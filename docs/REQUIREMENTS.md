@@ -1,0 +1,132 @@
+# Implementation Checklist — Kids' Financial Literacy App with Virtual Pet (Android)
+
+> Source of truth for this hackathon project, provided verbatim by the team. **Every `→ Specify:` slot has been resolved inline** (marked **Resolved:**); full rationale and screen-level detail live in [`docs/ROADMAP.md`](./ROADMAP.md), domain vocabulary in [`CONTEXT.md`](../CONTEXT.md), architectural decisions in [`docs/adr/`](./adr/).
+
+**Convention:** each feature lists the hard requirements from the doc. Sub-items marked `→ Specify:` in the original doc are the slots the doc leaves to the team — all of them are now filled: each carries a **Resolved:** line stating the decision and where it is specified.
+
+---
+
+## 1. First Launch & Local Profile
+- Onboarding: brief intro to the game's purpose + the three decision types (spend on required item / spend on desired item / postpone)
+- Guest mode, no mandatory registration; child profile = game name + selected character
+- The intro hint is returnable at any time
+- **Resolved:** 3 intro cards — what the game teaches · Три решения (обязательное / желаемое / отложить) · meet your pet; skippable. Hint re-opens anytime from Словарик → «Как играть». Profile = game name (child) + pet (name + appearance); no account. (ROADMAP §2.5, §4.2)
+
+## 2. Pet Creation
+- Pet appearance customization
+- Pet game name entry
+- Minimum: **9 visually distinguishable appearance combinations**
+- **Resolved:** appearance = Вид (3 species `sp1–sp3`, designer's Pokémon-like PNG bundle) × Окрас (3) × Аксессуар (3) = **27 combinations**; pet name entry after appearance pick. (ROADMAP §2.2, §5.4)
+
+## 3. Main Screen
+- Simultaneously visible without complex navigation: pet, available balance, savings amount, current goal, key status indicators, active task
+- Reachable from main screen: budget plan, tasks, purchases, savings, progress, adult section
+- **Resolved:** hub layout — pet + Этап badge + Забота/Настроение bars on top; Баланс and Копилка badges; active-goal and active-task cards; a 2×3 nav grid (План, Магазин, Копилка, Задания, Прогресс, Взрослый раздел) — everything ≤2 taps. Key status indicators = Забота and Настроение, drawn as icon + bar + number (never color alone). (ROADMAP §2.2, §4.2)
+
+## 4. Game Currency & Income
+- Only in-game currency (no real money anywhere)
+- Income from completing tasks and/or a clear recurring income (doc's example: daily login)
+- Every accrual shows source + amount; balance never changes without an explanation to the user
+- Starting budget granted at profile setup (game loop step 4)
+- **Resolved:** currency = монеты. Стартовый бюджет **100** granted at profile creation with an explanation screen. Пособие **+10** per Игровой день (recurring income). Task reward **+10**, first correct completion of each Задание only. Every movement goes through a feedback card (source + amount). (ROADMAP §2.1, §4.2)
+
+## 5. Budget Planning
+- Before each game period: distribute available amount across **≥3 areas** — mandatory expenses, optional expenses, savings
+- Enforce: distributed total ≤ available budget; display remaining balance
+- Plan editable until confirmation; after confirmation, show **plan vs. actual expenses** comparison
+- **Resolved:** a "game period" = **Игровой день** — one economy cycle; a new one unlocks on the next local calendar day in normal play, back-to-back in Демо-режиме (ADR-0002). Area labels: **Обязательные / Желаемые / Копилка**. Plan screen uses steppers per bucket with a live total and a remainder line; confirmed plan is locked for the day; plan-vs-actual columns shown on the same screen during the day and in Итоги дня. (ROADMAP §2.1, §4.2; ADR-0002)
+
+## 6. Purchases & Expenses
+- Catalog of priced items/actions of two types: mandatory and optional — minimum **8 items**
+- Pre-purchase display: price, category, estimated impact on the pet
+- Purchase requires confirmation → deducts balance → recorded in current-period history
+- Block negative balance & insufficient-funds purchases; instead explain what's missing and what options exist
+- **Resolved:** 8 items — mandatory: Обед 12 (Забота +10), Школьные принадлежности 10 (Забота +5), Проезд 8 (Забота +5), Лекарство 15 (Забота +20); optional: Конфета 5 (Настроение +5), Стикеры 7 (Настроение +6), Кино 20 (Настроение +12), Игрушка 25 (Настроение +10). Blocked purchase shows a sheet: how much is missing + options (wait for Пособие / do a Задание / postpone). (ROADMAP §2.1, §4.2)
+
+## 7. Savings & Goals
+- Goals with a clear cost, or goal creation from preset parameters — minimum **3 goals**
+- Goal view: cost, accumulated amount, remaining amount
+- Regular transfers of in-game currency into savings
+- If a completion date is shown: calculated transparently from the average of regular deposits
+- Withdrawal from savings requires separate confirmation; beforehand show how savings will decrease and how the completion date shifts
+- **Resolved:** 3 preset goals — Скейтборд **90**, Телескоп **160**, Велосипед **240**; one active goal; Копилка is a single pot attributed to it. Completion date = remaining ÷ average deposit, shown only after ≥1 transfer, else «—». Withdrawal = amount → preview screen (pot after, date shift) → separate confirm. (ROADMAP §2.1, §4.2)
+
+## 8. Financial Literacy Tasks
+- Minimum **6 tasks** covering **3 topics:** budget planning; savings; payments & purchases
+- Format: game situations with choices and consequences — **not** limited to picking an answer from options
+- After every answer/action: short explanation, regardless of correctness
+- Wording/calculations appropriate for ages 7–11
+- Demo mode: all mandatory-scenario tasks available immediately, not tied to real time
+- Content management: a new task is added **without reworking main app logic** (content decoupled from code)
+- **Resolved:** 6 tasks, 2 per topic — «Первый план», «Сломался рюкзак» (budget) · «Копилка мечты», «Большая распродажа» (savings) · «Две цены», «Чек» (payments); full node scripts with correct/incorrect paths and explanations in ROADMAP §6. Unlock: topics sequential budget → savings → payments, one new task per day; all 6 open in Демо-режиме; completed tasks replayable without reward. Tasks live in `assets/content/tasks.json` (generic node-graph runner; a new task is data only). (ROADMAP §2.3, §5.3, §6)
+
+## 9. Consequences & Feedback
+- After each financial action: show change in balance, savings, and the linked pet indicator
+- Feedback explains cause-and-effect in simple terms + suggests the next step
+- Unsuccessful decision: explanation of consequences + a correction path (new task, adjust next plan, cancel an optional purchase)
+- Safe-error rule: an unsuccessful choice creates a clear, timed game task and does **not** reset progress; no pet death/illness/injury except specially planned cases (doc's example: unforeseen medical expenses)
+- **Resolved:** every action shows a feedback card: Баланс ±, Копилка ±, Забота/Настроение ± with icons, a cause line, and a «Что дальше» next-step line (strings from content JSON). No illness/death/recovery events in v1: negative outcomes only lower meters, switch the pet pose to sad, and spawn a timed correction Задание (`spawnTask`) or a next-day plan-adjust hint. The doc's "unforeseen medical expense" exists solely as the Лекарство catalog item; an event variant is stretch. (ROADMAP §2.2, §2.6, §4.2)
+
+## 10. Pet Progress & Development
+- Minimum **3 development stages/states**
+- Stage changes depend on decisions combined over several game periods: mandatory expenses covered, actual spending vs. plan, savings regularity
+- Show a brief explanation for every change in the pet's emotional state
+- **Resolved:** stages **Новичок → Друг → Мастер**. Day score: +2 all mandatory purchases made · +1 actual spend ≤ plan · +1 savings deposit made; stage = rolling sum over the last 3 closed days (<3 / 3–8 / ≥9), recomputed at every day close. Visuals faked programmatically (scale/glow) over the designer's poses; every change (meters or stage) shows a kid-worded explanation. (ROADMAP §2.2)
+
+## 11. History & Learning Progress
+- Visible: completed tasks, progress toward current goal, results of the last game period
+- Short help section explaining key terms
+- **Resolved:** Прогресс screen with 3 tabs — Итоги (last day's score + plan-vs-actual + overall), Журнал (chronological transactions with source labels), Словарик. Key terms (10): Баланс, Копилка, Цель, Пособие, Обязательные расходы, Желаемые расходы, Забота, Настроение, Этап, Игровой день — one-to-one with `CONTEXT.md`, kid-worded definitions. (ROADMAP §2.5, §4.2)
+
+## 12. Adult Section
+- Entry barrier: simple adult gate (doc's examples: hold a button, solve an arithmetic problem)
+- Shows completed topics + overall progress; no negative evaluations of the child
+- Optional: parent-awarded bonus points
+- Profile reset/delete lives here
+- **Resolved:** gate = random two-digit × one-digit multiplication (e.g., 14 × 7); wrong answer → new question; asked on every entry. Contents: learning progress in positive wording only, Демо-режим toggle, «Сбросить демо», profile reset/delete with extra confirmations. Родительский бонус (+5/+10/+20 once per day, optional reason) is a stretch item. (ROADMAP §2.4, §2.6)
+
+## 13. Persistence & Demo Mode
+- Survive close/relaunch: profile, balance, purchases, savings, selected goal, learning progress
+- Demo mode: test profile that plays the mandatory game-cycle stages sequentially **without waiting for calendar deadlines**, resettable to initial state
+- Minimum **5 consecutive game periods** playable in demo mode without real-time waits
+- **Resolved:** storage = SQLite via Drizzle ORM; schema in ROADMAP §3.2 (profiles, days, plans, transactions, purchases, savingsTransfers, goals, petState, meterEvents, dayScores, taskProgress, meta); every mutation writes through immediately. Демо-режим: toggled in Взрослый раздел; creates/switches to a dedicated demo profile driven by a manual clock (day advance anytime), pre-onboarded, all tasks open; «Сбросить демо» restores its initial state; exit returns to the normal profile untouched. Sustains ≥5 consecutive days back-to-back. (ROADMAP §2.4, §3.2; ADR-0002)
+
+## 14. End-to-End Game Loop (acceptance flow — Appendix A)
+Steps 1–10 form the loop; 11–12 verify persistence and the adult section:
+1. First launch + intro → 2. Create local profile → 3. Choose/customize/name pet → 4. Starting budget, current goal, available tasks → 5. Distribute funds (mandatory/optional/savings) → 6. Complete a task, earn currency (with result explanation) → 7. Make ≥1 mandatory + ≥1 optional purchase (must include an attempted insufficient-funds purchase) → 8. Select a goal, replenish savings → 9. Feedback on balance, plan completion, pet status → 10. Transition to next period; progress/stage changes after a series of decisions → 11. Close & relaunch (progress confirmed saved) → 12. Enter adult section, reset/delete test profile
+- **Resolved:** the concrete sequence is specified screen-by-screen in ROADMAP §4 (design flow: screen map, per-screen specs, and the key flows including the day loop, insufficient-funds staging, correction path, demo walkthrough, and relaunch persistence). Acceptance = milestone ACs (ROADMAP §7) + the scripted manual cases (ROADMAP §8). (ROADMAP §4, §7, §8)
+
+---
+
+## Technical Constraints
+- Android 8.0+; portrait orientation; works at ≥360 dp width (tablet/landscape optional)
+- Launch to main/start screen ≤ 5 s; visual response to actions ≤ 1 s
+- Main gameplay loop fully offline; any network-dependent feature must report no-connection without losing progress
+- No hardware permissions (camera, mic, geolocation, contacts, Bluetooth, etc.)
+- Storage: Room/SQLite/file or equivalent, local; educational content separated from interface code
+- No server required (if used anyway: OpenAPI spec + single local launch procedure, preferably Docker Compose)
+- Signed release APK (or AAB), unique package name, version + build number in docs
+- Automated tests (or documented test cases) for budgeting, debiting, savings, and progress logic
+- No crashes, blocking errors, progress loss, or dead ends during the mandatory demo scenario
+- No secrets in the repo; only justified Android permissions
+- Stack: Kotlin/Java native, or Flutter/React Native/cross-platform — choice is yours, evaluated on stability and reproducibility
+
+## UX Constraints
+- Short phrases, simple words; complex terms explained
+- Touch targets ≥ 48×48 dp; main text ≥ 16 sp (legible under system font enlargement)
+- Color is never the sole channel for error/success/category/pet status
+- Sounds/animations disableable; critical info never audio-only
+- Destructive actions (data deletion, etc.) require confirmation
+
+## Hard Prohibitions (must not exist in the prototype)
+- Real bank accounts/cards/payments, real-money transactions, paid subscriptions, in-game purchases, ads, rewards with real value
+- Public chats, child-to-child messaging, ratings with personal data, social features
+- Personal data collection / mandatory accounts in the mandatory scenario
+- External links accessible to children outside the adult section
+- Texts/visuals that intimidate, shame, or imply care depends on real payment
+- Mandatory AI/ML/big-data/cloud use; comprehensive remote parental control or web dashboard
+
+## Non-Code Deliverables (brief)
+- Presentation (PPTX/PDF, ~8–12 slides) + live demo with a ≤3-min backup video
+- Accompanying docs: README, build/run instructions, architecture, data structures, requirements-compliance matrix, economy/progress formulas, educational content map, UX rationale, permissions/data description, test cases/report, limitations, third-party license list
+- RuStore card draft: name, category, descriptions, 512×512 icon, ≥3 screenshots, age-rating justification
