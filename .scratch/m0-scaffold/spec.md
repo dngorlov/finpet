@@ -67,3 +67,9 @@ Stand up the FinPet Expo/React Native application skeleton exactly as fixed in R
 - If the current stable Expo SDK's floor is already ≥ API 26, still pin 26 explicitly so a future SDK bump cannot silently raise or lower the floor.
 - Launch-time budget is measured, not assumed: record the emulator stopwatch number in the M0 issue comments — M6 re-measures it as a regression gate.
 - Use the canonical vocabulary from `CONTEXT.md` for any user-visible string introduced here («ФинПет», «монеты» if coins appear in the placeholder UI) and keep all strings in the strings module, never inline.
+
+## Comments
+
+**2026-09-18 — implemented (commit bdc833c).** All code-level acceptance criteria met: `npm test` 7/7 green (migration seam 5, render seam 2), `npm run typecheck` and `npm run lint` clean, core-purity boundary enforced by ESLint and verified with a deliberate-violation probe (all three rules fired). RNTL is v14 (async render/`screen` API; note added to AGENTS.md). Spec prose erratum: the placeholder asset tree is 30 PNGs (27 poses + 3 overlays), not 81 — the §5.4 contract itself is correct. Review note: the subagent-based two-axis review could not run (model concurrency limit); an inline review against this spec found one gap (missing repository stubs), which was fixed before commit.
+
+**Device acceptance blocked on this machine:** no Android SDK/emulator/gradle is installed (only adb from homebrew), so the release-APK build, API 26 emulator install, ≤5 s cold-start measurement, and `adb dumpsys` permission audit were **not executed**. The repo state supports them (identity, minSdk 26 pin, empty permissions list, README build commands). Follow-up for the team on a machine with Android Studio: run `npx expo run:android --variant release`, install on an API 26 emulator, record the cold-start stopwatch number here (M6 re-measures it as a regression gate).
