@@ -16,6 +16,7 @@ import { Screen } from "../components/Screen";
 import { TextButton } from "../components/TextButton";
 import { TourAnchor } from "../howToPlay/TourAnchor";
 import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
+import { hubTapRoute } from "../howToPlay/beats";
 import type { RootStackParamList } from "../navigation/types";
 import { PetView } from "../pet/PetView";
 import { useSession } from "../session/SessionProvider";
@@ -75,10 +76,12 @@ export default function MainScreen({ navigation }: Props) {
       });
       setHubMessage(null);
       if (opened.status === "opened" && opened.allowanceCredited) {
+        const tutorial = meta.get(META_KEYS.howToPlayDone) !== "1";
         setFeedback({
           deltas: { balance: ECONOMY.allowance },
-          cause: strings.feedbackCauseAllowance,
-          nextStep: strings.feedbackNextAllowance,
+          chip: strings.allowanceDayChip,
+          tutorial,
+          confirm: tutorial ? "next" : "gotIt",
         });
       }
     }, [content, game, meta]),
@@ -99,9 +102,17 @@ export default function MainScreen({ navigation }: Props) {
 
   const waiting = !hub.day.open;
   const go = (route: "Plan" | "Shop" | "Savings" | "TaskList" | "Progress" | "AdultGate" | "Settings") => {
-    if (tour.active) return;
+    if (tour.active) {
+      if (tour.beatId && hubTapRoute(tour.beatId) === route) {
+        navigation.navigate(route);
+        tour.next();
+      }
+      return;
+    }
     navigation.navigate(route);
   };
+  const tileLocked = (beatId: "main-plan" | "main-shop" | "main-savings") =>
+    waiting && !(tour.active && tour.beatId === beatId);
 
   return (
     <Screen>
@@ -155,15 +166,15 @@ export default function MainScreen({ navigation }: Props) {
           <NavTile
             pictogram={strings.navPlanPictogram}
             word={strings.navPlan}
-            highlighted={!waiting && hub.day.plan.status !== "confirmed"}
+            highlighted={!tileLocked("main-plan") && hub.day.plan.status !== "confirmed"}
             hint={
-              waiting
+              tileLocked("main-plan")
                 ? strings.waitingEconomyHint
                 : hub.day.plan.status === "confirmed"
                   ? strings.planReady
                   : strings.composePlanHint
             }
-            disabled={waiting}
+            disabled={tileLocked("main-plan")}
             onPress={() => go("Plan")}
             style={styles.tileFill}
           />
@@ -172,8 +183,8 @@ export default function MainScreen({ navigation }: Props) {
           <NavTile
             pictogram={strings.navShopPictogram}
             word={strings.navShop}
-            hint={waiting ? strings.waitingEconomyHint : undefined}
-            disabled={waiting}
+            hint={tileLocked("main-shop") ? strings.waitingEconomyHint : undefined}
+            disabled={tileLocked("main-shop")}
             onPress={() => go("Shop")}
             style={styles.tileFill}
           />
@@ -182,8 +193,8 @@ export default function MainScreen({ navigation }: Props) {
           <NavTile
             pictogram={strings.navSavingsPictogram}
             word={strings.navSavings}
-            hint={waiting ? strings.waitingEconomyHint : undefined}
-            disabled={waiting}
+            hint={tileLocked("main-savings") ? strings.waitingEconomyHint : undefined}
+            disabled={tileLocked("main-savings")}
             onPress={() => go("Savings")}
             style={styles.tileFill}
           />

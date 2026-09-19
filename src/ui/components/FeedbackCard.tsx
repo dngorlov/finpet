@@ -12,8 +12,11 @@ export type FeedbackDeltas = {
 
 export type FeedbackModel = {
   deltas: FeedbackDeltas;
-  cause: string;
-  nextStep: string;
+  cause?: string;
+  nextStep?: string;
+  chip?: string;
+  tutorial?: boolean;
+  confirm?: "gotIt" | "next";
 };
 
 function DeltaRow({ icon, label }: { icon: string; label: string }) {
@@ -35,10 +38,25 @@ export function FeedbackCard({
   onDismiss: () => void;
 }) {
   const { deltas } = model;
+  const tutorial = Boolean(model.tutorial);
+  const confirm = model.confirm ?? "gotIt";
+
   return (
-    <Modal animationType="slide" transparent visible onRequestClose={onDismiss}>
-      <View style={styles.backdrop} pointerEvents="box-none">
+    <Modal
+      animationType="fade"
+      transparent
+      visible
+      onRequestClose={() => {
+        if (!tutorial) onDismiss();
+      }}
+    >
+      <View style={[styles.backdrop, tutorial ? styles.backdropDim : null]}>
         <View style={styles.sheet}>
+          {model.chip ? (
+            <View style={styles.chip}>
+              <Text style={styles.chipLabel}>{model.chip}</Text>
+            </View>
+          ) : null}
           {deltas.balance ? (
             <DeltaRow icon={strings.balanceIcon} label={strings.feedbackBalance(deltas.balance)} />
           ) : null}
@@ -51,9 +69,12 @@ export function FeedbackCard({
           {deltas.mood ? (
             <DeltaRow icon={strings.moodIcon} label={strings.feedbackMood(deltas.mood)} />
           ) : null}
-          <Text style={styles.body}>{model.cause}</Text>
-          <Text style={styles.body}>{model.nextStep}</Text>
-          <PrimaryButton label={strings.gotIt} onPress={onDismiss} />
+          {model.cause ? <Text style={styles.body}>{model.cause}</Text> : null}
+          {model.nextStep ? <Text style={styles.body}>{model.nextStep}</Text> : null}
+          <PrimaryButton
+            label={confirm === "next" ? strings.next : strings.gotIt}
+            onPress={onDismiss}
+          />
         </View>
       </View>
     </Modal>
@@ -62,15 +83,33 @@ export function FeedbackCard({
 
 const styles = StyleSheet.create({
   backdrop: {
+    alignItems: "center",
     flex: 1,
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    padding: spacing.l,
+  },
+  backdropDim: {
+    backgroundColor: "rgba(0,0,0,0.55)",
   },
   sheet: {
+    alignSelf: "stretch",
     backgroundColor: colors.card,
-    borderTopLeftRadius: radius.card,
-    borderTopRightRadius: radius.card,
+    borderRadius: radius.card,
     gap: spacing.s,
+    maxWidth: 360,
     padding: spacing.l,
+  },
+  chip: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.badgeFill,
+    borderRadius: 12,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+  },
+  chipLabel: {
+    color: colors.text,
+    fontSize: type.body,
+    fontWeight: "700",
   },
   row: {
     alignItems: "center",

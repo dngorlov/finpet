@@ -41,7 +41,7 @@ export function HowToPlayTourProvider({
   const [running, setRunning] = useState<Running | null>(null);
   const [anchors, setAnchors] = useState<Partial<Record<string, TourAnchorRect>>>({});
 
-  const beatId = running ? running.beats[running.index] ?? null : null;
+  const beatId = running ? (running.beats[running.index] ?? null) : null;
   const body = beatId ? (content.hints.find((hint) => hint.id === beatId)?.body ?? "") : "";
   const active = running !== null;
 

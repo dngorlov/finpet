@@ -62,6 +62,7 @@ export const strings = {
   meterReasonUnchanged: (label: string) => `${label} без изменений`,
   nextDayPlanNeeds: "Завтра сначала запланируй обязательное.",
   allowanceRibbon: "Пособие +10 монет",
+  allowanceDayChip: "Начало игрового дня",
 
   feedbackBalance: (n: number) => `Баланс ${n > 0 ? "+" : ""}${n}`,
   feedbackSavings: (n: number) => `Копилка ${n > 0 ? "+" : ""}${n}`,

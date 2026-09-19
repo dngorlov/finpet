@@ -97,3 +97,5 @@ The overlay teleports through real screens. Taps that would spend, lock a plan, 
 - Grill locked: commit on Имя; tour after Пособие «Понятно»; practice (Q5/Q8/Q14 A); overlay pager not hole-only advance; skip kept; anonymous copy; seven beats including hub Задание; Android Back as specified; Словарик replay safe; no restore fiction.
 - CONTEXT.md already defines «Как играть» as this walkthrough. Do not restore “Питомец speaks scripted guidance” for these steps.
 - Historical first-run-redesign / pet-name specs still describe pet-card «Как играть»; append supersession comments rather than rewriting those stories.
+
+**Superseded** by `.scratch/how-to-play-tooltip/spec.md`: tooltip next to the control, tap-to-open hub tiles (no overlay teleport), frozen scroll, centered FeedbackCard, tutorial Пособие dim + chip + «Дальше». Leave the stories above as history.
