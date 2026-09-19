@@ -4,7 +4,7 @@
 
 **Blocked by:** 03, 04, 05
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -23,3 +23,7 @@
 ## Done when
 
 `npm test` covers the M3 loop at the navigation-root seam and `npm run typecheck` passes.
+
+## Answer
+
+`economyFlow.test.tsx` walks a returning child through План, Магазин (including blocked Игрушка), Копилка, and Журнал. `npm test` 81, typecheck and lint clean.

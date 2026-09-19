@@ -20,6 +20,7 @@ Seams (approved): navigation-root RNTL via fake `SessionPorts`; device AC for Ap
 - 03 Магазин: catalog, confirm, BlockedSheet ways out. See `.scratch/m3-economy-loop-ui/issues/03-shop.md`.
 - 04 Копилка: deposits, withdrawal preview, celebration. See `.scratch/m3-economy-loop-ui/issues/04-savings.md`.
 - 05 Прогресс / Журнал: three tabs, kid labels. See `.scratch/m3-economy-loop-ui/issues/05-progress-journal.md`.
+- 06 Economy flow tests: Appendix A 5, 7–9 at the navigation-root seam. See `.scratch/m3-economy-loop-ui/issues/06-economy-flow-tests.md`.
 
 ## Fog
 
