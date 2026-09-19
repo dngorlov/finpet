@@ -79,6 +79,22 @@ export const strings = {
   shopDoTask: "Выполнить задание",
   shopWaitExplain: "Пособие придёт в следующий игровой день. Можно сделать задание или отложить покупку.",
 
+  savingsPot: (n: number) => `В копилке ${n}`,
+  savingsEstimateNone: "—",
+  savingsEstimate: (n: number) => `примерно ${n} дн.`,
+  savingsDeposit: "Положить",
+  savingsWithdraw: "Забрать",
+  savingsDepositAmount: "Сумма",
+  savingsConfirmDeposit: (n: number) => `Положить ${n}?`,
+  savingsConfirmWithdraw: (n: number) => `Забрать ${n}?`,
+  savingsWithdrawPreview: (potAfter: number, days: number) =>
+    `В копилке станет ${potAfter}. Мечта отодвинется на ${days} дн.`,
+  savingsWithdrawPreviewNone: (potAfter: number) => `В копилке станет ${potAfter}.`,
+  savingsAchieved: "Мечта сбылась!",
+  savingsPickGoal: "Выбери новую цель",
+  savingsAchievedBadge: "сбылась",
+  savingsRemaining: (n: number) => `осталось ${n}`,
+
   planAvailable: (n: number) => `Можно распределить: ${n}`,
   planRemainder: (n: number) => `Останется свободных: ${n}`,
   planOverBudget: "В плане больше монет, чем есть. Убавь суммы.",

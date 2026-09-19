@@ -8,13 +8,16 @@ export function AmountStepper({
   value,
   onChange,
   disabled,
+  max,
 }: {
   label: string;
   pictogram: string;
   value: number;
   onChange: (next: number) => void;
   disabled?: boolean;
+  max?: number;
 }) {
+  const plusDisabled = Boolean(disabled) || (max != null && value >= max);
   return (
     <View style={styles.row}>
       <Text aria-hidden style={styles.pictogram}>
@@ -35,8 +38,8 @@ export function AmountStepper({
       <Pressable
         role="button"
         aria-label={strings.bucketPlus(label)}
-        aria-disabled={Boolean(disabled)}
-        disabled={disabled}
+        aria-disabled={plusDisabled}
+        disabled={plusDisabled}
         onPress={() => onChange(value + 1)}
         style={styles.step}
       >

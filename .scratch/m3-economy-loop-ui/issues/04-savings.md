@@ -4,7 +4,7 @@
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -25,3 +25,7 @@
 ## Done when
 
 Appendix A step 8 is playable in the UI test. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Копилка shows the pot, active Цель, and three presets. Deposits and double-confirmed withdrawals use FeedbackCard. Reaching the cost shows «Мечта сбылась!» and Настроение +10.
