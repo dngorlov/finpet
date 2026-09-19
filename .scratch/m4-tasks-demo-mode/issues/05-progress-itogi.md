@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready
+**Status:** resolved
 
 Type: task
 
@@ -23,3 +23,7 @@ Type: task
 ## Done when
 
 Итоги is no longer an empty tab after the first close. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Прогресс → Итоги reads `lastClosedDay` and replaces the empty copy with that day's score, plan-vs-actual, meter reasons, and Этап (no UI stage recompute), plus overall closed days / non-correction tasks x/6 / achieved goals. Журнал maps `task_reward:*` to «Задание: {title}» and `task_scene` to «Задание». Словарик is unchanged.

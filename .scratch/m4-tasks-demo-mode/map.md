@@ -14,6 +14,7 @@ Seams (approved): navigation-root RNTL via fake `SessionPorts`; device AC for Ap
 - Reward: `good` or `warn` exit is correct; `bad` exit completes without pay and leaves `rewardPaid` false.
 - No schema shape change: `lastClosedDay` reconstructs from existing `dayScores` / plans / purchases / meterEvents.
 - SessionGame M4 reads are live: expanded `closeDay`, `lastClosedDay`, `listTaskProgress`, `dayState.open`; fake `openDay` blocks non-demo after close ([01-session-reads.md](issues/01-session-reads.md)).
+- Progress Итоги fills from `lastClosedDay` (no UI stage recompute); Журнал labels `task_reward:*` / `task_scene` ([05-progress-itogi.md](issues/05-progress-itogi.md)).
 - AdultGate stays M5; this milestone ships a thin demo panel.
 
 ## Fog
