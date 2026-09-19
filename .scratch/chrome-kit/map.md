@@ -12,6 +12,7 @@ This is a visual consistency pass. Do not change persistence, routing, first-run
 - Kit first, then screen migrations in parallel, then one flow-test ticket.
 - ROADMAP §4 already records this chrome.
 - 01 theme tokens: `type.section` / `type.button`, `colors.raisedFace|raisedEdge|disabledFace|badgeFill`, `radius.card`. Meter `fill` kept. See `src/ui/theme.ts`.
+- 03 kit primitives: `Chip` / `Card` / `Badge` / `NavTile` / `SpeechBubble` / `Screen` plus chrome strings in `src/ui/strings.ts`. Screens not migrated. See `.scratch/chrome-kit/issues/03-kit-primitives.md`.
 
 ## Fog
 
