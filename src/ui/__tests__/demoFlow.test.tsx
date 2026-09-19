@@ -2,7 +2,7 @@ import { render, screen, userEvent } from "@testing-library/react-native";
 import type { CatalogItem } from "../../core/economy";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
-import { sixUnlocked } from "../testSupport/flowHelpers";
+import { passAdultGate, sixUnlocked } from "../testSupport/flowHelpers";
 
 const lunch: CatalogItem = {
   id: "lunch",
@@ -25,7 +25,7 @@ async function renderApp(ports = createFakePorts()) {
 }
 
 async function confirmDemo(user: ReturnType<typeof userEvent.setup>) {
-  await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
+  await passAdultGate(user);
   await user.press(screen.getByRole("button", { name: "Демо-режим" }));
   expect(screen.getByText("Демо создаёт отдельный тестовый профиль")).toBeOnTheScreen();
   await user.press(screen.getByRole("button", { name: "Готово" }));
@@ -81,7 +81,7 @@ describe("Демо-режим panel", () => {
       ports.game.claimTaskReward(demoId, demoDay.dayId, "budget_first_plan", true);
       ports.game.closeDay(demoId, tinyCatalog);
 
-      await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
+      await passAdultGate(user);
       await user.press(screen.getByRole("button", { name: "Сбросить демо" }));
       expect(screen.getByText("Демо вернётся к первому игровому дню")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Готово" }));
@@ -104,7 +104,7 @@ describe("Демо-режим panel", () => {
       expect(screen.queryByText("День 2")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
-      await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
+      await passAdultGate(user);
       await user.press(screen.getByRole("button", { name: "Демо-режим" }));
 
       expect(screen.getByText("Баланс 108")).toBeOnTheScreen();

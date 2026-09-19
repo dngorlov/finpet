@@ -6,7 +6,7 @@ import {
   createFakePorts,
   seedReturningChild,
 } from "../testSupport/fakePorts";
-import { confirmTinyPlan, sixUnlocked } from "../testSupport/flowHelpers";
+import { confirmTinyPlan, passAdultGate, sixUnlocked } from "../testSupport/flowHelpers";
 
 async function renderApp(ports = createFakePorts()) {
   const user = userEvent.setup();
@@ -69,7 +69,7 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       expect(childClosed?.n).toBe(1);
       expect(ports.game.dayState(childId).open).toBe(false);
 
-      await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
+      await passAdultGate(user);
       await user.press(screen.getByRole("button", { name: "Демо-режим" }));
       expect(screen.getByText("Демо создаёт отдельный тестовый профиль")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Готово" }));
@@ -98,7 +98,7 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       expect(screen.getByText("Игровых дней: 5")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
-      await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
+      await passAdultGate(user);
       await user.press(screen.getByRole("button", { name: "Сбросить демо" }));
       expect(screen.getByText("Демо вернётся к первому игровому дню")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Готово" }));
@@ -123,7 +123,7 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       expect(screen.queryByText("День 5")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
-      await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
+      await passAdultGate(user);
       await user.press(screen.getByRole("button", { name: "Демо-режим" }));
 
       expect(screen.getByText("Новый день откроется завтра")).toBeOnTheScreen();

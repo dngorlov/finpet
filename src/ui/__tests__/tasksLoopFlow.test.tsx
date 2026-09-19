@@ -2,6 +2,7 @@ import { render, screen, userEvent } from "@testing-library/react-native";
 import { loadContent } from "../../data/content";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
+import { passAdultGate } from "../testSupport/flowHelpers";
 
 const content = loadContent();
 const cinema = content.catalog.find((item) => item.id === "cinema")!;
@@ -89,7 +90,7 @@ describe("Задания combined loop", () => {
       await user.press(screen.getByRole("button", { name: "Отложить" }));
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
-      await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
+      await passAdultGate(user);
       await user.press(screen.getByRole("button", { name: "Демо-режим" }));
       await user.press(screen.getByRole("button", { name: "Готово" }));
       await user.press(screen.getByRole("button", { name: "Понятно" }));

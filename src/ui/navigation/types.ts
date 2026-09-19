@@ -11,6 +11,7 @@ export type RootStackParamList = {
   Progress: undefined;
   Settings: undefined;
   DaySummary: undefined;
+  AdultGate: undefined;
   Demo: undefined;
   TaskList: undefined;
   TaskRun: { taskId: string };

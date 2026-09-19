@@ -237,6 +237,9 @@ export const strings = {
   navTasks: "Задания",
   navProgress: "Прогресс",
   navAdult: "Взрослый раздел",
+  adultGatePrompt: (a: number, b: number) => `Сколько будет ${a} × ${b}?`,
+  adultGateAnswer: "Ответ",
+  adultGateEnter: "Войти",
 
   demoMode: "Демо-режим",
   demoName: "Демо",

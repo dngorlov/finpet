@@ -175,7 +175,7 @@ export default function MainScreen({ navigation }: Props) {
         <NavTile
           pictogram={strings.navAdultPictogram}
           word={strings.navAdult}
-          onPress={() => navigation.navigate("Demo")}
+          onPress={() => navigation.navigate("AdultGate")}
         />
       </View>
       {hubMessage === "needPlan" ? <Text style={styles.body}>{strings.finishDayNeedPlan}</Text> : null}

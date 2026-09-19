@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 Type: task
 
@@ -26,3 +26,7 @@ Type: task
 ## Done when
 
 A juror hitting Взрослый раздел must answer a product before the M4 demo panel. Existing M4 demo tests pass. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Main's Взрослый раздел opens AdultGate (`makeQuestion` 10–99 × 2–9). A correct «Войти» `replace`s to the M4 Demo panel; two wrong answers generate a new question; Back does not unlock. Existing demo/day-close/task-loop tests pass through `passAdultGate`. Coverage is `src/ui/__tests__/adultGate.test.ts` and `adultGateFlow.test.tsx`.

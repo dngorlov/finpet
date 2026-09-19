@@ -13,6 +13,7 @@ Seams (approved): navigation-root RNTL via fake `SessionPorts` + `passAdultGate`
 - Gate on every Main → Adult entry; correct answer is not stored.
 - After the gate, `replace` into the existing Demo panel (M4 file). Main tile goes to `AdultGate`.
 - Reset/delete compose `createProfile` / `deleteProfile`; hide child destructive actions while `isDemo`.
+- AdultGate is in front of the Demo panel; `passAdultGate` is the shared test helper ([01-adult-gate.md](issues/01-adult-gate.md)).
 
 ## Fog
 
