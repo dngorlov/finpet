@@ -28,7 +28,7 @@ type HubModel = {
   savings: SavingsView;
   day: DayState;
   allowanceCredited: boolean;
-  taskTitle: string | null;
+  taskTitles: string[];
   goalName: string;
   accumulated: number;
   cost: number;
@@ -52,7 +52,7 @@ export default function MainScreen({ navigation }: Props) {
       const savings = game.savingsState(profileId);
       const day = game.dayState(profileId);
       const dayN = opened.status === "opened" ? opened.n : day.n;
-      const task = unlockedTasks(content.tasks, dayN, profile.isDemo)[0];
+      const unlocked = unlockedTasks(content.tasks, dayN, profile.isDemo);
       const active = savings.activeGoal;
       const goal = content.goals.find((g) => g.id === active?.key);
       const cost = active?.cost ?? 0;
@@ -62,7 +62,11 @@ export default function MainScreen({ navigation }: Props) {
         savings,
         day,
         allowanceCredited: opened.status === "opened" && opened.allowanceCredited,
-        taskTitle: task?.title ?? null,
+        taskTitles: profile.isDemo
+          ? unlocked.map((task) => task.title)
+          : unlocked[0]
+            ? [unlocked[0].title]
+            : [],
         goalName: goal?.name ?? "",
         accumulated: cost - remaining,
         cost,
@@ -114,15 +118,20 @@ export default function MainScreen({ navigation }: Props) {
       <TextButton label={strings.settings} onPress={() => navigation.navigate("Settings")} />
       <MeterBar icon={strings.careIcon} label={strings.care} value={hub.profile.care} />
       <MeterBar icon={strings.moodIcon} label={strings.mood} value={hub.profile.mood} />
+      {hub.profile.isDemo ? <Text style={styles.body}>{strings.demoBanner}</Text> : null}
       {hub.allowanceCredited ? <Text style={styles.body}>{strings.allowanceRibbon}</Text> : null}
       <Card>
         <Text style={styles.cardTitle}>{hub.goalName}</Text>
         <Text style={styles.body}>{strings.goalRatio(hub.accumulated, hub.cost)}</Text>
         <Text style={styles.body}>{strings.goalRemaining(hub.remaining)}</Text>
       </Card>
-      {hub.taskTitle ? (
+      {hub.taskTitles.length ? (
         <Card>
-          <Text style={styles.cardTitle}>{hub.taskTitle}</Text>
+          {hub.taskTitles.map((title) => (
+            <Text key={title} style={styles.cardTitle}>
+              {title}
+            </Text>
+          ))}
           <PrimaryButton label={strings.playTask} onPress={() => goStub("tasks")} />
         </Card>
       ) : null}
@@ -157,7 +166,7 @@ export default function MainScreen({ navigation }: Props) {
         <NavTile
           pictogram={strings.navAdultPictogram}
           word={strings.navAdult}
-          onPress={() => goStub("adult")}
+          onPress={() => navigation.navigate("Demo")}
         />
       </View>
       {hubMessage === "needPlan" ? <Text style={styles.body}>{strings.finishDayNeedPlan}</Text> : null}

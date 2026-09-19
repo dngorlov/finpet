@@ -15,6 +15,7 @@ Seams (approved): navigation-root RNTL via fake `SessionPorts`; device AC for Ap
 - No schema shape change: `lastClosedDay` reconstructs from existing `dayScores` / plans / purchases / meterEvents.
 - SessionGame M4 reads are live: expanded `closeDay`, `lastClosedDay`, `listTaskProgress`, `dayState.open`; fake `openDay` blocks non-demo after close ([01-session-reads.md](issues/01-session-reads.md)).
 - AdultGate stays M5; this milestone ships a thin demo panel.
+- Demo panel replaces the Adult stub: confirm/reset/exit compose `createProfile({ isDemo })` / `deleteProfile` with meta `childProfileId`; Demo Main banner + `unlockedTasks(..., profile.isDemo)` ([04-demo-panel.md](issues/04-demo-panel.md)).
 
 ## Fog
 

@@ -14,7 +14,6 @@ const COPY: Record<StubDestination, string> = {
   shop: strings.stubShop,
   savings: strings.stubSavings,
   tasks: strings.stubTasks,
-  adult: strings.stubAdult,
 };
 
 export default function StubScreen({ route }: Props) {
