@@ -328,3 +328,42 @@ describe("schema roundtrip", () => {
     expect(sums(sqlite, profileId).balance).toBe(sums(sqlite, profileId).txSum);
   });
 });
+
+describe("Удалить профиль", () => {
+  it("removes that Профиль ребёнка and leaves a Демо-режим profile", () => {
+    const { game } = openMemoryGame();
+    const childId = game.createProfile({
+      name: "Миша",
+      species: "sp1",
+      color: "c1",
+      accessory: "a1",
+      petName: "Пух",
+      contentVersion: 1,
+      goals: GOALS,
+      activeGoalKey: "skateboard",
+    });
+    const opened = game.openDay(childId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+    game.purchase(childId, opened.dayId, lunch);
+    game.transferToSavings(childId, opened.dayId, 15);
+    game.claimTaskReward(childId, opened.dayId, "budget_first_plan", true);
+
+    const demoId = game.createProfile({
+      name: "Демо",
+      species: "sp2",
+      color: "c2",
+      accessory: "a2",
+      petName: "Демо",
+      isDemo: true,
+      contentVersion: 1,
+      goals: GOALS,
+      activeGoalKey: "skateboard",
+    });
+    game.openDay(demoId);
+
+    game.deleteProfile(childId);
+
+    expect(() => game.getProfile(childId)).toThrow(/не найден/);
+    expect(game.getProfile(demoId)).toMatchObject({ name: "Демо", isDemo: true, petName: "Демо" });
+  });
+});

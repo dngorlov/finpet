@@ -20,5 +20,8 @@ export function createMetaRepository(db: Db) {
         db.insert(meta).values({ key, value }).run();
       }
     },
+    remove(key: string): void {
+      db.delete(meta).where(eq(meta.key, key)).run();
+    },
   };
 }

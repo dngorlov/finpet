@@ -15,8 +15,12 @@ An isolated test profile that walks the mandatory game loop through consecutive 
 _Avoid_: тестовый аккаунт, отладка
 
 **Взрослый раздел (Adult section)**:
-The area for adults, protected by an arithmetic gate: learning progress, Parent bonus, Demo mode toggle, profile reset/delete.
+The area for adults, protected by an arithmetic gate: learning progress, Parent bonus, Demo mode toggle, Удалить профиль.
 _Avoid_: родительский контроль (a prohibited feature), родительские настройки
+
+**Удалить профиль (Delete profile)**:
+A Профиль ребёнка taken off the device — that pet, its Игровые дни, and its money are gone. First-run onboarding starts again.
+_Avoid_: clear storage, wipe, reset app, сброс приложения, сбросить демо
 
 **Родительский бонус (Parent bonus)**:
 Extra coins a parent awards at most once per Game Day from the Adult section, with an optional reason.

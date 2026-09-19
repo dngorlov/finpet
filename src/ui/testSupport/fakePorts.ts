@@ -28,6 +28,9 @@ export function createFakePorts(): SessionPorts {
       set(key, value) {
         meta.set(key, value);
       },
+      remove(key) {
+        meta.delete(key);
+      },
     },
     game: {
       createProfile(input: CreateProfileInput) {
@@ -54,6 +57,10 @@ export function createFakePorts(): SessionPorts {
         const row = profiles.get(profileId);
         if (!row) throw new Error(`Профиль ${profileId} не найден`);
         return viewOf(row);
+      },
+      deleteProfile(profileId) {
+        if (!profiles.has(profileId)) throw new Error(`Профиль ${profileId} не найден`);
+        profiles.delete(profileId);
       },
       openDay(profileId) {
         const row = profiles.get(profileId);

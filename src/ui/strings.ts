@@ -38,6 +38,8 @@ export const strings = {
   back: "Назад",
   howToPlay: "Как играть",
   settings: "Настройки",
+  deleteProfile: "Удалить профиль",
+  devSection: "Dev",
   finishDay: "Закончить день",
   composePlanHint: "Составь план дня",
   finishDayNeedPlan: "Сначала составь план дня",

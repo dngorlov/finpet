@@ -7,8 +7,8 @@ const content = loadContent();
 
 async function renderApp(ports = createFakePorts()) {
   const user = userEvent.setup();
-  await render(<FinPetApp ports={ports} />);
-  return { user, ports };
+  const view = await render(<FinPetApp ports={ports} />);
+  return { user, ports, view };
 }
 
 describe("first-run flow (Appendix A 1–4)", () => {
@@ -93,5 +93,37 @@ describe("first-run flow (Appendix A 1–4)", () => {
     await user.press(screen.getByRole("button", { name: "Настройки" }));
     expect(screen.getByText("ФинПет")).toBeOnTheScreen();
     expect(screen.getByText(/версия \d+\.\d+\.\d+ \(\d+\)/)).toBeOnTheScreen();
+  });
+
+  it("lets a developer Удалить профиль from Settings and start onboarding again", async () => {
+    const ports = createFakePorts();
+    seedReturningChild(ports);
+    const { user, view } = await renderApp(ports);
+
+    await user.press(screen.getByRole("button", { name: "Настройки" }));
+    expect(screen.getByText("Dev")).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Удалить профиль" }));
+
+    expect(screen.getByText(content.hints[0]!.title)).toBeOnTheScreen();
+    expect(screen.getByText(content.hints[0]!.body)).toBeOnTheScreen();
+
+    await view.unmount();
+    await render(<FinPetApp ports={ports} />);
+    expect(screen.getByText(content.hints[0]!.title)).toBeOnTheScreen();
+  });
+
+  it("hides DevSettings on Settings when not __DEV__", async () => {
+    const held = __DEV__;
+    Object.defineProperty(globalThis, "__DEV__", { configurable: true, value: false });
+    try {
+      const ports = createFakePorts();
+      seedReturningChild(ports);
+      const { user } = await renderApp(ports);
+      await user.press(screen.getByRole("button", { name: "Настройки" }));
+      expect(screen.queryByText("Dev")).not.toBeOnTheScreen();
+      expect(screen.queryByRole("button", { name: "Удалить профиль" })).not.toBeOnTheScreen();
+    } finally {
+      Object.defineProperty(globalThis, "__DEV__", { configurable: true, value: held });
+    }
   });
 });

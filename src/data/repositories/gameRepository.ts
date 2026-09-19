@@ -285,6 +285,23 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       };
     },
 
+    deleteProfile(profileId: string): void {
+      db.transaction((tx) => {
+        profile(tx, profileId);
+        tx.delete(tables.meterEvents).where(eq(tables.meterEvents.profileId, profileId)).run();
+        tx.delete(tables.dayScores).where(eq(tables.dayScores.profileId, profileId)).run();
+        tx.delete(tables.purchases).where(eq(tables.purchases.profileId, profileId)).run();
+        tx.delete(tables.savingsTransfers).where(eq(tables.savingsTransfers.profileId, profileId)).run();
+        tx.delete(tables.plans).where(eq(tables.plans.profileId, profileId)).run();
+        tx.delete(tables.transactions).where(eq(tables.transactions.profileId, profileId)).run();
+        tx.delete(tables.taskProgress).where(eq(tables.taskProgress.profileId, profileId)).run();
+        tx.delete(tables.goals).where(eq(tables.goals.profileId, profileId)).run();
+        tx.delete(tables.petState).where(eq(tables.petState.profileId, profileId)).run();
+        tx.delete(tables.days).where(eq(tables.days.profileId, profileId)).run();
+        tx.delete(tables.profiles).where(eq(tables.profiles.id, profileId)).run();
+      });
+    },
+
     openDay(profileId: string): OpenDayResult {
       return db.transaction((tx) => {
         const open = openDayRow(tx, profileId);
