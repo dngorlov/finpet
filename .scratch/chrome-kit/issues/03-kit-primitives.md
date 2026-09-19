@@ -1,6 +1,6 @@
 # 03 — Chip, Card, Badge, NavTile, SpeechBubble, Screen
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 Blocked by: 01
 
@@ -29,3 +29,7 @@ Add the shared chrome primitives and the centralized strings they need. Do not m
 ## Done when
 
 New components live under `src/ui/components/` (and `Screen` if that is the right home), strings compile, and no screen has been rewritten yet. `npm run typecheck` passes.
+
+## Answer
+
+Added `Chip`, `Card`, `Badge`, `NavTile`, `SpeechBubble`, and `Screen` under `src/ui/components/` plus chrome strings (stage word, check, badge/tile pictograms). Screens are unchanged; `npm run typecheck` and `npm test` pass.
