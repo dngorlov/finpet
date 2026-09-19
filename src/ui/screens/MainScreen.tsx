@@ -4,10 +4,12 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { STAGE_NAMES } from "../../core/stages";
 import { unlockedTasks } from "../../core/tasks";
+import { ECONOMY } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
 import { Badge } from "../components/Badge";
 import { Card } from "../components/Card";
+import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { MeterBar } from "../components/MeterBar";
 import { NavTile } from "../components/NavTile";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -39,6 +41,7 @@ export default function MainScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
   const [hub, setHub] = useState<HubModel | null>(null);
   const [hubMessage, setHubMessage] = useState<"needPlan" | "dayLater" | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -66,6 +69,13 @@ export default function MainScreen({ navigation }: Props) {
         remaining,
       });
       setHubMessage(null);
+      if (opened.status === "opened" && opened.allowanceCredited) {
+        setFeedback({
+          deltas: { balance: ECONOMY.allowance },
+          cause: strings.feedbackCauseAllowance,
+          nextStep: strings.feedbackNextAllowance,
+        });
+      }
     }, [content, game, meta]),
   );
 
@@ -158,6 +168,7 @@ export default function MainScreen({ navigation }: Props) {
           setHubMessage(hub.day.plan.status === "confirmed" ? "dayLater" : "needPlan")
         }
       />
+      {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}
     </Screen>
   );
 }

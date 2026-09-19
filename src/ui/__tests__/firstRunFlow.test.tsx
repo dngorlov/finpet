@@ -123,6 +123,11 @@ describe("first-run flow (Appendix A 1–4)", () => {
 
     await user.press(screen.getByRole("button", { name: "Понятно" }));
 
+    expect(screen.getByText("Баланс +10")).toBeOnTheScreen();
+    expect(screen.getByText("Потому что начался новый игровой день.")).toBeOnTheScreen();
+    expect(screen.getByText("Что дальше: составь план дня.")).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Понятно" }));
+
     expect(screen.getByText("Новичок")).toBeOnTheScreen();
     expect(screen.getByText("Забота 50")).toBeOnTheScreen();
     expect(screen.getByText("Настроение 50")).toBeOnTheScreen();
@@ -285,6 +290,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.queryByText(content.hints[0]!.title)).not.toBeOnTheScreen();
     expectMainChrome();
     expect(screen.queryByText("Пособие +10 монет")).not.toBeOnTheScreen();
+    expect(screen.queryByText("Потому что начался новый игровой день.")).not.toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Настройки" }));
     expect(screen.getByText("ФинПет")).toBeOnTheScreen();

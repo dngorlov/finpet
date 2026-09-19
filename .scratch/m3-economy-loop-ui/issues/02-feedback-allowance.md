@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -21,3 +21,7 @@
 ## Done when
 
 A child opening a new Игровой день can read why +10 arrived and dismiss the sheet. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Shared FeedbackCard sheet shows only the deltas that moved. Main presents it when `openDay` credits Пособие; returning children do not see it. Стартовый бюджет is unchanged. First-run flow dismisses the sheet after the grant screen.
