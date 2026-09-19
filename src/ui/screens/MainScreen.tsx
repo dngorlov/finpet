@@ -15,10 +15,11 @@ import { NavTile } from "../components/NavTile";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { TextButton } from "../components/TextButton";
-import type { RootStackParamList, StubDestination } from "../navigation/types";
+import type { RootStackParamList } from "../navigation/types";
 import { PetView } from "../pet/PetView";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
+import { preferredHubTask } from "../tasks/model";
 import { colors, spacing, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Main">;
@@ -29,6 +30,7 @@ type HubModel = {
   day: DayState;
   allowanceCredited: boolean;
   taskTitles: string[];
+  taskId: string | null;
   goalName: string;
   accumulated: number;
   cost: number;
@@ -53,6 +55,7 @@ export default function MainScreen({ navigation }: Props) {
       const day = game.dayState(profileId);
       const dayN = opened.status === "opened" ? opened.n : day.n;
       const unlocked = unlockedTasks(content.tasks, dayN, profile.isDemo);
+      const task = preferredHubTask(content.tasks, dayN, profile.isDemo, game.listTaskProgress(profileId));
       const active = savings.activeGoal;
       const goal = content.goals.find((g) => g.id === active?.key);
       const cost = active?.cost ?? 0;
@@ -63,10 +66,11 @@ export default function MainScreen({ navigation }: Props) {
         day,
         allowanceCredited: opened.status === "opened" && opened.allowanceCredited,
         taskTitles: profile.isDemo
-          ? unlocked.map((task) => task.title)
-          : unlocked[0]
-            ? [unlocked[0].title]
+          ? unlocked.map((row) => row.title)
+          : task
+            ? [task.title]
             : [],
+        taskId: task?.id ?? null,
         goalName: goal?.name ?? "",
         accumulated: cost - remaining,
         cost,
@@ -91,7 +95,6 @@ export default function MainScreen({ navigation }: Props) {
     );
   }
 
-  const goStub = (destination: StubDestination) => navigation.navigate("Stub", { destination });
   const waiting = !hub.day.open;
 
   return (
@@ -134,7 +137,10 @@ export default function MainScreen({ navigation }: Props) {
               {title}
             </Text>
           ))}
-          <PrimaryButton label={strings.playTask} onPress={() => goStub("tasks")} />
+          <PrimaryButton
+            label={strings.playTask}
+            onPress={() => hub.taskId && navigation.navigate("TaskRun", { taskId: hub.taskId })}
+          />
         </Card>
       ) : null}
       <View style={styles.grid}>
@@ -169,7 +175,7 @@ export default function MainScreen({ navigation }: Props) {
         <NavTile
           pictogram={strings.navTasksPictogram}
           word={strings.navTasks}
-          onPress={() => goStub("tasks")}
+          onPress={() => navigation.navigate("TaskList")}
         />
         <NavTile
           pictogram={strings.navProgressPictogram}

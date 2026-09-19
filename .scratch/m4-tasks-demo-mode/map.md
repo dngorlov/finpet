@@ -18,6 +18,7 @@ Seams (approved): navigation-root RNTL via fake `SessionPorts`; device AC for Ap
 - AdultGate stays M5; this milestone ships a thin demo panel.
 - DaySummary + waiting hub: confirmed «Закончить день» calls `closeDay` / `lastClosedDay`; normal Main freezes План/Магазин/Копилка until tomorrow ([03-day-close.md](issues/03-day-close.md)).
 - Demo panel replaces the Adult stub: confirm/reset/exit compose `createProfile({ isDemo })` / `deleteProfile` with meta `childProfileId`; Demo Main banner + `unlockedTasks(..., profile.isDemo)` ([04-demo-panel.md](issues/04-demo-panel.md)).
+- TaskList / TaskRun / TaskResult replace the Задания stub; hub «Играть» jumps to the preferred task ([02-task-runner.md](issues/02-task-runner.md)).
 
 ## Fog
 

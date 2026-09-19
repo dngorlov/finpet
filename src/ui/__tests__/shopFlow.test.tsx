@@ -92,6 +92,6 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Купить" }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
     await user.press(screen.getByRole("button", { name: "Выполнить задание" }));
-    expect(screen.getByText(/скоро/i)).toBeOnTheScreen();
+    expect(screen.getByText("Бюджет")).toBeOnTheScreen();
   });
 });

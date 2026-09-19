@@ -387,10 +387,9 @@ export function createFakePorts(): SessionPorts {
       claimTaskReward(profileId, dayId, taskId, correct) {
         const row = requireRow(profiles, profileId);
         requireOpen(row, dayId);
-        if (!correct) return 0;
         const existing = row.tasks.find((task) => task.taskKey === taskId);
         const alreadyPaid = existing?.rewardPaid === true;
-        const reward = taskRewardDue(alreadyPaid);
+        const reward = correct ? taskRewardDue(alreadyPaid) : 0;
         if (reward > 0) {
           row.balance += reward;
           appendJournal(row, {

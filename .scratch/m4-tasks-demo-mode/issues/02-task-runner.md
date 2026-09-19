@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready
+**Status:** resolved
 
 Type: task
 
@@ -28,3 +28,7 @@ Type: task
 ## Done when
 
 Appendix A step 6 is playable in the UI test. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+TaskList / TaskRun / TaskResult replace the Задания stub. Hub «Играть» opens the preferred task; the tile and Shop «Выполнить задание» open the list. Generic runner uses content JSON + `startTask` / `chooseOption` / `applyTaskStep` / `claimTaskReward` (claim on exit; good|warn pays once; bad exit completes unpaid). Navigation-root coverage is `src/ui/__tests__/taskFlow.test.tsx`.

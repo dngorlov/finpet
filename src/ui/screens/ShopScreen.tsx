@@ -100,7 +100,7 @@ export default function ShopScreen({ navigation }: Props) {
           <TextButton label={strings.shopWaitAllowance} onPress={() => setWaiting(true)} />
           <TextButton
             label={strings.shopDoTask}
-            onPress={() => navigation.navigate("Stub", { destination: "tasks" })}
+            onPress={() => navigation.navigate("TaskList")}
           />
           <PrimaryButton label={strings.shopPostpone} onPress={() => setPhase({ name: "list" })} />
         </>
