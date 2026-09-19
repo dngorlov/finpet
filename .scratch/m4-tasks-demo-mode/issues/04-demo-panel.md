@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready
+**Status:** resolved
 
 Type: task
 
@@ -24,3 +24,7 @@ Type: task
 ## Done when
 
 A juror can enter, reset, and leave Демо-режим without mutating the child profile. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Взрослый раздел is a Demo panel: confirm creates/switches a dedicated `isDemo` profile (names «Демо», `sp1/c1/a1`), Main shows «Демо: дни идут подряд» and all six unlocked titles via `unlockedTasks(..., profile.isDemo)`, «Сбросить демо» recreates that profile, and exit restores `childProfileId`. Live SystemClock is unchanged. Five consecutive UI days wait for 03+06.

@@ -10,6 +10,7 @@ import SettingsScreen from "../screens/SettingsScreen";
 import ShopScreen from "../screens/ShopScreen";
 import SavingsScreen from "../screens/SavingsScreen";
 import StartingBudgetScreen from "../screens/StartingBudgetScreen";
+import DemoScreen from "../screens/DemoScreen";
 import StubScreen from "../screens/StubScreen";
 import { useSession } from "../session/SessionProvider";
 import type { RootStackParamList } from "./types";
@@ -32,6 +33,7 @@ export function RootNavigator() {
       <Stack.Screen name="Progress" component={ProgressScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="DaySummary" component={DaySummaryScreen} />
+      <Stack.Screen name="Demo" component={DemoScreen} />
       <Stack.Screen name="Stub" component={StubScreen} />
     </Stack.Navigator>
   );

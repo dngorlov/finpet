@@ -17,6 +17,7 @@ Seams (approved): navigation-root RNTL via fake `SessionPorts`; device AC for Ap
 - Progress Итоги fills from `lastClosedDay` (no UI stage recompute); Журнал labels `task_reward:*` / `task_scene` ([05-progress-itogi.md](issues/05-progress-itogi.md)).
 - AdultGate stays M5; this milestone ships a thin demo panel.
 - DaySummary + waiting hub: confirmed «Закончить день» calls `closeDay` / `lastClosedDay`; normal Main freezes План/Магазин/Копилка until tomorrow ([03-day-close.md](issues/03-day-close.md)).
+- Demo panel replaces the Adult stub: confirm/reset/exit compose `createProfile({ isDemo })` / `deleteProfile` with meta `childProfileId`; Demo Main banner + `unlockedTasks(..., profile.isDemo)` ([04-demo-panel.md](issues/04-demo-panel.md)).
 
 ## Fog
 

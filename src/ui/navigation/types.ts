@@ -1,4 +1,4 @@
-export type StubDestination = "plan" | "shop" | "savings" | "tasks" | "adult";
+export type StubDestination = "plan" | "shop" | "savings" | "tasks";
 
 export type RootStackParamList = {
   FirstRun: undefined;
@@ -11,5 +11,6 @@ export type RootStackParamList = {
   Progress: undefined;
   Settings: undefined;
   DaySummary: undefined;
+  Demo: undefined;
   Stub: { destination: StubDestination };
 };

@@ -2,4 +2,6 @@
 export const META_KEYS = {
   activeProfileId: "activeProfileId",
   onboardingDone: "onboardingDone",
+  childProfileId: "childProfileId",
+  demoProfileId: "demoProfileId",
 } as const;
