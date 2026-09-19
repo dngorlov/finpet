@@ -1,0 +1,20 @@
+# M4 Задания + Демо-режим — map
+
+## Notes
+
+Spec: `.scratch/m4-tasks-demo-mode/spec.md`
+
+One PR branch: `feat/m4-tasks-demo-mode`. Ticket branches: `feat/m4-NN-*` in worktrees under `/Users/dimagorlov/finpet-worktrees/` when run in parallel.
+
+Seams (approved): navigation-root RNTL via fake `SessionPorts`; device AC for Appendix A 6, 10 and five demo days. Repository read-model tests stay on the existing M1 node suite. Live app keeps SystemClock; demo cadence is the existing `isDemo` unlock branch.
+
+## Decisions-so-far
+
+- Reuse M1 `applyTaskStep` / `claimTaskReward` / `closeDay` / `createProfile({ isDemo })`. No second engine.
+- Reward: `good` or `warn` exit is correct; `bad` exit completes without pay and leaves `rewardPaid` false.
+- No schema shape change: `lastClosedDay` reconstructs from existing `dayScores` / plans / purchases / meterEvents.
+- AdultGate stays M5; this milestone ships a thin demo panel.
+
+## Fog
+
+Device Appendix A 6, 10 and five demo days still need a machine with Android SDK (same gap as M0–M3).
