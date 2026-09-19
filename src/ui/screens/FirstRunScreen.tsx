@@ -23,7 +23,7 @@ import { strings } from "../strings";
 import { colors, minTarget, spacing, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "FirstRun">;
-type Phase = "pet" | "names" | "rules";
+type Phase = "pet" | "name" | "rules";
 type FirstRunDraft = {
   profileId: string;
   species: SpeciesKey;
@@ -99,7 +99,7 @@ export default function FirstRunScreen({ navigation }: Props) {
         replay={false}
         error={saveError}
         busy={saving}
-        onBack={() => setPhase("names")}
+        onBack={() => setPhase("name")}
         onFinish={finish}
         onClose={finish}
       />
@@ -111,13 +111,13 @@ export default function FirstRunScreen({ navigation }: Props) {
       <PetPhase
         draft={draft}
         onChange={(change) => setDraft((current) => ({ ...current, ...change }))}
-        onNext={() => setPhase("names")}
+        onNext={() => setPhase("name")}
       />
     );
   }
 
   return (
-    <NamesPhase
+    <NamePhase
       draft={draft}
       petNameTouched={petNameTouched}
       onChange={(change) => setDraft((current) => ({ ...current, ...change }))}
@@ -183,7 +183,7 @@ function nameIntro(value: string): string {
   return value.trim() === "" ? strings.nameIntroEmpty : strings.nameIntro(value);
 }
 
-function NamesPhase({
+function NamePhase({
   draft,
   petNameTouched,
   onChange,
@@ -209,7 +209,7 @@ function NamesPhase({
         </>
       }
     >
-      <Text style={styles.title}>{strings.firstRunNames}</Text>
+      <Text style={styles.title}>{strings.firstRunName}</Text>
       <PetView
         species={draft.species}
         color={draft.color}
@@ -221,7 +221,7 @@ function NamesPhase({
       </SpeechBubble>
       <TextInput
         role={TEXTBOX_ROLE}
-        aria-label={strings.firstRunNames}
+        aria-label={strings.firstRunName}
         autoFocus
         value={draft.petName}
         onChangeText={(petName) => onChange({ petName })}

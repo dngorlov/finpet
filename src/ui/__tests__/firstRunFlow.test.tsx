@@ -86,7 +86,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     }
   });
 
-  it("starts with pet customization before names and Как играть", async () => {
+  it("starts with pet customization before Имя and Как играть", async () => {
     const { user } = await renderApp();
 
     expect(screen.getByText("Питомец")).toBeOnTheScreen();
@@ -121,7 +121,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByText("Имя")).toBeOnTheScreen();
   });
 
-  it("walks pet, names, pet-spoken rules, starting budget, and the hub", async () => {
+  it("walks pet, Имя, pet-spoken rules, starting budget, and the hub", async () => {
     const ports = createFakePorts();
     const complete = jest.spyOn(ports.firstRun, "complete");
     const { user } = await renderApp(ports);
@@ -265,7 +265,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByText("Шаг 1 из 3")).toBeOnTheScreen();
   });
 
-  it("validates names after blur and restarts an abandoned draft", async () => {
+  it("validates the pet name after blur and restarts an abandoned draft", async () => {
     const ports = createFakePorts();
     const { user, view } = await renderApp(ports);
     await user.press(screen.getByRole("button", { name: "Вид 2" }));
@@ -284,7 +284,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByRole("button", { name: "Вид 1" })).toBeSelected();
   });
 
-  it("counts visible graphemes and trims names before saving", async () => {
+  it("counts visible graphemes and trims the pet name before saving", async () => {
     const ports = createFakePorts();
     const { user } = await renderApp(ports);
     await user.press(screen.getByRole("button", { name: "Дальше" }));

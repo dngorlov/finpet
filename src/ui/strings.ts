@@ -178,7 +178,7 @@ export const strings = {
   planVsActual: (plan: number, actual: number) => `план ${plan} · потрачено ${actual}`,
 
   firstRunPet: "Питомец",
-  firstRunNames: "Имя",
+  firstRunName: "Имя",
   howToPlayStep: (step: number, total: number) => `Шаг ${step} из ${total}`,
   petSays: (petName: string, message: string) => `Питомец ${petName} говорит: ${message}`,
   nameIntroEmpty: "Меня зовут ____",
