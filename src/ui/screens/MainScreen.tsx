@@ -1,18 +1,23 @@
 import { useCallback, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { STAGE_NAMES } from "../../core/stages";
 import { unlockedTasks } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
 import type { ProfileView, SavingsView } from "../../data/repositories/gameRepository";
-import { PrimaryButton } from "../components/PrimaryButton";
+import { Badge } from "../components/Badge";
+import { Card } from "../components/Card";
 import { MeterBar } from "../components/MeterBar";
+import { NavTile } from "../components/NavTile";
+import { PrimaryButton } from "../components/PrimaryButton";
+import { Screen } from "../components/Screen";
+import { TextButton } from "../components/TextButton";
 import type { RootStackParamList, StubDestination } from "../navigation/types";
 import { PetView } from "../pet/PetView";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
-import { colors, minTarget, spacing, type } from "../theme";
+import { colors, spacing, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Main">;
 
@@ -26,6 +31,8 @@ type HubModel = {
   cost: number;
   remaining: number;
 };
+
+const HUB_PET_SIZE = 200;
 
 export default function MainScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
@@ -60,17 +67,26 @@ export default function MainScreen({ navigation }: Props) {
 
   if (!hub) {
     return (
-      <View style={styles.screen}>
+      <Screen>
         <Text style={styles.body}>{strings.appName}</Text>
-      </View>
+      </Screen>
     );
   }
 
   const goStub = (destination: StubDestination) => navigation.navigate("Stub", { destination });
 
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
-      <View style={styles.topRow}>
+    <Screen>
+      <View style={styles.badgeStrip}>
+        <Badge
+          icon={strings.stageIcon}
+          word={strings.stageWord}
+          value={STAGE_NAMES[hub.profile.stage]}
+        />
+        <Badge icon={strings.balanceIcon} word={strings.balanceWord} value={hub.profile.balance} />
+        <Badge icon={strings.savingsIcon} word={strings.savingsWord} value={hub.savings.pot} />
+      </View>
+      <View style={styles.pet}>
         <PetView
           species={hub.profile.species}
           color={hub.profile.color}
@@ -78,149 +94,85 @@ export default function MainScreen({ navigation }: Props) {
           petName={hub.profile.petName}
           care={hub.profile.care}
           mood={hub.profile.mood}
+          size={HUB_PET_SIZE}
         />
-        <Pressable
-          role="button"
-          aria-label={strings.settings}
-          onPress={() => navigation.navigate("Settings")}
-          style={styles.settings}
-        >
-          <Text style={styles.settingsMark}>⚙</Text>
-        </Pressable>
       </View>
-      <View style={styles.stageRow}>
-        <Text style={styles.stage}>{strings.stageIcon}</Text>
-        <Text style={styles.stage}>{STAGE_NAMES[hub.profile.stage]}</Text>
-      </View>
+      <TextButton label={strings.settings} onPress={() => navigation.navigate("Settings")} />
       <MeterBar icon="♡" label={strings.care} value={hub.profile.care} />
       <MeterBar icon="☀" label={strings.mood} value={hub.profile.mood} />
-      <View style={styles.badgeRow}>
-        <Text style={styles.body}>{strings.balanceBadge(hub.profile.balance)}</Text>
-        <Text style={styles.body}>{strings.savingsBadge(hub.savings.pot)}</Text>
-      </View>
       {hub.allowanceCredited ? <Text style={styles.body}>{strings.allowanceRibbon}</Text> : null}
-      <View style={styles.card}>
+      <Card>
         <Text style={styles.cardTitle}>{hub.goalName}</Text>
         <Text style={styles.body}>{strings.goalRatio(hub.accumulated, hub.cost)}</Text>
         <Text style={styles.body}>{strings.goalRemaining(hub.remaining)}</Text>
-      </View>
+      </Card>
       {hub.taskTitle ? (
-        <View style={styles.card}>
+        <Card>
           <Text style={styles.cardTitle}>{hub.taskTitle}</Text>
           <PrimaryButton label={strings.playTask} onPress={() => goStub("tasks")} />
-        </View>
+        </Card>
       ) : null}
       <View style={styles.grid}>
-        <NavTile label={strings.navPlan} highlight hint={strings.composePlanHint} onPress={() => goStub("plan")} />
-        <NavTile label={strings.navShop} onPress={() => goStub("shop")} />
-        <NavTile label={strings.navSavings} onPress={() => goStub("savings")} />
-        <NavTile label={strings.navTasks} onPress={() => goStub("tasks")} />
-        <NavTile label={strings.navProgress} onPress={() => navigation.navigate("Glossary")} />
-        <NavTile label={strings.navAdult} onPress={() => goStub("adult")} />
+        <NavTile
+          pictogram={strings.navPlanPictogram}
+          word={strings.navPlan}
+          needed
+          hint={strings.composePlanHint}
+          onPress={() => goStub("plan")}
+        />
+        <NavTile
+          pictogram={strings.navShopPictogram}
+          word={strings.navShop}
+          onPress={() => goStub("shop")}
+        />
+        <NavTile
+          pictogram={strings.navSavingsPictogram}
+          word={strings.navSavings}
+          onPress={() => goStub("savings")}
+        />
+        <NavTile
+          pictogram={strings.navTasksPictogram}
+          word={strings.navTasks}
+          onPress={() => goStub("tasks")}
+        />
+        <NavTile
+          pictogram={strings.navProgressPictogram}
+          word={strings.navProgress}
+          onPress={() => navigation.navigate("Glossary")}
+        />
+        <NavTile
+          pictogram={strings.navAdultPictogram}
+          word={strings.navAdult}
+          onPress={() => goStub("adult")}
+        />
       </View>
       {planPrompt ? <Text style={styles.body}>{strings.finishDayNeedPlan}</Text> : null}
       <PrimaryButton label={strings.finishDay} onPress={() => setPlanPrompt(true)} />
-    </ScrollView>
-  );
-}
-
-function NavTile({
-  label,
-  onPress,
-  highlight,
-  hint,
-}: {
-  label: string;
-  onPress: () => void;
-  highlight?: boolean;
-  hint?: string;
-}) {
-  return (
-    <Pressable
-      role="button"
-      aria-label={label}
-      onPress={onPress}
-      style={[styles.tile, highlight ? styles.tileOn : null]}
-    >
-      <Text style={styles.tileLabel}>{label}</Text>
-      {hint ? <Text style={styles.tileHint}>{hint}</Text> : null}
-    </Pressable>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: colors.background,
-    gap: spacing.m,
-    padding: spacing.l,
-  },
-  topRow: {
+  badgeStrip: {
     flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  settings: {
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: minTarget,
-    minWidth: minTarget,
-  },
-  settingsMark: {
-    fontSize: type.title,
-  },
-  stageRow: {
-    alignItems: "center",
-    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.s,
   },
-  stage: {
-    color: colors.text,
-    fontSize: type.body,
-    fontWeight: "700",
+  pet: {
+    alignItems: "center",
   },
   body: {
     color: colors.text,
     fontSize: type.body,
   },
-  badgeRow: {
-    flexDirection: "row",
-    gap: spacing.m,
-  },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    gap: spacing.s,
-    padding: spacing.m,
-  },
   cardTitle: {
     color: colors.text,
-    fontSize: type.body,
+    fontSize: type.section,
     fontWeight: "700",
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.s,
-  },
-  tile: {
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    justifyContent: "center",
-    minHeight: minTarget,
-    padding: spacing.s,
-    width: "48%",
-  },
-  tileOn: {
-    backgroundColor: colors.highlight,
-  },
-  tileLabel: {
-    color: colors.text,
-    fontSize: type.body,
-    fontWeight: "700",
-  },
-  tileHint: {
-    color: colors.text,
-    fontSize: type.body,
-    textAlign: "center",
   },
 });
