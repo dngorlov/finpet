@@ -9,11 +9,11 @@ export type AdultOverview = {
   topics: string[];
 };
 
-const TOPIC_TITLE = {
-  budget: () => strings.taskTopicBudget,
-  savings: () => strings.taskTopicSavings,
-  payments: () => strings.taskTopicPayments,
-} as const;
+const TOPIC_TITLE: Record<(typeof TASK_TOPICS)[number], string> = {
+  budget: strings.taskTopicBudget,
+  savings: strings.taskTopicSavings,
+  payments: strings.taskTopicPayments,
+};
 
 export function adultOverview(game: SessionGame, content: GameContent, profileId: string): AdultOverview {
   const progress = game.listTaskProgress(profileId);
@@ -28,8 +28,9 @@ export function adultOverview(game: SessionGame, content: GameContent, profileId
       nonCorrection.filter((task) => completed(task.id)).length,
       nonCorrection.length,
     ),
-    topics: TASK_TOPICS.map((topic) =>
-      strings.adultTopicLine(TOPIC_TITLE[topic](), groups[topic].filter((task) => completed(task.id)).length),
-    ),
+    topics: TASK_TOPICS.map((topic) => {
+      const pair = groups[topic].filter((task) => !task.correction);
+      return strings.adultTopicLine(TOPIC_TITLE[topic], pair.filter((task) => completed(task.id)).length);
+    }),
   };
 }

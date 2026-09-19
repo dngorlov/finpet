@@ -10,22 +10,45 @@ async function renderApp(ports = createFakePorts()) {
 }
 
 describe("AdultGate", () => {
-  it("keeps the question after one wrong answer and stays gated after two", async () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("keeps the question after one wrong answer and replaces it after two", async () => {
+    const ports = createFakePorts();
+    seedReturningChild(ports);
+    const { user } = await renderApp(ports);
+
+    let secondQuestion = false;
+    jest.spyOn(Math, "random").mockImplementation(() => (secondQuestion ? 0.9 : 0));
+
+    await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
+    expect(visibleGatePrompt()).toBe("Сколько будет 10 × 2?");
+    await user.type(screen.getByRole("textbox", { name: "Ответ" }), "0");
+    await user.press(screen.getByRole("button", { name: "Войти" }));
+    expect(visibleGatePrompt()).toBe("Сколько будет 10 × 2?");
+    expect(screen.queryByRole("button", { name: "Демо-режим" })).not.toBeOnTheScreen();
+
+    secondQuestion = true;
+    await user.type(screen.getByRole("textbox", { name: "Ответ" }), "0");
+    await user.press(screen.getByRole("button", { name: "Войти" }));
+    expect(visibleGatePrompt()).toBe("Сколько будет 91 × 9?");
+    expect(screen.getByRole("button", { name: "Войти" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Демо-режим" })).not.toBeOnTheScreen();
+  });
+
+  it("does not unlock after Back from the gate", async () => {
     const ports = createFakePorts();
     seedReturningChild(ports);
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
-    const first = visibleGatePrompt();
-    await user.type(screen.getByRole("textbox", { name: "Ответ" }), "0");
-    await user.press(screen.getByRole("button", { name: "Войти" }));
-    expect(visibleGatePrompt()).toBe(first);
-    expect(screen.queryByRole("button", { name: "Демо-режим" })).not.toBeOnTheScreen();
-
-    await user.type(screen.getByRole("textbox", { name: "Ответ" }), "0");
-    await user.press(screen.getByRole("button", { name: "Войти" }));
     expect(screen.getByText(/Сколько будет \d+ × \d+\?/)).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "Войти" })).toBeDisabled();
+    await user.press(screen.getByRole("button", { name: "Назад" }));
+    expect(screen.getByRole("button", { name: "Магазин" })).toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
+    expect(screen.getByText(/Сколько будет \d+ × \d+\?/)).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Демо-режим" })).not.toBeOnTheScreen();
   });
 

@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { StyleSheet, Text, TextInput, type Role } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BackButton } from "../components/BackButton";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import type { RootStackParamList } from "../navigation/types";
-import { makeQuestion, product } from "../session/adultGate";
+import { makeQuestion, product, type AdultQuestion } from "../session/adultGate";
 import { strings } from "../strings";
 import { colors, minTarget, spacing, type } from "../theme";
 
@@ -14,11 +15,20 @@ type Props = NativeStackScreenProps<RootStackParamList, "AdultGate">;
 const TEXTBOX_ROLE = "textbox" as Role;
 
 export default function AdultGateScreen({ navigation }: Props) {
-  const [question, setQuestion] = useState(makeQuestion);
+  const [question, setQuestion] = useState<AdultQuestion | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [answer, setAnswer] = useState("");
 
+  useFocusEffect(
+    useCallback(() => {
+      setQuestion(makeQuestion());
+      setAttempts(0);
+      setAnswer("");
+    }, []),
+  );
+
   const submit = () => {
+    if (!question) return;
     if (Number(answer) === product(question)) {
       navigation.replace("Demo");
       return;
@@ -35,13 +45,13 @@ export default function AdultGateScreen({ navigation }: Props) {
   return (
     <Screen
       footer={
-        <PrimaryButton label={strings.adultGateEnter} disabled={answer.trim() === ""} onPress={submit} />
+        <PrimaryButton label={strings.adultGateEnter} disabled={!question || answer.trim() === ""} onPress={submit} />
       }
       keyboardShouldPersistTaps="handled"
     >
       <BackButton />
       <Text style={styles.title}>{strings.navAdult}</Text>
-      <Text style={styles.body}>{strings.adultGatePrompt(question.a, question.b)}</Text>
+      {question ? <Text style={styles.body}>{strings.adultGatePrompt(question.a, question.b)}</Text> : null}
       <TextInput
         role={TEXTBOX_ROLE}
         aria-label={strings.adultGateAnswer}
