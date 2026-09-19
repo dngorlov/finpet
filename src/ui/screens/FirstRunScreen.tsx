@@ -286,6 +286,7 @@ const styles = StyleSheet.create({
     fontSize: type.body,
   },
   sliders: {
-    gap: spacing.m,
+    gap: spacing.l,
+    paddingTop: spacing.s,
   },
 });

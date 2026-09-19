@@ -64,6 +64,7 @@ export function BeadSlider<K extends string>({
   onChangeRef.current = onChange;
   const keysRef = useRef(keys);
   keysRef.current = keys;
+  const dragXRef = useRef(0);
 
   const centers = useMemo(
     () => stopCenters(trackWidth, keys.length, minTarget),
@@ -99,32 +100,43 @@ export function BeadSlider<K extends string>({
     [centers],
   );
 
+  const applyPageX = useCallback(
+    (pageX: number) => {
+      const x = clampX(pageX - trackPageXRef.current);
+      dragXRef.current = x;
+      setDragX(x);
+      emitNearest(x);
+    },
+    [clampX, emitNearest],
+  );
+
+  const finishDrag = useCallback(() => {
+    emitNearest(dragXRef.current);
+    setDragging(false);
+  }, [emitNearest]);
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponderCapture: (_, gesture) =>
           Math.abs(gesture.dx) > DRAG_THRESHOLD,
         onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > DRAG_THRESHOLD,
+        onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: (event) => {
-          measureTrackPageX();
-          const x = clampX(event.nativeEvent.pageX - trackPageXRef.current);
-          setDragging(true);
-          setDragX(x);
-          emitNearest(x);
+          const pageX = event.nativeEvent.pageX;
+          trackRef.current?.measureInWindow((originX) => {
+            trackPageXRef.current = originX;
+            setDragging(true);
+            applyPageX(pageX);
+          });
         },
         onPanResponderMove: (event) => {
-          const x = clampX(event.nativeEvent.pageX - trackPageXRef.current);
-          setDragX(x);
-          emitNearest(x);
+          applyPageX(event.nativeEvent.pageX);
         },
-        onPanResponderRelease: () => {
-          setDragging(false);
-        },
-        onPanResponderTerminate: () => {
-          setDragging(false);
-        },
+        onPanResponderRelease: finishDrag,
+        onPanResponderTerminate: finishDrag,
       }),
-    [clampX, emitNearest, measureTrackPageX],
+    [applyPageX, finishDrag],
   );
 
   const onTrackLayout = (event: LayoutChangeEvent) => {
