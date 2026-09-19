@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 Type: task
 
@@ -25,3 +25,7 @@ Type: task
 ## Done when
 
 Appendix A 11–12 are passable in the UI tests (remount stands in for kill-and-relaunch). `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Navigation-root coverage is `src/ui/__tests__/adultFlow.test.tsx`: positive overview copy, typed reset/delete, remount persistence routing, and hidden child destructive actions in demo. M4 demo tests still pass behind `passAdultGate`.
