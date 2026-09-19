@@ -152,7 +152,7 @@ export default function MainScreen({ navigation }: Props) {
         <NavTile
           pictogram={strings.navProgressPictogram}
           word={strings.navProgress}
-          onPress={() => navigation.navigate("Glossary")}
+          onPress={() => navigation.navigate("Progress")}
         />
         <NavTile
           pictogram={strings.navAdultPictogram}

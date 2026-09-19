@@ -5,6 +5,7 @@ import FirstRunScreen from "../screens/FirstRunScreen";
 import HowToPlayScreen from "../screens/HowToPlayScreen";
 import MainScreen from "../screens/MainScreen";
 import PlanScreen from "../screens/PlanScreen";
+import ProgressScreen from "../screens/ProgressScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import ShopScreen from "../screens/ShopScreen";
 import SavingsScreen from "../screens/SavingsScreen";
@@ -28,6 +29,7 @@ export function RootNavigator() {
       <Stack.Screen name="Plan" component={PlanScreen} />
       <Stack.Screen name="Shop" component={ShopScreen} />
       <Stack.Screen name="Savings" component={SavingsScreen} />
+      <Stack.Screen name="Progress" component={ProgressScreen} />
       <Stack.Screen name="Glossary" component={GlossaryScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Stub" component={StubScreen} />

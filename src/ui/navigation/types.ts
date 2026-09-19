@@ -8,6 +8,7 @@ export type RootStackParamList = {
   Plan: undefined;
   Shop: undefined;
   Savings: undefined;
+  Progress: undefined;
   Glossary: undefined;
   Settings: undefined;
   Stub: { destination: StubDestination };

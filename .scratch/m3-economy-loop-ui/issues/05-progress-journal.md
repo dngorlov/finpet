@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -24,3 +24,7 @@
 ## Done when
 
 Appendix A step 9’s history surface is visible. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Прогресс has Итоги (empty-state), Журнал (grouped kid labels), and Словарик with «Как играть». Main opens Progress. First-run help goes through the Словарик tab.

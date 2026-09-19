@@ -19,6 +19,7 @@ Seams (approved): navigation-root RNTL via fake `SessionPorts`; device AC for Ap
 - 02 FeedbackCard + Пособие: shared sheet; allowance on first day open. See `.scratch/m3-economy-loop-ui/issues/02-feedback-allowance.md`.
 - 03 Магазин: catalog, confirm, BlockedSheet ways out. See `.scratch/m3-economy-loop-ui/issues/03-shop.md`.
 - 04 Копилка: deposits, withdrawal preview, celebration. See `.scratch/m3-economy-loop-ui/issues/04-savings.md`.
+- 05 Прогресс / Журнал: three tabs, kid labels. See `.scratch/m3-economy-loop-ui/issues/05-progress-journal.md`.
 
 ## Fog
 

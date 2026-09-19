@@ -152,6 +152,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
     await user.press(screen.getByRole("button", { name: "Прогресс" }));
+    await user.press(screen.getByRole("button", { name: "Словарик" }));
     for (const term of content.terms) {
       expect(screen.getByText(term.term)).toBeOnTheScreen();
     }
