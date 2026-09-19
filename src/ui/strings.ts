@@ -247,6 +247,19 @@ export const strings = {
   demoResetConfirmBody: "Демо вернётся к первому игровому дню",
   demoBanner: "Демо: дни идут подряд",
   demoReset: "Сбросить демо",
+  adultDaysEmpty: "Игровых дней пока нет — это нормально.",
+  adultTopicLine: (topic: string, done: number) => {
+    if (done >= 2) return `${topic}: оба задания сделаны`;
+    if (done === 1) return `${topic}: одно задание сделано`;
+    return `${topic}: ещё впереди`;
+  },
+  resetProgress: "Сбросить прогресс",
+  resetProgressBody: "Прогресс сбросится, имена и вид питомца останутся.",
+  resetProgressTypedLabel: "Введи: сбросить",
+  resetProgressWord: "сбросить",
+  deleteProfileBody: "Питомец и все игровые дни пропадут с устройства.",
+  deleteProfileTypedLabel: "Введи: удалить",
+  deleteProfileWord: "удалить",
 
   glossaryTitle: "Словарик",
   stubPlan: "Скоро: план дня. Пока вернись на главный экран.",

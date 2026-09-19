@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 Type: task
 
@@ -27,3 +27,7 @@ Type: task
 ## Done when
 
 Adult behind the gate shows progress and can reset or delete the child with typed confirm. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+The Demo panel now shows positive topic/overall progress from `listTaskProgress` / `lastClosedDay`. Child «Сбросить прогресс» / «Удалить профиль» are two-step typed confirms (`сбросить` / `удалить`) composing `createProfile` / `deleteProfile`; they are hidden while `isDemo`. `__DEV__` Settings delete is unchanged.
