@@ -1,13 +1,15 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
 import { APP_BUILD, APP_VERSION } from "../appInfo";
 import { BackButton } from "../components/BackButton";
+import { Card } from "../components/Card";
 import { DevSettings } from "../components/DevSettings";
+import { Screen } from "../components/Screen";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
-import { colors, spacing, type } from "../theme";
+import { colors, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Settings">;
 
@@ -25,22 +27,18 @@ export default function SettingsScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.screen}>
+    <Screen>
       <BackButton />
-      <Text style={styles.title}>{strings.appName}</Text>
-      <Text style={styles.body}>{strings.versionLine(APP_VERSION, APP_BUILD)}</Text>
+      <Card>
+        <Text style={styles.title}>{strings.appName}</Text>
+        <Text style={styles.body}>{strings.versionLine(APP_VERSION, APP_BUILD)}</Text>
+      </Card>
       <DevSettings onDeleteProfile={deleteActiveProfile} />
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: colors.background,
-    flex: 1,
-    gap: spacing.m,
-    padding: spacing.l,
-  },
   title: {
     color: colors.text,
     fontSize: type.title,

@@ -1,6 +1,6 @@
 # 08 — Migrate Словарик, Стартовый бюджет, Settings, stubs
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 Blocked by: 02, 03
 
@@ -28,3 +28,7 @@ Leftover child-facing surfaces use `Screen` / `Card` / kit buttons so they belon
 ## Done when
 
 These screens no longer copy cream/card/button styles locally. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Glossary, StartingBudget, Settings, and Stub now use `Screen` / `Card` / kit buttons instead of local cream padding. Glossary terms stay accordion `Pressable`s (`aria-label={term.term}`, `aria-expanded`) inside Cards; «Как играть» is `PrimaryButton` in a Card. StartingBudget pins «Понятно» as a footer `PrimaryButton` and still `navigation.reset`s to Main. Stub/Settings keep `BackButton` «Назад»; delete-profile is unchanged. `npm test` (70) and `npm run typecheck` pass.

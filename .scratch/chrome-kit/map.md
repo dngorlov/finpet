@@ -15,6 +15,7 @@ This is a visual consistency pass. Do not change persistence, routing, first-run
 - 02 buttons: `PrimaryButton` replaces `AppButton`; `TextButton` added for later screens. See `.scratch/chrome-kit/issues/02-primary-text-buttons.md`.
 - 03 kit primitives: `Chip` / `Card` / `Badge` / `NavTile` / `SpeechBubble` / `Screen` plus chrome strings in `src/ui/strings.ts`. Screens not migrated. See `.scratch/chrome-kit/issues/03-kit-primitives.md`.
 - 04 MeterBar + BackButton: taller rounded track/fill (`spacing.l`, `radius.card`); BackButton stays the word «Назад» at ≥48 dp with `type.button`. See `src/ui/components/MeterBar.tsx`, `src/ui/components/BackButton.tsx`.
+- 08 remaining screens: Glossary / StartingBudget / Settings / Stub consume `Screen` + `Card` + kit buttons; accordion, budget reset, and delete-profile unchanged. See `.scratch/chrome-kit/issues/08-migrate-remaining-screens.md`.
 
 ## Fog
 
