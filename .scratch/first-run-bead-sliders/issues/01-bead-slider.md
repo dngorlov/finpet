@@ -1,6 +1,6 @@
 # 01 — BeadSlider component
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 
 ## Goal
@@ -28,3 +28,7 @@ Add one reusable discrete bead-slider control under shared UI components. Do not
 ## Done when
 
 The component compiles (`npm run typecheck`). FirstRun still uses Chips. `npm test` still passes.
+
+## Answer
+
+Added `src/ui/components/BeadSlider.tsx`: generic over `keys` / `value` / `onChange` with caller-supplied `legend`, `pictogram`, and `labelOf` for circle `aria-label`s. Label row matches AmountStepper (hidden emoji, visible legend). Track has a track-colored line through stop centers, 48 dp card rings with dim inner beads, accent bead at rest on the selected stop and a separate accent traveler while dragging. Parent `PanResponder` captures horizontal drags after 8 px, keeps tracking with `pageX` off the control, calls `onChange` on the nearest stop (midpoint ties to the lower index), and snaps on release with no animation. Each stop is a `Pressable` with `role="button"`, `aria-selected` (nearest while dragging), and `onPress` for flow tests; line, traveler, pictogram, and inner beads are hidden from accessibility. Uses existing `accent`, `disabledFace`, `card`, and `track` tokens only. Not wired into FirstRun or chrome-kit. `npm run typecheck` and `npm test` pass.
