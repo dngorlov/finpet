@@ -1,6 +1,6 @@
 # 01 — Pet-spoken Имя UI and flow tests
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 
 ## Goal
@@ -29,3 +29,7 @@ Replace the two-field «Имена» phase with pet-spoken «Имя» and update
 ## Done when
 
 `npm test` and `npm run typecheck` pass. Naming UI has one textbox named «Имя». Profile commit stores the same trimmed pet name in both name fields.
+
+## Answer
+
+Первый запуск naming is now a single «Имя» phase: the customized pet speaks «Меня зовут ____» / live-echoes the typed name, one unlabeled textbox named «Имя» sits under the bubble, and «Дальше» stays disabled until 1–20 graphemes after trim. The FirstRun draft dropped the child game name; finish/skip of «Как играть» writes that trimmed pet name to both persistence `name` and `petName`. `firstRunFlow.test.tsx` covers empty/live bubble, single field, blur, graphemes, Back retention, and retry. `npm test` 24/24 suites, 107/107 tests; typecheck clean on `feat/frpn-01`.

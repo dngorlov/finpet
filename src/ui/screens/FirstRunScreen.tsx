@@ -6,6 +6,7 @@ import { BeadSlider } from "../components/BeadSlider";
 import { HowToPlay } from "../components/HowToPlay";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
+import { SpeechBubble } from "../components/SpeechBubble";
 import { TextButton } from "../components/TextButton";
 import type { RootStackParamList } from "../navigation/types";
 import {
@@ -28,7 +29,6 @@ type FirstRunDraft = {
   species: SpeciesKey;
   color: ColorKey;
   accessory: AccessoryKey;
-  playerName: string;
   petName: string;
 };
 
@@ -42,10 +42,8 @@ export default function FirstRunScreen({ navigation }: Props) {
     species: "sp1",
     color: "c1",
     accessory: "a1",
-    playerName: "",
     petName: "",
   }));
-  const [playerNameTouched, setPlayerNameTouched] = useState(false);
   const [petNameTouched, setPetNameTouched] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -73,7 +71,7 @@ export default function FirstRunScreen({ navigation }: Props) {
       try {
         firstRun.complete({
           id: draft.profileId,
-          name: draft.playerName.trim(),
+          name: draft.petName.trim(),
           petName: draft.petName.trim(),
           species: draft.species,
           color: draft.color,
@@ -121,10 +119,8 @@ export default function FirstRunScreen({ navigation }: Props) {
   return (
     <NamesPhase
       draft={draft}
-      playerNameTouched={playerNameTouched}
       petNameTouched={petNameTouched}
       onChange={(change) => setDraft((current) => ({ ...current, ...change }))}
-      onPlayerNameBlur={() => setPlayerNameTouched(true)}
       onPetNameBlur={() => setPetNameTouched(true)}
       onBack={() => setPhase("pet")}
       onNext={() => {
@@ -183,33 +179,33 @@ function PetPhase({
   );
 }
 
+function nameIntro(value: string): string {
+  return value.trim() === "" ? strings.nameIntroEmpty : strings.nameIntro(value);
+}
+
 function NamesPhase({
   draft,
-  playerNameTouched,
   petNameTouched,
   onChange,
-  onPlayerNameBlur,
   onPetNameBlur,
   onBack,
   onNext,
 }: {
   draft: FirstRunDraft;
-  playerNameTouched: boolean;
   petNameTouched: boolean;
-  onChange: (change: Partial<Pick<FirstRunDraft, "playerName" | "petName">>) => void;
-  onPlayerNameBlur: () => void;
+  onChange: (change: Partial<Pick<FirstRunDraft, "petName">>) => void;
   onPetNameBlur: () => void;
   onBack: () => void;
   onNext: () => void;
 }) {
-  const namesValid = isValidName(draft.playerName) && isValidName(draft.petName);
+  const intro = nameIntro(draft.petName);
   return (
     <Screen
       keyboardShouldPersistTaps="handled"
       footer={
         <>
           <TextButton label={strings.back} onPress={onBack} />
-          <PrimaryButton label={strings.next} disabled={!namesValid} onPress={onNext} />
+          <PrimaryButton label={strings.next} disabled={!isValidName(draft.petName)} onPress={onNext} />
         </>
       }
     >
@@ -218,25 +214,15 @@ function NamesPhase({
         species={draft.species}
         color={draft.color}
         accessory={draft.accessory}
-        petName={draft.petName.trim() || undefined}
         pose="idle"
       />
-      <Text style={styles.legend}>{strings.playerNameLabel}</Text>
+      <SpeechBubble accessibilityLabel={intro}>
+        <Text style={styles.body}>{intro}</Text>
+      </SpeechBubble>
       <TextInput
         role={TEXTBOX_ROLE}
-        aria-label={strings.playerNameLabel}
-        value={draft.playerName}
-        onChangeText={(playerName) => onChange({ playerName })}
-        onBlur={onPlayerNameBlur}
-        style={styles.input}
-      />
-      {playerNameTouched && !isValidName(draft.playerName) ? (
-        <Text style={styles.validation}>{strings.nameValidation}</Text>
-      ) : null}
-      <Text style={styles.legend}>{strings.petNameLabel}</Text>
-      <TextInput
-        role={TEXTBOX_ROLE}
-        aria-label={strings.petNameLabel}
+        aria-label={strings.firstRunNames}
+        autoFocus
         value={draft.petName}
         onChangeText={(petName) => onChange({ petName })}
         onBlur={onPetNameBlur}
@@ -267,10 +253,9 @@ const styles = StyleSheet.create({
     fontSize: type.title,
     fontWeight: "700",
   },
-  legend: {
+  body: {
     color: colors.text,
     fontSize: type.body,
-    fontWeight: "700",
   },
   input: {
     backgroundColor: colors.card,
