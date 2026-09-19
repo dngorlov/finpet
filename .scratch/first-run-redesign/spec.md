@@ -159,3 +159,5 @@ The same pet-spoken «Как играть» explanation remains replayable from 
 **2026-09-19 — implemented.** Первый запуск now runs Питомец → Имена → pet-spoken «Как играть», commits atomically after finish/skip, and replays safely from Словарик. The obsolete Onboarding and ProfileSetup routes were retired. Navigation-root and repository tests cover the automated acceptance surface; full suite 68/68, typecheck and lint clean. Device-only follow-up remains for 360 dp enlarged text, visual affordance, Android hardware Back, and airplane mode.
 
 **2026-09-19 — naming superseded.** «Имена» and the child game name were superseded by `.scratch/first-run-pet-name/spec.md`. Appearance, «Как играть», and commit timing from this spec remain in force.
+
+**2026-09-19 — Как играть superseded.** Pet-card «Как играть» and commit-after-rules are superseded by `.scratch/how-to-play-tour/spec.md`. Valid Имя «Дальше» writes the profile; «Как играть» is the post-Пособие spotlight walkthrough.

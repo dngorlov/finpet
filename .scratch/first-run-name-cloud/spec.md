@@ -102,3 +102,7 @@ Domain and persistence stay as they are: only the pet is named; 1–20 graphemes
 - Grill locked: type in the cloud (chip + ✏️) only because the chip is a visible 48 dp write-in; no title; compact cloud above centered pet, tail down; no autofocus; footer «Дальше»; placeholder «____»; horizontal scroll; pen inside the chip and silent to TalkBack; field name «Меня зовут».
 - Domain locked earlier: pet name only; leftover `name` duplicates `petName`; glossary already defines Профиль ребёнка as the pet.
 - The first-run-pet-name spec’s stories about title «Имя», a field under the bubble, autofocus, and accessible name «Имя» are superseded here. Appearance, «Как играть», validation limits, and commit timing remain in force.
+
+## Comments
+
+**2026-09-19 — Как играть superseded.** Wide SpeechBubble «Как играть» and commit-after-rules are superseded by `.scratch/how-to-play-tour/spec.md`. The compact Имя cloud still stands.

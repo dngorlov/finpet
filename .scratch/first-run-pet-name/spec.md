@@ -118,3 +118,5 @@ The Профиль ребёнка is the pet (name + appearance). Первый �
 ## Comments
 
 **2026-09-19 — layout superseded.** Domain and persistence (pet name only; dual-write `name`/`petName`) still stand. The form layout — title «Имя», wide bubble, field below, autofocus, accessible name «Имя» — is superseded by `.scratch/first-run-name-cloud/spec.md`.
+
+**2026-09-19 — Как играть superseded.** Pet-card «Как играть» and commit-after-rules are superseded by `.scratch/how-to-play-tour/spec.md`.
