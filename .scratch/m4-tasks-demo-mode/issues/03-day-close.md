@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready
+**Status:** resolved
 
 Type: task
 
@@ -26,3 +26,7 @@ Type: task
 ## Done when
 
 Appendix A step 10 is playable in the UI test for a normal profile. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Confirmed «Закончить день» calls `closeDay` and opens DaySummary from `lastClosedDay` (plan-vs-actual, +2/+1/+1, meter reasons, Этап only when `stageExplanation` is set). Primary pops to Main so `openDay` can run: normal profiles wait with economy tiles disabled; `isDemo` uses «Следующий день». Coverage is `src/ui/__tests__/dayCloseFlow.test.tsx`.

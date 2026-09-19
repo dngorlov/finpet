@@ -15,6 +15,7 @@ Seams (approved): navigation-root RNTL via fake `SessionPorts`; device AC for Ap
 - No schema shape change: `lastClosedDay` reconstructs from existing `dayScores` / plans / purchases / meterEvents.
 - SessionGame M4 reads are live: expanded `closeDay`, `lastClosedDay`, `listTaskProgress`, `dayState.open`; fake `openDay` blocks non-demo after close ([01-session-reads.md](issues/01-session-reads.md)).
 - AdultGate stays M5; this milestone ships a thin demo panel.
+- DaySummary + waiting hub: confirmed «Закончить день» calls `closeDay` / `lastClosedDay`; normal Main freezes План/Магазин/Копилка until tomorrow ([03-day-close.md](issues/03-day-close.md)).
 
 ## Fog
 

@@ -10,27 +10,38 @@ export function NavTile({
   onPress,
   highlighted,
   hint,
+  disabled,
 }: {
   pictogram: string;
   word: string;
   onPress: () => void;
   highlighted?: boolean;
   hint?: string;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
       role="button"
       aria-label={word}
       aria-selected={highlighted}
+      aria-disabled={Boolean(disabled)}
+      disabled={disabled}
       accessibilityHint={hint}
       onPress={onPress}
       style={({ pressed }) => [
         styles.shell,
-        highlighted ? styles.shellHighlighted : null,
-        pressed ? styles.shellPressed : null,
+        highlighted && !disabled ? styles.shellHighlighted : null,
+        disabled ? styles.shellDisabled : null,
+        !disabled && pressed ? styles.shellPressed : null,
       ]}
     >
-      <View style={[styles.face, highlighted ? styles.faceHighlighted : null]}>
+      <View
+        style={[
+          styles.face,
+          highlighted && !disabled ? styles.faceHighlighted : null,
+          disabled ? styles.faceDisabled : null,
+        ]}
+      >
         <Text
           aria-hidden
           accessibilityElementsHidden
@@ -40,7 +51,7 @@ export function NavTile({
           {pictogram}
         </Text>
         <Text style={styles.word}>{word}</Text>
-        {highlighted ? (
+        {highlighted && !disabled ? (
           <Text
             aria-hidden
             accessibilityElementsHidden
@@ -48,6 +59,16 @@ export function NavTile({
             style={styles.check}
           >
             {strings.selectedCheck}
+          </Text>
+        ) : null}
+        {disabled ? (
+          <Text
+            aria-hidden
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={styles.pictogram}
+          >
+            {strings.waitingLockIcon}
           </Text>
         ) : null}
         {hint ? <Text style={styles.hint}>{hint}</Text> : null}
@@ -68,6 +89,9 @@ const styles = StyleSheet.create({
   shellHighlighted: {
     backgroundColor: colors.accent,
   },
+  shellDisabled: {
+    backgroundColor: colors.disabledFace,
+  },
   shellPressed: {
     paddingBottom: 0,
     paddingTop: EDGE,
@@ -83,6 +107,9 @@ const styles = StyleSheet.create({
   },
   faceHighlighted: {
     backgroundColor: colors.highlight,
+  },
+  faceDisabled: {
+    backgroundColor: colors.disabledFace,
   },
   pictogram: {
     fontSize: type.section,

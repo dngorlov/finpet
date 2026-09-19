@@ -1,6 +1,5 @@
 import { render, screen, userEvent } from "@testing-library/react-native";
 import { FinPetApp } from "../FinPetApp";
-import { strings } from "../strings";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
 
 async function renderApp(ports = createFakePorts()) {
@@ -44,7 +43,7 @@ describe("plan from Main", () => {
     expect(screen.getByText("Баланс 110")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Закончить день" }));
-    expect(screen.getByText(strings.finishDayLater)).toBeOnTheScreen();
+    expect(screen.getByText("Итоги дня")).toBeOnTheScreen();
   });
 
   it("blocks confirm when the План exceeds Баланс and keeps the draft editable", async () => {

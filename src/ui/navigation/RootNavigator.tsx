@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
+import DaySummaryScreen from "../screens/DaySummaryScreen";
 import FirstRunScreen from "../screens/FirstRunScreen";
 import HowToPlayScreen from "../screens/HowToPlayScreen";
 import MainScreen from "../screens/MainScreen";
@@ -30,6 +31,7 @@ export function RootNavigator() {
       <Stack.Screen name="Savings" component={SavingsScreen} />
       <Stack.Screen name="Progress" component={ProgressScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="DaySummary" component={DaySummaryScreen} />
       <Stack.Screen name="Stub" component={StubScreen} />
     </Stack.Navigator>
   );
