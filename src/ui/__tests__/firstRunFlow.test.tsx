@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
+import { fireEvent, render, screen, userEvent } from "@testing-library/react-native";
 import { loadContent } from "../../data/content";
 import { FinPetApp } from "../FinPetApp";
 import { strings } from "../strings";
@@ -21,14 +21,11 @@ async function reachHowToPlay(user: ReturnType<typeof userEvent.setup>) {
   await user.press(screen.getByRole("button", { name: "Дальше" }));
 }
 
-function expectSelectedChip(name: string) {
-  const chip = screen.getByRole("button", { name });
-  expect(chip).toBeSelected();
-  expect(chip).toHaveAccessibleName(name);
-  expect(within(chip).queryByText(strings.selectedCheck)).not.toBeOnTheScreen();
-  expect(
-    within(chip).getByText(strings.selectedCheck, { includeHiddenElements: true }),
-  ).toBeOnTheScreen();
+function expectSelectedAppearanceOption(name: string) {
+  const option = screen.getByRole("button", { name });
+  expect(option).toBeSelected();
+  expect(option).toHaveAccessibleName(name);
+  expect(option).not.toBeDisabled();
 }
 
 function expectHowToPlayBubble() {
@@ -88,15 +85,32 @@ describe("first-run flow (Appendix A 1–4)", () => {
     const { user } = await renderApp();
 
     expect(screen.getByText("Питомец")).toBeOnTheScreen();
+    expect(screen.getByText(strings.speciesLegend)).toBeOnTheScreen();
+    expect(screen.getByText(strings.colorLegend)).toBeOnTheScreen();
+    expect(screen.getByText(strings.accessoryLegend)).toBeOnTheScreen();
     expect(screen.getByRole("img", { name: /Питомец.*Вид 1.*Окрас 1.*Аксессуар 1/ })).toBeOnTheScreen();
     expect(screen.queryByText(content.hints[0]!.body)).not.toBeOnTheScreen();
-    expectSelectedChip("Вид 1");
+    expectSelectedAppearanceOption("Вид 1");
     expect(screen.getByRole("button", { name: "Вид 2" })).not.toBeSelected();
+    expect(screen.getByRole("button", { name: "Вид 2" })).not.toBeDisabled();
 
     await user.press(screen.getByRole("button", { name: "Вид 2" }));
     expect(screen.getByRole("img", { name: /Питомец.*Вид 2.*Окрас 1.*Аксессуар 1/ })).toBeOnTheScreen();
-    expectSelectedChip("Вид 2");
+    expectSelectedAppearanceOption("Вид 2");
     expect(screen.getByRole("button", { name: "Вид 1" })).not.toBeSelected();
+    expect(screen.getByRole("button", { name: "Вид 1" })).not.toBeDisabled();
+
+    await user.press(screen.getByRole("button", { name: "Окрас 2" }));
+    expect(screen.getByRole("img", { name: /Питомец.*Вид 2.*Окрас 2.*Аксессуар 1/ })).toBeOnTheScreen();
+    expectSelectedAppearanceOption("Окрас 2");
+    expect(screen.getByRole("button", { name: "Окрас 1" })).not.toBeSelected();
+    expect(screen.getByRole("button", { name: "Окрас 1" })).not.toBeDisabled();
+
+    await user.press(screen.getByRole("button", { name: "Аксессуар 3" }));
+    expect(screen.getByRole("img", { name: /Питомец.*Вид 2.*Окрас 2.*Аксессуар 3/ })).toBeOnTheScreen();
+    expectSelectedAppearanceOption("Аксессуар 3");
+    expect(screen.getByRole("button", { name: "Аксессуар 1" })).not.toBeSelected();
+    expect(screen.getByRole("button", { name: "Аксессуар 1" })).not.toBeDisabled();
 
     await user.press(screen.getByRole("button", { name: "Дальше" }));
     expect(screen.getByText("Имена")).toBeOnTheScreen();
@@ -108,7 +122,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Вид 2" }));
-    expectSelectedChip("Вид 2");
+    expectSelectedAppearanceOption("Вид 2");
     await user.press(screen.getByRole("button", { name: "Дальше" }));
 
     expect(screen.getByText("Имена")).toBeOnTheScreen();
@@ -221,7 +235,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByRole("textbox", { name: "Как тебя зовут в игре?" })).toHaveDisplayValue("Миша");
     expect(screen.getByRole("textbox", { name: "Как зовут питомца?" })).toHaveDisplayValue("Пух");
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    expectSelectedChip("Вид 2");
+    expectSelectedAppearanceOption("Вид 2");
     expect(complete).not.toHaveBeenCalled();
   });
 

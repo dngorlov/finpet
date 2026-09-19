@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { BackHandler, StyleSheet, Text, TextInput, View, type Role } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { createLocalId } from "../../data/localId";
-import { Chip } from "../components/Chip";
+import { BeadSlider } from "../components/BeadSlider";
 import { HowToPlay } from "../components/HowToPlay";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -153,27 +153,32 @@ function PetPhase({
         accessory={draft.accessory}
         pose="idle"
       />
-      <AppearanceGroup
-        legend={strings.speciesLegend}
-        keys={SPECIES_KEYS}
-        labelOf={strings.speciesName}
-        value={draft.species}
-        onChange={(species) => onChange({ species })}
-      />
-      <AppearanceGroup
-        legend={strings.colorLegend}
-        keys={COLOR_KEYS}
-        labelOf={strings.colorName}
-        value={draft.color}
-        onChange={(color) => onChange({ color })}
-      />
-      <AppearanceGroup
-        legend={strings.accessoryLegend}
-        keys={ACCESSORY_KEYS}
-        labelOf={strings.accessoryName}
-        value={draft.accessory}
-        onChange={(accessory) => onChange({ accessory })}
-      />
+      <View style={styles.sliders}>
+        <BeadSlider
+          legend={strings.speciesLegend}
+          pictogram={strings.speciesPictogram}
+          keys={SPECIES_KEYS}
+          labelOf={strings.speciesName}
+          value={draft.species}
+          onChange={(species) => onChange({ species })}
+        />
+        <BeadSlider
+          legend={strings.colorLegend}
+          pictogram={strings.colorPictogram}
+          keys={COLOR_KEYS}
+          labelOf={strings.colorName}
+          value={draft.color}
+          onChange={(color) => onChange({ color })}
+        />
+        <BeadSlider
+          legend={strings.accessoryLegend}
+          pictogram={strings.accessoryPictogram}
+          keys={ACCESSORY_KEYS}
+          labelOf={strings.accessoryName}
+          value={draft.accessory}
+          onChange={(accessory) => onChange({ accessory })}
+        />
+      </View>
     </Screen>
   );
 }
@@ -256,36 +261,6 @@ function isValidName(value: string): boolean {
   return length >= 1 && length <= 20;
 }
 
-function AppearanceGroup<K extends string>({
-  legend,
-  keys,
-  labelOf,
-  value,
-  onChange,
-}: {
-  legend: string;
-  keys: readonly K[];
-  labelOf: (key: string) => string;
-  value: K;
-  onChange: (key: K) => void;
-}) {
-  return (
-    <View style={styles.chipBlock}>
-      <Text style={styles.legend}>{legend}</Text>
-      <View style={styles.chipRow}>
-        {keys.map((key) => (
-          <Chip
-            key={key}
-            label={labelOf(key)}
-            selected={value === key}
-            onPress={() => onChange(key)}
-          />
-        ))}
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   title: {
     color: colors.text,
@@ -310,12 +285,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: type.body,
   },
-  chipBlock: {
-    gap: spacing.s,
-  },
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.s,
+  sliders: {
+    gap: spacing.m,
   },
 });

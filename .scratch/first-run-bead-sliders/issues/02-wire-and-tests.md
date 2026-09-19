@@ -1,6 +1,6 @@
 # 02 — Wire Питомец phase and flow tests
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 Blocked by: 01
 
