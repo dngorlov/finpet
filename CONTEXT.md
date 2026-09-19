@@ -79,8 +79,16 @@ The virtual creature whose state reflects the child's financial decisions. It ma
 _Avoid_: герой, аватар
 
 **Вид (Species)**:
-One of the three pet species from the designer's art; appearance = Вид + color + accessory.
+One of the three pet species from the designer's art; appearance = Вид + Окрас + Аксессуар.
 _Avoid_: порода, тип
+
+**Окрас (Color)**:
+The pet's color variant — one of the three designer colors.
+_Avoid_: цвет, окрас кожи, skin
+
+**Аксессуар (Accessory)**:
+The extra item the pet wears — one of the three designer accessories.
+_Avoid_: украшение, шапка, hat
 
 **Забота (Care)**:
 The pet meter fed by buying Обязательные расходы on time.
