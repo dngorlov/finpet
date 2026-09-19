@@ -178,6 +178,10 @@ function PetPhase({
   );
 }
 
+function blankIfWhitespace(value: string): string {
+  return value.trim() === "" ? "" : value;
+}
+
 function NamePhase({
   draft,
   petNameTouched,
@@ -193,7 +197,6 @@ function NamePhase({
   onBack: () => void;
   onNext: () => void;
 }) {
-  const chipValue = draft.petName.trim() === "" ? "" : draft.petName;
   return (
     <Screen
       keyboardShouldPersistTaps="handled"
@@ -204,7 +207,7 @@ function NamePhase({
         </>
       }
     >
-      <View style={styles.speaker}>
+      <View style={styles.petCluster}>
         <View style={styles.cloud}>
           <View style={styles.cloudCard}>
             <Text style={styles.body}>{strings.namePrompt}</Text>
@@ -214,12 +217,12 @@ function NamePhase({
                 aria-label={strings.namePrompt}
                 placeholder={strings.nameBlank}
                 placeholderTextColor={colors.subtle}
-                value={chipValue}
-                onChangeText={(petName) => onChange({ petName: petName.trim() === "" ? "" : petName })}
+                value={blankIfWhitespace(draft.petName)}
+                onChangeText={(petName) => onChange({ petName: blankIfWhitespace(petName) })}
                 onBlur={onPetNameBlur}
                 style={styles.chipInput}
               />
-              <Text aria-hidden style={styles.pen}>
+              <Text aria-hidden pointerEvents="none" style={styles.pen}>
                 {strings.namePen}
               </Text>
             </View>
@@ -258,7 +261,7 @@ const styles = StyleSheet.create({
     fontSize: type.title,
     fontWeight: "700",
   },
-  speaker: {
+  petCluster: {
     alignItems: "center",
     alignSelf: "stretch",
     flexGrow: 1,
@@ -296,21 +299,23 @@ const styles = StyleSheet.create({
     borderColor: colors.track,
     borderRadius: 8,
     borderWidth: 1,
-    flexDirection: "row",
-    maxWidth: 180,
+    justifyContent: "center",
+    maxWidth: minTarget * 4 - spacing.l,
     minHeight: minTarget,
-    minWidth: 120,
-    paddingRight: spacing.s,
+    minWidth: minTarget * 2 + spacing.l,
   },
   chipInput: {
     color: colors.text,
-    flex: 1,
     fontSize: type.body,
     minHeight: minTarget,
-    paddingHorizontal: spacing.s,
+    paddingLeft: spacing.s,
+    paddingRight: minTarget,
+    width: "100%",
   },
   pen: {
     fontSize: type.body,
+    position: "absolute",
+    right: spacing.s,
   },
   validation: {
     color: colors.text,
