@@ -1,6 +1,6 @@
 # 02 — PrimaryButton and TextButton
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 Blocked by: 01
 
@@ -26,3 +26,7 @@ Replace the flat `AppButton` with a raised `PrimaryButton` and add `TextButton` 
 ## Done when
 
 There is no `AppButton`. Primary actions use `PrimaryButton`. `TextButton` exists for later screen tickets. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Replaced `AppButton` with `PrimaryButton` (orange raised face, darker edge, press via `Pressable` `pressed`: face drops and edge collapses; disabled is flat `colors.disabledFace` with `aria-disabled`, no opacity-only fade). Added `TextButton` for later quiet-action migrations; `BackButton` and HowToPlay `TextAction` left unchanged. Callers now import `PrimaryButton`. `npm test` (70) and `npm run typecheck` pass.
