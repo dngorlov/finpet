@@ -1,6 +1,6 @@
 # 02 — Align living docs with pet-only Имя
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 
 ## Goal
@@ -25,3 +25,7 @@ Update REQUIREMENTS and ROADMAP so Первый запуск names only the Пи
 ## Done when
 
 Living docs match the glossary. The historical first-run-redesign spec still reads as implemented history plus the supersession comment.
+
+## Answer
+
+Living FirstRun copy now names only the Питомец: REQUIREMENTS R1/R14 Resolved, ROADMAP §2.5 / §3.1 / §4.1 / §4.2 / §4.3. Profile = pet (name + appearance); phase is «Имя» with one pet-spoken field; leftover persistence `name` equals `petName`. Historical first-run-redesign stories left intact; Comments note that «Имена» and the child game name were superseded by `.scratch/first-run-pet-name/spec.md`. CONTEXT.md and bead-sliders spec untouched.

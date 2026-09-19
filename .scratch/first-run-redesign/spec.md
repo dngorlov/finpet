@@ -157,3 +157,5 @@ The same pet-spoken «Как играть» explanation remains replayable from 
 ## Comments
 
 **2026-09-19 — implemented.** Первый запуск now runs Питомец → Имена → pet-spoken «Как играть», commits atomically after finish/skip, and replays safely from Словарик. The obsolete Onboarding and ProfileSetup routes were retired. Navigation-root and repository tests cover the automated acceptance surface; full suite 68/68, typecheck and lint clean. Device-only follow-up remains for 360 dp enlarged text, visual affordance, Android hardware Back, and airplane mode.
+
+**2026-09-19 — naming superseded.** «Имена» and the child game name were superseded by `.scratch/first-run-pet-name/spec.md`. Appearance, «Как играть», and commit timing from this spec remain in force.

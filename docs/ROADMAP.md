@@ -76,7 +76,7 @@ These were decided in the planning interview; do not re-derive them. If a number
 
 ### 2.5 Первый запуск & help (R1, R11)
 
-- Первый запуск is ordered Питомец → Имена → «Как играть». Appearance and both names remain an in-memory draft until «Как играть» is finished or skipped; only then is the Профиль ребёнка created.
+- Первый запуск is ordered Питомец → Имя → «Как играть». Appearance and the pet name remain an in-memory draft until «Как играть» is finished or skipped; only then is the Профиль ребёнка created. Naming is one pet-spoken field; on commit the leftover persistence `name` equals `petName`.
 - «Как играть» is 3 passive, non-clickable steps. The customized pet remains visible and speaks one first-person bubble per step: why decisions affect the pet · Три решения (обязательное / желаемое / отложить) · the Игровой день loop (plan, spend, save, review). «Дальше» advances; the last step uses «Играть!». «Пропустить» is available on every step.
 - Help re-access: Словарик screen = «Как играть» (same pet explanation, «Готово» / «Закрыть», no profile write) + the 10 terms with kid definitions: Баланс, Копилка, Цель, Пособие, Обязательные расходы, Желаемые расходы, Забота, Настроение, Этап, Игровой день (one-to-one with `CONTEXT.md`).
 
@@ -115,7 +115,7 @@ docs/
 
 ### 3.1 Navigation map
 
-`FirstRun (Питомец → Имена → Как играть) → StartingBudget → Main`. Main is a hub: pet + meters top, coin badges, active-goal card, active-task card; buttons (≥48 dp) to План, Магазин (purchases), Копилка, Задания, Прогресс (progress + Журнал + Словарик), Взрослый раздел. Every screen reachable in ≤2 taps; back never traps the user (no dead ends, `TC`). Screen-by-screen specifications and flows: §4.
+`FirstRun (Питомец → Имя → Как играть) → StartingBudget → Main`. Main is a hub: pet + meters top, coin badges, active-goal card, active-task card; buttons (≥48 dp) to План, Магазин (purchases), Копилка, Задания, Прогресс (progress + Журнал + Словарик), Взрослый раздел. Every screen reachable in ≤2 taps; back never traps the user (no dead ends, `TC`). Screen-by-screen specifications and flows: §4.
 
 ### 3.2 Storage schema (Drizzle/SQLite; R13 slot)
 
@@ -155,7 +155,7 @@ Written for 360 dp portrait, RU copy, ages 7–11. Conventions for every screen:
 
 ```
 Launch
- ├─ first run ──→ FirstRun [Питомец → Имена → Как играть] ─→ StartingBudget ─┐
+ ├─ first run ──→ FirstRun [Питомец → Имя → Как играть] ─→ StartingBudget ─┐
  └─ returning ──────────────────────────────────────────────────→ Main ◄─────┘
 
 Main (hub) ── day loop lives here
@@ -174,7 +174,7 @@ Main (hub) ── day loop lives here
 
 ### 4.2 Screen specifications
 
-**1–2. FirstRun.** *Purpose:* let the child make the pet theirs before that pet explains the game, without writing a partial profile (R1, R2). One controlled journey owns an in-memory draft and shows the phase labels «Питомец», «Имена», «Как играть». *Питомец:* a complete default pet is selected; live preview plus bead sliders for «Вид» (3), «Окрас» (3), and «Аксессуар» (3); the selected stop is the accent bead in its circle, not a Chip check. *Имена:* the same preview; fields «Как тебя зовут в игре?» and «Как зовут питомца?» accept 1–20 visible characters after trimming; both are required before «Дальше»; disabled primary is flat grey. *Как играть:* pet centered above a SpeechBubble with a tail pointing up; pet name visible; idle pose; one first-person bubble per step: decisions affect the pet · Три решения · plan/spend/save/review. A passive indicator announces «Шаг N из 3» and never acts as navigation. Primary actions sit in a pinned bottom bar: steps 1–2 «Дальше»; step 3 «Играть!»; quiet «Пропустить» under the primary. Visible and Android Back traverse the draft without losing choices; Back from Питомец may exit, and reopening restarts from defaults. Finishing or skipping atomically creates the profile, then leaves for StartingBudget; on failure the draft remains and «Не получилось начать игру. Попробуй ещё раз.» offers retry. No profile row is written earlier. Replay from Словарик reuses only «Как играть», with the existing pet, «Готово» / «Закрыть», and no profile write. For TalkBack each bubble is one message, «Питомец [имя] говорит: …»; the decorative pet image is hidden from that step's reading order.
+**1–2. FirstRun.** *Purpose:* let the child make the pet theirs before that pet explains the game, without writing a partial profile (R1, R2). One controlled journey owns an in-memory draft and shows the phase labels «Питомец», «Имя», «Как играть». *Питомец:* a complete default pet is selected; live preview plus bead sliders for «Вид» (3), «Окрас» (3), and «Аксессуар» (3); the selected stop is the accent bead in its circle, not a Chip check. *Имя:* the same customized pet remains visible and speaks one SpeechBubble «Меня зовут ____», which live-echoes the typed pet name; one unlabeled field (accessible name «Имя») under the bubble accepts 1–20 visible characters after trimming; «Дальше» stays disabled until that name is valid; disabled primary is flat grey. *Как играть:* pet centered above a SpeechBubble with a tail pointing up; pet name visible; idle pose; one first-person bubble per step: decisions affect the pet · Три решения · plan/spend/save/review. A passive indicator announces «Шаг N из 3» and never acts as navigation. Primary actions sit in a pinned bottom bar: steps 1–2 «Дальше»; step 3 «Играть!»; quiet «Пропустить» under the primary. Visible and Android Back traverse the draft without losing choices; Back from Питомец may exit, and reopening restarts from defaults. Finishing or skipping atomically creates the profile (leftover persistence `name` equals `petName`, both the trimmed pet name), then leaves for StartingBudget; on failure the draft remains and «Не получилось начать игру. Попробуй ещё раз.» offers retry. No profile row is written earlier. Replay from Словарик reuses only «Как играть», with the existing pet, «Готово» / «Закрыть», and no profile write. For TalkBack each bubble is one message, «Питомец [имя] говорит: …»; the decorative pet image is hidden from that step's reading order.
 
 **3. StartingBudget (one-time modal).** *Purpose:* grant +100 with explanation (R4, loop step 4). *Zones:* «Тебе дали 100 монет на старт!», coin art, short line «Это твой бюджет. Планируй, копи, заботься о питомце», button «Понятно». *Leaves:* Main (transaction `starting_grant` + FeedbackCard).
 
@@ -206,7 +206,7 @@ Main (hub) ── day loop lives here
 
 ### 4.3 Key flows
 
-- **First launch (Appendix A 1–4):** Launch → FirstRun Питомец → Имена → «Как играть» finished or skipped (profile created) → StartingBudget modal → Main → hint «Составь план дня» → Plan. Force-quit before profile creation discards the draft and restarts at Питомец.
+- **First launch (Appendix A 1–4):** Launch → FirstRun Питомец → Имя → «Как играть» finished or skipped (profile created) → StartingBudget modal → Main → hint «Составь план дня» → Plan. Force-quit before profile creation discards the draft and restarts at Питомец.
 - **Day loop (normal & demo):** day opens on entering Main after unlock → Пособие +10 via FeedbackCard → Plan confirmed → free play (Магазин / Задания / Копилка; plan-vs-actual live on Plan) → «Закончить день» → DaySummary → next day unlocks (demo: immediately; normal: tomorrow). After day close in normal play the economy is frozen until the next day; Задания replays and Словарик remain available.
 - **Insufficient funds (Appendix A 7):** Магазин → buy Игрушка (25) at balance < 25 → BlockedSheet (needs N more; options) → a way out exists in-app (Задание now, Пособие tomorrow, or postpone).
 - **Savings withdrawal (R7):** Копилка → «Забрать» → amount → WithdrawPreview (pot after, date shift) → separate confirm → FeedbackCard.
