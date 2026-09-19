@@ -137,7 +137,7 @@ export default function MainScreen({ navigation }: Props) {
         <NavTile
           pictogram={strings.navShopPictogram}
           word={strings.navShop}
-          onPress={() => goStub("shop")}
+          onPress={() => navigation.navigate("Shop")}
         />
         <NavTile
           pictogram={strings.navSavingsPictogram}

@@ -4,7 +4,7 @@
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -24,3 +24,7 @@
 ## Done when
 
 Appendix A step 7 is playable in the UI test (minus needing a prior plan). `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Магазин has Обязательное / Желаемое tabs, item sheet, confirm, FeedbackCard, «Куплено», and BlockedSheet with wait / задание / postpone. Main opens Shop. Hub meters and Баланс update after a buy.

@@ -17,6 +17,7 @@ Seams (approved): navigation-root RNTL via fake `SessionPorts`; device AC for Ap
 - Пособие sheets when credited; Стартовый бюджет does not get a second sheet.
 - 01 Plan from Main: SessionGame + `dayState`/`listJournal`/`listGoals`/`purchasedItemIds`; Plan screen; Main «План готов». See `.scratch/m3-economy-loop-ui/issues/01-plan-from-main.md`.
 - 02 FeedbackCard + Пособие: shared sheet; allowance on first day open. See `.scratch/m3-economy-loop-ui/issues/02-feedback-allowance.md`.
+- 03 Магазин: catalog, confirm, BlockedSheet ways out. See `.scratch/m3-economy-loop-ui/issues/03-shop.md`.
 
 ## Fog
 
