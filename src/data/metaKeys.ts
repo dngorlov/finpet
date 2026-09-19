@@ -1,4 +1,4 @@
-/** Keys in the meta table that the first-run session reads and writes. */
+/** Stable keys shared by persistence and first-run session routing. */
 export const META_KEYS = {
   activeProfileId: "activeProfileId",
   onboardingDone: "onboardingDone",

@@ -31,10 +31,12 @@ export const strings = {
   versionLine: (version: string, build: number) => `версия ${version} (${build})`,
 
   skip: "Пропустить",
-  start: "Начать",
+  next: "Дальше",
   play: "Играть!",
   playTask: "Играть",
   gotIt: "Понятно",
+  done: "Готово",
+  close: "Закрыть",
   back: "Назад",
   howToPlay: "Как играть",
   settings: "Настройки",
@@ -45,8 +47,12 @@ export const strings = {
   finishDayNeedPlan: "Сначала составь план дня",
   allowanceRibbon: "Пособие +10 монет",
 
-  cardDot: (n: number) => `Карточка ${n}`,
-
+  firstRunPet: "Питомец",
+  firstRunNames: "Имена",
+  howToPlayStep: (step: number, total: number) => `Шаг ${step} из ${total}`,
+  petSays: (petName: string, message: string) => `Питомец ${petName} говорит: ${message}`,
+  nameValidation: "Введи от 1 до 20 символов",
+  firstRunSaveFailed: "Не получилось начать игру. Попробуй ещё раз.",
   playerNameLabel: "Как тебя зовут в игре?",
   petNameLabel: "Как зовут питомца?",
   speciesLegend: "Вид",

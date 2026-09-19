@@ -6,6 +6,10 @@ A single-context project: an offline Android game that teaches kids 7–11 basic
 
 ### Profiles & modes
 
+**Первый запуск (First run)**:
+The one-time journey in which a child creates a Профиль ребёнка and learns how to begin playing.
+_Avoid_: онбординг (ambiguous: may mean only the «Как играть» cards)
+
 **Профиль ребёнка (Child profile)**:
 A local game identity: a game name plus the child's pet. No account, no personal data.
 _Avoid_: аккаунт, регистрация, пользователь
@@ -19,7 +23,7 @@ The area for adults, protected by an arithmetic gate: learning progress, Parent 
 _Avoid_: родительский контроль (a prohibited feature), родительские настройки
 
 **Удалить профиль (Delete profile)**:
-A Профиль ребёнка taken off the device — that pet, its Игровые дни, and its money are gone. First-run onboarding starts again.
+A Профиль ребёнка taken off the device — that pet, its Игровые дни, and its money are gone. Первый запуск starts again.
 _Avoid_: clear storage, wipe, reset app, сброс приложения, сбросить демо
 
 **Родительский бонус (Parent bonus)**:
@@ -71,7 +75,7 @@ _Avoid_: ачивка, мечта
 ### Pet
 
 **Питомец (Pet)**:
-The virtual creature whose state reflects the child's financial decisions.
+The virtual creature whose state reflects the child's financial decisions. It may speak fixed, scripted guidance but does not answer questions.
 _Avoid_: герой, аватар
 
 **Вид (Species)**:
@@ -92,6 +96,10 @@ _Avoid_: уровень, эволюция
 
 ### Learning
 
+**Как играть (How to play)**:
+A brief, replayable explanation of the game in which the child's Питомец speaks scripted guidance.
+_Avoid_: онбординг, Помощник
+
 **Помощник (Helper)**:
 An optional, kid-visible chat assistant on the main screen that answers money questions in kid language. Never required for the game loop.
 _Avoid_: чат-бот, ИИ-друг
@@ -105,5 +113,5 @@ The in-app record of income, purchases and savings transfers for the current Gam
 _Avoid_: лог, отчёт
 
 **Словарик (Glossary)**:
-The short help section explaining key terms in kid language; also where the intro hint can be replayed.
+The short help section explaining key terms in kid language; also where «Как играть» can be replayed.
 _Avoid_: справка, FAQ

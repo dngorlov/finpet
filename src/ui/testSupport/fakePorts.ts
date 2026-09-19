@@ -1,6 +1,6 @@
 import { loadContent } from "../../data/content";
+import { META_KEYS } from "../../data/metaKeys";
 import type { CreateProfileInput, ProfileView } from "../../data/repositories/gameRepository";
-import { META_KEYS } from "../session/metaKeys";
 import type { SessionPorts } from "../session/types";
 
 type StoredProfile = ProfileView & {
@@ -19,8 +19,45 @@ export function createFakePorts(): SessionPorts {
   const meta = new Map<string, string>();
   const profiles = new Map<string, StoredProfile>();
 
+  const createProfile = (input: CreateProfileInput) => {
+    const id = input.id ?? `p_${profiles.size + 1}`;
+    profiles.set(id, {
+      id,
+      name: input.name,
+      petName: input.petName,
+      species: input.species,
+      color: input.color,
+      accessory: input.accessory,
+      balance: 100,
+      isDemo: Boolean(input.isDemo),
+      care: 50,
+      mood: 50,
+      stage: "novice",
+      dayOpen: false,
+      goals: input.goals.map((g) => ({ key: g.key, cost: g.cost })),
+      activeGoalKey: input.activeGoalKey,
+    });
+    return id;
+  };
+
   return {
     content: loadContent(),
+    firstRun: {
+      complete(input) {
+        if (
+          input.id &&
+          profiles.has(input.id) &&
+          meta.get(META_KEYS.activeProfileId) === input.id &&
+          meta.get(META_KEYS.onboardingDone) === "1"
+        ) {
+          return input.id;
+        }
+        const id = createProfile(input);
+        meta.set(META_KEYS.activeProfileId, id);
+        meta.set(META_KEYS.onboardingDone, "1");
+        return id;
+      },
+    },
     meta: {
       get(key) {
         return meta.get(key) ?? null;
@@ -33,26 +70,7 @@ export function createFakePorts(): SessionPorts {
       },
     },
     game: {
-      createProfile(input: CreateProfileInput) {
-        const id = input.id ?? `p_${profiles.size + 1}`;
-        profiles.set(id, {
-          id,
-          name: input.name,
-          petName: input.petName,
-          species: input.species,
-          color: input.color,
-          accessory: input.accessory,
-          balance: 100,
-          isDemo: Boolean(input.isDemo),
-          care: 50,
-          mood: 50,
-          stage: "novice",
-          dayOpen: false,
-          goals: input.goals.map((g) => ({ key: g.key, cost: g.cost })),
-          activeGoalKey: input.activeGoalKey,
-        });
-        return id;
-      },
+      createProfile,
       getProfile(profileId) {
         const row = profiles.get(profileId);
         if (!row) throw new Error(`Профиль ${profileId} не найден`);

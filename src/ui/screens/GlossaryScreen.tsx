@@ -18,7 +18,7 @@ export default function GlossaryScreen({ navigation }: Props) {
     <ScrollView contentContainerStyle={styles.screen}>
       <BackButton />
       <Text style={styles.title}>{strings.glossaryTitle}</Text>
-      <AppButton label={strings.howToPlay} onPress={() => navigation.navigate("Onboarding", { replay: true })} />
+      <AppButton label={strings.howToPlay} onPress={() => navigation.navigate("HowToPlay")} />
       {content.terms.map((term) => (
         <View key={term.id} style={styles.row}>
           <Pressable

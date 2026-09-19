@@ -21,6 +21,7 @@ import {
   type Stage,
 } from "../../core/stages";
 import { taskRewardDue, type TaskStepResult } from "../../core/tasks";
+import { META_KEYS } from "../metaKeys";
 import * as tables from "../schema";
 import type * as schema from "../schema";
 
@@ -223,46 +224,86 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     return day;
   }
 
+  function insertProfile(conn: GameDb, input: CreateProfileInput, id: string) {
+    conn
+      .insert(tables.profiles)
+      .values({
+        id,
+        name: input.name,
+        species: input.species,
+        color: input.color,
+        accessory: input.accessory,
+        petName: input.petName,
+        balance: 0,
+        isDemo: input.isDemo ? 1 : 0,
+        contentVersion: input.contentVersion,
+        createdAt: nowMs(),
+      })
+      .run();
+    conn
+      .insert(tables.petState)
+      .values({
+        profileId: id,
+        care: METERS.initialCare,
+        mood: METERS.initialMood,
+        stage: STAGE_CODES.novice,
+      })
+      .run();
+    for (const goal of input.goals) {
+      conn
+        .insert(tables.goals)
+        .values({
+          id: newId("goal"),
+          profileId: id,
+          key: goal.key,
+          cost: goal.cost,
+          status: "active",
+          isActive: goal.key === input.activeGoalKey ? 1 : 0,
+          achievedAt: null,
+        })
+        .run();
+    }
+    credit(conn, id, null, ECONOMY.startingBudget, "starting_grant", "starting_grant");
+  }
+
+  function setMeta(conn: GameDb, key: string, value: string) {
+    conn
+      .insert(tables.meta)
+      .values({ key, value })
+      .onConflictDoUpdate({ target: tables.meta.key, set: { value } })
+      .run();
+  }
+
   return {
     createProfile(input: CreateProfileInput): string {
       const id = input.id ?? crypto.randomUUID();
       db.transaction((tx) => {
-        tx.insert(tables.profiles)
-          .values({
-            id,
-            name: input.name,
-            species: input.species,
-            color: input.color,
-            accessory: input.accessory,
-            petName: input.petName,
-            balance: 0,
-            isDemo: input.isDemo ? 1 : 0,
-            contentVersion: input.contentVersion,
-            createdAt: nowMs(),
-          })
-          .run();
-        tx.insert(tables.petState)
-          .values({
-            profileId: id,
-            care: METERS.initialCare,
-            mood: METERS.initialMood,
-            stage: STAGE_CODES.novice,
-          })
-          .run();
-        for (const goal of input.goals) {
-          tx.insert(tables.goals)
-            .values({
-              id: newId("goal"),
-              profileId: id,
-              key: goal.key,
-              cost: goal.cost,
-              status: "active",
-              isActive: goal.key === input.activeGoalKey ? 1 : 0,
-              achievedAt: null,
-            })
-            .run();
-        }
-        credit(tx, id, null, ECONOMY.startingBudget, "starting_grant", "starting_grant");
+        insertProfile(tx, input, id);
+      });
+      return id;
+    },
+
+    completeFirstRun(input: CreateProfileInput): string {
+      const id = input.id ?? crypto.randomUUID();
+      const existing = db.select().from(tables.profiles).where(eq(tables.profiles.id, id)).get();
+      if (existing) {
+        const active = db
+          .select()
+          .from(tables.meta)
+          .where(eq(tables.meta.key, META_KEYS.activeProfileId))
+          .get();
+        const done = db
+          .select()
+          .from(tables.meta)
+          .where(eq(tables.meta.key, META_KEYS.onboardingDone))
+          .get();
+        if (active?.value === id && done?.value === "1") return id;
+        throw new Error(`Профиль ${id} уже существует`);
+      }
+      db.transaction((tx) => {
+        insertProfile(tx, input, id);
+        setMeta(tx, META_KEYS.activeProfileId, id);
+        setMeta(tx, META_KEYS.onboardingDone, "1");
       });
       return id;
     },

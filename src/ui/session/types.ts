@@ -23,7 +23,12 @@ export type SessionMeta = {
   remove(key: string): void;
 };
 
+export type SessionFirstRun = {
+  complete(input: CreateProfileInput): string;
+};
+
 export type SessionPorts = {
+  firstRun: SessionFirstRun;
   game: SessionGame;
   meta: SessionMeta;
   content: GameContent;

@@ -10,7 +10,7 @@
 - Onboarding: brief intro to the game's purpose + the three decision types (spend on required item / spend on desired item / postpone)
 - Guest mode, no mandatory registration; child profile = game name + selected character
 - The intro hint is returnable at any time
-- **Resolved:** 3 intro cards — what the game teaches · Три решения (обязательное / желаемое / отложить) · meet your pet; skippable. Hint re-opens anytime from Словарик → «Как играть». Profile = game name (child) + pet (name + appearance); no account. (ROADMAP §2.5, §4.2)
+- **Resolved:** Первый запуск is ordered Питомец → Имена → «Как играть». The child first chooses the pet's Вид, Окрас, and Аксессуар, then enters the child's game name and pet name. The customized pet then explains three skippable rules in first-person speech bubbles: why decisions affect the pet · Три решения (обязательное / желаемое / отложить) · the Игровой день loop (plan, spend, save, review). The profile is written only when «Как играть» is finished or skipped. The same explanation re-opens anytime from Словарик without writing profile data. Profile = game name (child) + pet (name + appearance); no account. (ROADMAP §2.5, §4.2)
 
 ## 2. Pet Creation
 - Pet appearance customization
@@ -93,7 +93,7 @@
 
 ## 14. End-to-End Game Loop (acceptance flow — Appendix A)
 Steps 1–10 form the loop; 11–12 verify persistence and the adult section:
-1. First launch + intro → 2. Create local profile → 3. Choose/customize/name pet → 4. Starting budget, current goal, available tasks → 5. Distribute funds (mandatory/optional/savings) → 6. Complete a task, earn currency (with result explanation) → 7. Make ≥1 mandatory + ≥1 optional purchase (must include an attempted insufficient-funds purchase) → 8. Select a goal, replenish savings → 9. Feedback on balance, plan completion, pet status → 10. Transition to next period; progress/stage changes after a series of decisions → 11. Close & relaunch (progress confirmed saved) → 12. Enter adult section, reset/delete test profile
+1. First launch + customize pet → 2. Enter child and pet names → 3. Finish or skip the pet's «Как играть» explanation, creating the local profile → 4. Starting budget, current goal, available tasks → 5. Distribute funds (mandatory/optional/savings) → 6. Complete a task, earn currency (with result explanation) → 7. Make ≥1 mandatory + ≥1 optional purchase (must include an attempted insufficient-funds purchase) → 8. Select a goal, replenish savings → 9. Feedback on balance, plan completion, pet status → 10. Transition to next period; progress/stage changes after a series of decisions → 11. Close & relaunch (progress confirmed saved) → 12. Enter adult section, reset/delete test profile
 - **Resolved:** the concrete sequence is specified screen-by-screen in ROADMAP §4 (design flow: screen map, per-screen specs, and the key flows including the day loop, insufficient-funds staging, correction path, demo walkthrough, and relaunch persistence). Acceptance = milestone ACs (ROADMAP §7) + the scripted manual cases (ROADMAP §8). (ROADMAP §4, §7, §8)
 
 ---

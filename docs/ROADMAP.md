@@ -74,10 +74,11 @@ These were decided in the planning interview; do not re-derive them. If a number
 - **Contents:** learning progress (topics completed + overall, positive wording only) · Демо-режим toggle · profile reset/delete (extra confirmation, typed action) · Родительский бонус is **stretch** (§2.6).
 - **Демо-режим:** toggled in Взрослый раздел; creates/switches to a dedicated demo profile (`isDemo = true`), pre-onboarded, with the manual clock; "Сбросить демо" restores its initial state; exit returns to the normal profile untouched. Must sustain **≥5 consecutive days** end-to-end (R13, Appendix A).
 
-### 2.5 Onboarding & help (R1, R11)
+### 2.5 Первый запуск & help (R1, R11)
 
-- 3 swipe cards: what the game teaches · Три решения (обязательное / желаемое / отложить) · meet your pet. Skippable, never blocking.
-- Hint re-access: Словарик screen = «Как играть» (replays the 3 cards) + the 10 terms with kid definitions: Баланс, Копилка, Цель, Пособие, Обязательные расходы, Желаемые расходы, Забота, Настроение, Этап, Игровой день (one-to-one with `CONTEXT.md`).
+- Первый запуск is ordered Питомец → Имена → «Как играть». Appearance and both names remain an in-memory draft until «Как играть» is finished or skipped; only then is the Профиль ребёнка created.
+- «Как играть» is 3 passive, non-clickable steps. The customized pet remains visible and speaks one first-person bubble per step: why decisions affect the pet · Три решения (обязательное / желаемое / отложить) · the Игровой день loop (plan, spend, save, review). «Дальше» advances; the last step uses «Играть!». «Пропустить» is available on every step.
+- Help re-access: Словарик screen = «Как играть» (same pet explanation, «Готово» / «Закрыть», no profile write) + the 10 terms with kid definitions: Баланс, Копилка, Цель, Пособие, Обязательные расходы, Желаемые расходы, Забота, Настроение, Этап, Игровой день (one-to-one with `CONTEXT.md`).
 
 ### 2.6 Stretch tier (build only after M6; never blocks the mandatory scope)
 
@@ -102,7 +103,7 @@ src/
     db.ts schema.ts repositories/   # Drizzle over expo-sqlite; migrations
     content.ts     # loads+validates assets/content/*.json (zod), contentVersion check
   ui/
-    screens/       # Onboarding, ProfileSetup, Main, Plan, Purchases, Savings,
+    screens/       # FirstRun, Main, Plan, Purchases, Savings,
                    # Tasks, TaskRun, Progress, Adult, Settings, Glossary
     components/    # PetView, MeterBar, CoinBadge, FeedbackCard, ConfirmSheet…
     theme.ts strings.ts   # RU strings; spacing/type scale ≥16 sp
@@ -114,7 +115,7 @@ docs/
 
 ### 3.1 Navigation map
 
-`Onboarding → ProfileSetup → Main`. Main is a hub: pet + meters top, coin badges, active-goal card, active-task card; buttons (≥48 dp) to План, Магазин (purchases), Копилка, Задания, Прогресс (progress + Журнал + Словарик), Взрослый раздел. Every screen reachable in ≤2 taps; back never traps the user (no dead ends, `TC`). Screen-by-screen specifications and flows: §4.
+`FirstRun (Питомец → Имена → Как играть) → StartingBudget → Main`. Main is a hub: pet + meters top, coin badges, active-goal card, active-task card; buttons (≥48 dp) to План, Магазин (purchases), Копилка, Задания, Прогресс (progress + Журнал + Словарик), Взрослый раздел. Every screen reachable in ≤2 taps; back never traps the user (no dead ends, `TC`). Screen-by-screen specifications and flows: §4.
 
 ### 3.2 Storage schema (Drizzle/SQLite; R13 slot)
 
@@ -152,9 +153,8 @@ Written for 360 dp portrait, RU copy, ages 7–11. Conventions for every screen:
 
 ```
 Launch
- ├─ first run ──→ Onboarding (3 cards, skippable) ──→ ProfileSetup
- │                                                    └─→ StartingBudget ─┐
- └─ returning ──────────────────────────────────────────────→ Main ◄─────┘
+ ├─ first run ──→ FirstRun [Питомец → Имена → Как играть] ─→ StartingBudget ─┐
+ └─ returning ──────────────────────────────────────────────────→ Main ◄─────┘
 
 Main (hub) ── day loop lives here
  ├─ План ────────→ Plan (draft → confirm → plan-vs-actual)
@@ -164,7 +164,7 @@ Main (hub) ── day loop lives here
  │                             └─ goal reached ─→ Celebration
  ├─ Задания ─────→ TaskList ─→ TaskRun (nodes) ─→ TaskResult
  ├─ Прогресс ────→ Progress [Итоги | Журнал | Словарик]
- │      Словарик tab ─→ «Как играть» (replays Onboarding cards)
+ │      Словарик tab ─→ «Как играть» (replays the pet's explanation)
  ├─ Взрослый раздел → AdultGate ─→ Adult (progress · demo toggle · reset)
  ├─ ⚙ Settings (animations, about)
  └─ «Закончить день» (once plan confirmed) ─→ DaySummary ─→ next day
@@ -172,9 +172,7 @@ Main (hub) ── day loop lives here
 
 ### 4.2 Screen specifications
 
-**1. Onboarding.** *Purpose:* teach the premise before any data is written. *Zones:* swipeable card area (3 cards: what the game teaches · Три решения with three pictograms · meet your pet), page dots, «Начать» + «Пропустить». *States:* card 1–3. *Leaves:* ProfileSetup. Replayable from Словарик → «Как играть» (same cards, exit back).
-
-**2. ProfileSetup.** *Purpose:* create the child profile and pet (R1, R2). *Zones:* live pet preview (base + accessory layers, reacts to picks); chip rows «Вид» (3), «Окрас» (3), «Аксессуар» (3); fields «Как тебя зовут в игре?» and «Как зовут питомца?»; button «Играть!». *States:* preview per combination (27). *Leaves:* StartingBudget. No profile row is written until «Играть!».
+**1–2. FirstRun.** *Purpose:* let the child make the pet theirs before that pet explains the game, without writing a partial profile (R1, R2). One controlled journey owns an in-memory draft and shows the phase labels «Питомец», «Имена», «Как играть». *Питомец:* a complete default pet is selected; live preview plus chip rows «Вид» (3), «Окрас» (3), «Аксессуар» (3), then «Дальше». *Имена:* the same preview; fields «Как тебя зовут в игре?» and «Как зовут питомца?» accept 1–20 visible characters after trimming; both are required before «Дальше». *Как играть:* the named, customized pet in idle pose speaks one short first-person bubble on each of 3 steps: decisions affect the pet · Три решения · plan/spend/save/review. A passive indicator announces «Шаг N из 3» and never acts as navigation. Steps 1–2 use «Дальше»; step 3 uses «Играть!»; every step has a quiet «Пропустить». Visible and Android Back traverse the draft without losing choices; Back from Питомец may exit, and reopening restarts from defaults. Finishing or skipping atomically creates the profile, then leaves for StartingBudget; on failure the draft remains and «Не получилось начать игру. Попробуй ещё раз.» offers retry. No profile row is written earlier. Replay from Словарик reuses only «Как играть», with the existing pet, «Готово» / «Закрыть», and no profile write. For TalkBack each bubble is one message, «Питомец [имя] говорит: …»; the decorative pet image is hidden from that step's reading order.
 
 **3. StartingBudget (one-time modal).** *Purpose:* grant +100 with explanation (R4, loop step 4). *Zones:* «Тебе дали 100 монет на старт!», coin art, short line «Это твой бюджет. Планируй, копи, заботься о питомце», button «Понятно». *Leaves:* Main (transaction `starting_grant` + FeedbackCard).
 
@@ -206,7 +204,7 @@ Main (hub) ── day loop lives here
 
 ### 4.3 Key flows
 
-- **First launch (Appendix A 1–4):** Launch → Onboarding → ProfileSetup → StartingBudget modal → Main → hint «Составь план дня» → Plan.
+- **First launch (Appendix A 1–4):** Launch → FirstRun Питомец → Имена → «Как играть» finished or skipped (profile created) → StartingBudget modal → Main → hint «Составь план дня» → Plan. Force-quit before profile creation discards the draft and restarts at Питомец.
 - **Day loop (normal & demo):** day opens on entering Main after unlock → Пособие +10 via FeedbackCard → Plan confirmed → free play (Магазин / Задания / Копилка; plan-vs-actual live on Plan) → «Закончить день» → DaySummary → next day unlocks (demo: immediately; normal: tomorrow). After day close in normal play the economy is frozen until the next day; Задания replays and Словарик remain available.
 - **Insufficient funds (Appendix A 7):** Магазин → buy Игрушка (25) at balance < 25 → BlockedSheet (needs N more; options) → a way out exists in-app (Задание now, Пособие tomorrow, or postpone).
 - **Savings withdrawal (R7):** Копилка → «Забрать» → amount → WithdrawPreview (pot after, date shift) → separate confirm → FeedbackCard.
@@ -227,7 +225,7 @@ Main (hub) ── day loop lives here
 
 ### 5.2 `goals.json` / `terms.json` / `hint.json`
 
-Goals: `{ id, name, cost, description }` (3 presets, §2.1). Terms: the 10 glossary entries. Hint: the 3 onboarding cards' copy.
+Goals: `{ id, name, cost, description }` (3 presets, §2.1). Terms: the 10 glossary entries. Hint: the pet's 3 first-person «Как играть» bubbles. Existing `title` and `body` fields remain for content compatibility; the FirstRun UI renders `body` as speech and does not render `title`.
 
 ### 5.3 `tasks.json` — task node schema
 
@@ -319,7 +317,7 @@ Each milestone ends with a demoable increment. Do not start a stretch item (§2.
   *AC:* release APK builds and installs on an Android 8.0 (API 26) emulator; portrait locked; cold launch → Main ≤5 s.
 - **M1 — Domain core (Days 1–2).** `core/` modules + Clock port; content loader with zod; repositories + schema (§3.2) with invariants. Jest suite covering the four mandated areas: **budgeting, debiting, savings, progress/stages** + day gating.
   *AC:* `npm test` green; no UI yet.
-- **M2 — Onboarding, pet, hub (Days 2–4).** Screens per §4.2 #1–4: 3 intro cards; profile+pet creation (3×3×3 pickers + pet name); Стартовый бюджет grant screen (+100, explained); Main hub with meters/badges/active cards; Словарик + hint replay.
+- **M2 — Первый запуск, pet, hub (Days 2–4).** Screens per §4.2 #1–4: FirstRun state machine (3×3×3 pet customization → child and pet names → 3 skippable speech bubbles from the pet); atomic profile creation after the explanation; Стартовый бюджет grant screen (+100, explained); Main hub with meters/badges/active cards; Словарик + «Как играть» replay.
   *AC:* Appendix A steps 1–4 passable end-to-end on device.
 - **M3 — Economy loop UI (Days 4–6).** Screens per §4.2 #5–7, 11, 16: План (3 buckets, total ≤ available, remainder shown, editable until confirmed, plan-vs-actual); Магазин (8 items, pre-purchase sheet, confirm, insufficient-funds block with options); Копилка (3 goals, active goal, transfers in, withdrawal with double confirm + before/after + date shift); Журнал; FeedbackCard on every coin/meter movement.
   *AC:* steps 5–9 passable; a wrong-path purchase demonstrates the safe-error rule (no dead ends).
@@ -345,7 +343,7 @@ Each milestone ends with a demoable increment. Do not start a stretch item (§2.
 
 | Req | Where settled/implemented |
 |---|---|
-| R1 onboarding/hint | §2.5 · §4.2 · M2 |
+| R1 first run / «Как играть» | §2.5 · §4.2 · M2 |
 | R2 pet creation, 9+ combos | §2.2 (27) · §5.4 · M2 |
 | R3 main screen contents | §2.2 · §3.1, §4 · M2 |
 | R4 currency/income | §2.1 · §3.3 · M1, M2 |

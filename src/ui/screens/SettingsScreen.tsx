@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { META_KEYS } from "../../data/metaKeys";
 import { APP_BUILD, APP_VERSION } from "../appInfo";
 import { BackButton } from "../components/BackButton";
 import { DevSettings } from "../components/DevSettings";
 import type { RootStackParamList } from "../navigation/types";
-import { META_KEYS } from "../session/metaKeys";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, spacing, type } from "../theme";
@@ -21,7 +21,7 @@ export default function SettingsScreen({ navigation }: Props) {
       meta.remove(META_KEYS.activeProfileId);
       meta.remove(META_KEYS.onboardingDone);
     }
-    navigation.reset({ index: 0, routes: [{ name: "Onboarding" }] });
+    navigation.reset({ index: 0, routes: [{ name: "FirstRun" }] });
   };
 
   return (

@@ -9,8 +9,12 @@ import type { SessionPorts } from "./types";
 export function createLiveSession(): SessionPorts {
   const db = bootDatabase();
   const clock = new SystemClock();
+  const game = createGameRepository(db.drizzle, clock);
   return {
-    game: createGameRepository(db.drizzle, clock),
+    firstRun: {
+      complete: game.completeFirstRun,
+    },
+    game,
     meta: createMetaRepository(db.drizzle),
     content: loadContent(),
   };

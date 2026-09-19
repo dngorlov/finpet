@@ -11,6 +11,7 @@ export function PetView({
   care,
   mood,
   pose,
+  accessibilityHidden = false,
 }: {
   species: string;
   color: string;
@@ -19,14 +20,20 @@ export function PetView({
   care?: number;
   mood?: number;
   pose?: PetPose;
+  accessibilityHidden?: boolean;
 }) {
   const resolved: PetPose =
     pose ?? (care !== undefined && mood !== undefined ? poseFromMeters(care, mood) : "idle");
   return (
     <View
-      accessible
-      role="img"
-      aria-label={strings.petA11y({ petName, species, color, accessory, pose: resolved })}
+      accessible={!accessibilityHidden}
+      role={accessibilityHidden ? undefined : "img"}
+      aria-hidden={accessibilityHidden}
+      aria-label={
+        accessibilityHidden
+          ? undefined
+          : strings.petA11y({ petName, species, color, accessory, pose: resolved })
+      }
       style={styles.frame}
     >
       <Image source={petBaseSource(species, color, resolved)} style={styles.layer} />

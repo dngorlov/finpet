@@ -1,6 +1,7 @@
 import { ManualClock, nextDayUnlocked } from "../../core/clock";
 import type { Clock } from "../../core/clock";
 import type { CatalogItem } from "../../core/economy";
+import { META_KEYS } from "../metaKeys";
 import { openMemoryGame } from "../testSupport/memoryDb";
 
 const GOALS = [
@@ -75,6 +76,68 @@ function sums(sqlite: import("better-sqlite3").Database, profileId: string) {
 }
 
 describe("grants and the balance invariant", () => {
+  it("completes Первый запуск atomically and is idempotent for the same profile id", () => {
+    const { game, meta, sqlite } = openMemoryGame();
+    const input = {
+      id: "first-run-profile",
+      name: "Миша",
+      species: "sp2",
+      color: "c1",
+      accessory: "a1",
+      petName: "Пух",
+      contentVersion: 1,
+      goals: GOALS,
+      activeGoalKey: "skateboard",
+    };
+
+    expect(game.completeFirstRun(input)).toBe(input.id);
+    expect(game.completeFirstRun(input)).toBe(input.id);
+    expect(meta.get(META_KEYS.activeProfileId)).toBe(input.id);
+    expect(meta.get(META_KEYS.onboardingDone)).toBe("1");
+    expect(sums(sqlite, input.id)).toEqual({ balance: 100, txSum: 100, pot: 0 });
+    expect(
+      sqlite.prepare("SELECT COUNT(*) AS count FROM profiles WHERE id = ?").get(input.id),
+    ).toEqual({ count: 1 });
+  });
+
+  it("rolls back the profile and Стартовый бюджет when activation fails", () => {
+    const { game, sqlite } = openMemoryGame();
+    sqlite.exec(`
+      CREATE TRIGGER fail_first_run_activation
+      BEFORE INSERT ON meta
+      WHEN NEW.key = 'activeProfileId'
+      BEGIN
+        SELECT RAISE(ABORT, 'activation failed');
+      END;
+    `);
+
+    const input = {
+      id: "rolled-back-profile",
+      name: "Миша",
+      species: "sp1",
+      color: "c1",
+      accessory: "a1",
+      petName: "Пух",
+      contentVersion: 1,
+      goals: GOALS,
+      activeGoalKey: "skateboard",
+    };
+
+    expect(() => game.completeFirstRun(input)).toThrow("activation failed");
+    expect(
+      sqlite.prepare("SELECT COUNT(*) AS count FROM profiles WHERE id = ?").get("rolled-back-profile"),
+    ).toEqual({ count: 0 });
+    expect(
+      sqlite
+        .prepare("SELECT COUNT(*) AS count FROM transactions WHERE profileId = ?")
+        .get("rolled-back-profile"),
+    ).toEqual({ count: 0 });
+
+    sqlite.exec("DROP TRIGGER fail_first_run_activation");
+    expect(game.completeFirstRun(input)).toBe(input.id);
+    expect(sums(sqlite, input.id)).toEqual({ balance: 100, txSum: 100, pot: 0 });
+  });
+
   it("grants 100 at profile creation and +10 Пособие on first open of a day", () => {
     const { game, sqlite, profileId } = seed();
 
