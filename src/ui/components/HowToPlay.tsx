@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { BackHandler, StyleSheet, Text, View } from "react-native";
 import type { HintCardContent } from "../../data/content";
 import { PetView } from "../pet/PetView";
 import { strings } from "../strings";
-import { colors, minTarget, spacing, type } from "../theme";
+import { colors, spacing, type } from "../theme";
 import { PrimaryButton } from "./PrimaryButton";
+import { Screen } from "./Screen";
+import { SpeechBubble } from "./SpeechBubble";
+import { TextButton } from "./TextButton";
 
 type HowToPlayPet = {
   species: string;
@@ -63,24 +66,38 @@ export function HowToPlay({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
+    <Screen
+      footer={
+        <>
+          <TextButton label={strings.back} onPress={goBack} />
+          <PrimaryButton
+            label={last ? (replay ? strings.done : strings.play) : strings.next}
+            disabled={busy}
+            onPress={next}
+          />
+          <TextButton
+            label={replay ? strings.close : strings.skip}
+            disabled={busy}
+            onPress={onClose}
+          />
+        </>
+      }
+    >
       <Text style={styles.title}>{strings.howToPlay}</Text>
       <Text style={styles.step}>{strings.howToPlayStep(index + 1, cards.length)}</Text>
-      <PetView
-        species={pet.species}
-        color={pet.color}
-        accessory={pet.accessory}
-        petName={pet.petName}
-        pose="idle"
-        accessibilityHidden
-      />
-      <Text style={styles.petName}>{pet.petName}</Text>
-      <View
-        accessible
-        aria-label={strings.petSays(pet.petName, card.body)}
-        style={styles.bubble}
-      >
-        <Text style={styles.body}>{card.body}</Text>
+      <View style={styles.speaker}>
+        <PetView
+          species={pet.species}
+          color={pet.color}
+          accessory={pet.accessory}
+          petName={pet.petName}
+          pose="idle"
+          accessibilityHidden
+        />
+        <Text style={styles.petName}>{pet.petName}</Text>
+        <SpeechBubble accessibilityLabel={strings.petSays(pet.petName, card.body)}>
+          <Text style={styles.body}>{card.body}</Text>
+        </SpeechBubble>
       </View>
       <View aria-hidden style={styles.dots}>
         {cards.map((item, dotIndex) => (
@@ -95,76 +112,31 @@ export function HowToPlay({
           {error}
         </Text>
       ) : null}
-      <View style={styles.actions}>
-        <TextAction label={strings.back} onPress={goBack} />
-        <PrimaryButton
-          label={last ? (replay ? strings.done : strings.play) : strings.next}
-          disabled={busy}
-          onPress={next}
-        />
-        <TextAction
-          label={replay ? strings.close : strings.skip}
-          disabled={busy}
-          onPress={onClose}
-        />
-      </View>
-    </ScrollView>
-  );
-}
-
-function TextAction({
-  label,
-  disabled,
-  onPress,
-}: {
-  label: string;
-  disabled?: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      role="button"
-      aria-label={label}
-      aria-disabled={Boolean(disabled)}
-      disabled={disabled}
-      onPress={onPress}
-      style={styles.textAction}
-    >
-      <Text style={styles.textActionLabel}>{label}</Text>
-    </Pressable>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    alignItems: "center",
-    backgroundColor: colors.background,
-    flexGrow: 1,
-    gap: spacing.m,
-    justifyContent: "center",
-    padding: spacing.l,
-  },
   title: {
     color: colors.text,
     fontSize: type.title,
     fontWeight: "700",
+    textAlign: "center",
   },
   step: {
     color: colors.subtle,
     fontSize: type.body,
+    textAlign: "center",
+  },
+  speaker: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    gap: spacing.m,
   },
   petName: {
     color: colors.text,
     fontSize: type.body,
     fontWeight: "700",
-  },
-  bubble: {
-    alignSelf: "stretch",
-    backgroundColor: colors.card,
-    borderColor: colors.track,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: spacing.m,
   },
   body: {
     color: colors.text,
@@ -173,6 +145,7 @@ const styles = StyleSheet.create({
   dots: {
     flexDirection: "row",
     gap: spacing.s,
+    justifyContent: "center",
   },
   dot: {
     backgroundColor: colors.track,
@@ -186,20 +159,5 @@ const styles = StyleSheet.create({
   error: {
     color: colors.text,
     fontSize: type.body,
-  },
-  actions: {
-    alignSelf: "stretch",
-    gap: spacing.s,
-  },
-  textAction: {
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: minTarget,
-    paddingHorizontal: spacing.m,
-  },
-  textActionLabel: {
-    color: colors.accent,
-    fontSize: type.body,
-    fontWeight: "700",
   },
 });
