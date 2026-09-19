@@ -78,7 +78,14 @@ describe("grants and the balance invariant", () => {
   it("grants 100 at profile creation and +10 Пособие on first open of a day", () => {
     const { game, sqlite, profileId } = seed();
 
-    expect(game.getProfile(profileId).balance).toBe(100);
+    expect(game.getProfile(profileId)).toMatchObject({
+      balance: 100,
+      species: "sp1",
+      color: "c1",
+      accessory: "a1",
+      petName: "Пух",
+      name: "Миша",
+    });
     expect(sums(sqlite, profileId)).toEqual({ balance: 100, txSum: 100, pot: 0 });
 
     const day = game.openDay(profileId);

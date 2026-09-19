@@ -53,6 +53,27 @@ export interface CloseDayResult {
   meters: { care: number; mood: number };
 }
 
+/** Read model for the hub and PetView (appearance + meters + Баланс). */
+export interface ProfileView {
+  id: string;
+  name: string;
+  petName: string;
+  species: string;
+  color: string;
+  accessory: string;
+  balance: number;
+  isDemo: boolean;
+  care: number;
+  mood: number;
+  stage: Stage;
+}
+
+export interface SavingsView {
+  pot: number;
+  estimateDays: number | null;
+  activeGoal: { key: string; cost: number; remaining: number; achieved: boolean } | null;
+}
+
 /**
  * Intent-level persistence seam: every coin movement writes its transaction
  * (and purchase/meter rows) atomically and keeps balance == Σ transactions.
@@ -246,12 +267,16 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       return id;
     },
 
-    getProfile(profileId: string) {
+    getProfile(profileId: string): ProfileView {
       const row = profile(db, profileId);
       const petRow = pet(db, profileId);
       return {
         id: row.id,
         name: row.name,
+        petName: row.petName,
+        species: row.species,
+        color: row.color,
+        accessory: row.accessory,
         balance: row.balance,
         isDemo: row.isDemo === 1,
         care: petRow.care,
@@ -469,7 +494,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       });
     },
 
-    savingsState(profileId: string) {
+    savingsState(profileId: string): SavingsView {
       const transfers = db
         .select()
         .from(tables.savingsTransfers)
