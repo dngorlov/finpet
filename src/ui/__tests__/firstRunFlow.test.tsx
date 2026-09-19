@@ -5,7 +5,7 @@ import { strings } from "../strings";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
 
 const content = loadContent();
-const firstRule = strings.petSays("Пух", content.hints[0]!.body);
+const tourById = Object.fromEntries(content.hints.map((hint) => [hint.id, hint.body]));
 const hubDestinations = ["План", "Магазин", "Копилка", "Задания", "Прогресс", "Взрослый раздел"] as const;
 
 async function renderApp(ports = createFakePorts()) {
@@ -14,10 +14,16 @@ async function renderApp(ports = createFakePorts()) {
   return { user, ports, view };
 }
 
-async function reachHowToPlay(user: ReturnType<typeof userEvent.setup>) {
+async function finishName(user: ReturnType<typeof userEvent.setup>) {
   await user.press(screen.getByRole("button", { name: "Дальше" }));
   await user.type(screen.getByRole("textbox", { name: "Меня зовут" }), "Пух");
   await user.press(screen.getByRole("button", { name: "Дальше" }));
+}
+
+async function reachTour(user: ReturnType<typeof userEvent.setup>) {
+  await finishName(user);
+  await user.press(screen.getByRole("button", { name: "Понятно" }));
+  await user.press(screen.getByRole("button", { name: "Понятно" }));
 }
 
 function nameField() {
@@ -42,9 +48,11 @@ function expectSelectedAppearanceOption(name: string) {
   expect(option).not.toBeDisabled();
 }
 
-function expectHowToPlayBubble() {
-  expect(screen.getAllByLabelText(firstRule)).toHaveLength(1);
-  expect(screen.queryByRole("img")).not.toBeOnTheScreen();
+function expectTourChrome(body: string) {
+  expect(screen.getByText(body)).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "Назад" })).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "Дальше" })).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "Пропустить" })).toBeOnTheScreen();
 }
 
 function expectMainChrome() {
@@ -103,7 +111,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByText(strings.colorLegend)).toBeOnTheScreen();
     expect(screen.getByText(strings.accessoryLegend)).toBeOnTheScreen();
     expect(screen.getByRole("img", { name: /Питомец.*Вид 1.*Окрас 1.*Аксессуар 1/ })).toBeOnTheScreen();
-    expect(screen.queryByText(content.hints[0]!.body)).not.toBeOnTheScreen();
+    expect(screen.queryByText(tourById["main-plan"]!)).not.toBeOnTheScreen();
     expectSelectedAppearanceOption("Вид 1");
     expect(screen.getByRole("button", { name: "Вид 2" })).not.toBeSelected();
     expect(screen.getByRole("button", { name: "Вид 2" })).not.toBeDisabled();
@@ -130,7 +138,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expectNameChip("");
   });
 
-  it("walks pet, Имя, pet-spoken rules, starting budget, and the hub", async () => {
+  it("walks pet, Имя, starting budget, Пособие, and the hub tour", async () => {
     const ports = createFakePorts();
     const complete = jest.spyOn(ports.firstRun, "complete");
     const { user } = await renderApp(ports);
@@ -150,21 +158,6 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByRole("img", { name: /Питомец, Вид 2/ })).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Дальше" })).toBeEnabled();
     await user.press(screen.getByRole("button", { name: "Дальше" }));
-
-    expect(screen.getByText("Как играть")).toBeOnTheScreen();
-    expect(screen.getByText("Шаг 1 из 3")).toBeOnTheScreen();
-    expect(screen.getByText("Пух")).toBeOnTheScreen();
-    expectHowToPlayBubble();
-    expect(screen.queryByRole("button", { name: "Карточка 1" })).not.toBeOnTheScreen();
-    expect(complete).not.toHaveBeenCalled();
-
-    await user.press(screen.getByRole("button", { name: "Дальше" }));
-    expect(screen.getByText("Шаг 2 из 3")).toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Дальше" }));
-    expect(screen.getByText("Шаг 3 из 3")).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "Играть!" })).toBeOnTheScreen();
-
-    await user.press(screen.getByRole("button", { name: "Играть!" }));
     expect(complete).toHaveBeenCalledTimes(1);
 
     expect(screen.getByText("Тебе дали 100 монет на старт!")).toBeOnTheScreen();
@@ -177,6 +170,46 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByText("Что дальше: составь план дня.")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
 
+    expectTourChrome(tourById["main-plan"]!);
+    expect(screen.queryByLabelText(/Питомец .* говорит:/)).not.toBeOnTheScreen();
+    expect(screen.getByText("Пособие +10 монет")).toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    expectTourChrome(tourById["plan-buckets"]!);
+    expect(screen.getByText("План")).toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    expectTourChrome(tourById["main-shop"]!);
+
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    expectTourChrome(tourById["shop-lunch"]!);
+    expect(screen.getByRole("button", { name: "Обед" })).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Обед" }));
+    await user.press(screen.getByRole("button", { name: "Купить" }));
+    expect(screen.getByText("Купить Обед за 12?")).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Купить" }));
+    expect(screen.queryByText("Баланс -12")).not.toBeOnTheScreen();
+    const profileId = ports.meta.get("activeProfileId");
+    expect(profileId).not.toBeNull();
+    expect(ports.game.getProfile(profileId!).balance).toBe(110);
+    expect(ports.game.dayState(profileId!).plan.status).not.toBe("confirmed");
+
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    expectTourChrome(tourById["main-savings"]!);
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    expectTourChrome(tourById["savings-deposit"]!);
+    expect(screen.getByRole("button", { name: "Положить" })).toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    expectTourChrome(tourById["main-task"]!);
+    await user.press(screen.getByRole("button", { name: "Играть" }));
+    expect(screen.queryByText("С чего начнёшь?")).not.toBeOnTheScreen();
+    expectTourChrome(tourById["main-task"]!);
+
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    expect(screen.queryByText(tourById["main-task"]!)).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Пропустить" })).not.toBeOnTheScreen();
+
     expect(screen.getByText("Новичок")).toBeOnTheScreen();
     expect(screen.getByText("Забота 50")).toBeOnTheScreen();
     expect(screen.getByText("Настроение 50")).toBeOnTheScreen();
@@ -186,8 +219,8 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByText("осталось 90")).toBeOnTheScreen();
     expect(screen.getByText("Первый план")).toBeOnTheScreen();
     expect(screen.getByText("Составь план дня")).toBeOnTheScreen();
-    expect(screen.getByText("Пособие +10 монет")).toBeOnTheScreen();
     expect(screen.getByLabelText(/Питомец Пух.*Вид 2.*спокойный/)).toBeOnTheScreen();
+    expect(ports.meta.get("howToPlayDone")).toBe("1");
 
     await user.press(screen.getByRole("button", { name: "Закончить день" }));
     expect(screen.getByText("Сначала составь план дня")).toBeOnTheScreen();
@@ -213,14 +246,11 @@ describe("first-run flow (Appendix A 1–4)", () => {
     const profileBeforeReplay = ports.game.getProfile(activeProfileId!);
     expect(profileBeforeReplay).toMatchObject({ name: "Пух", petName: "Пух" });
     await user.press(screen.getByRole("button", { name: "Как играть" }));
-    expect(screen.getByText("Шаг 1 из 3")).toBeOnTheScreen();
-    expectHowToPlayBubble();
-    expect(screen.getByRole("button", { name: "Закрыть" })).toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Дальше" }));
-    await user.press(screen.getByRole("button", { name: "Дальше" }));
-    await user.press(screen.getByRole("button", { name: "Готово" }));
-    expect(screen.getByText("Баланс")).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "Как играть" })).toBeOnTheScreen();
+    expectTourChrome(tourById["main-plan"]!);
+    expect(screen.queryByText("Потому что начался новый игровой день.")).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Закрыть" })).not.toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Пропустить" }));
+    expectMainChrome();
     expect(complete).toHaveBeenCalledTimes(1);
     expect(ports.meta.get("activeProfileId")).toBe(activeProfileId);
     expect(ports.game.getProfile(activeProfileId!)).toEqual(profileBeforeReplay);
@@ -230,18 +260,19 @@ describe("first-run flow (Appendix A 1–4)", () => {
     const ports = createFakePorts();
     const complete = jest.spyOn(ports.firstRun, "complete");
     const { user } = await renderApp(ports);
-    await reachHowToPlay(user);
+    await reachTour(user);
 
     for (let current = 1; current < step; current += 1) {
       await user.press(screen.getByRole("button", { name: "Дальше" }));
     }
     await user.press(screen.getByRole("button", { name: "Пропустить" }));
 
-    expect(screen.getByText("Тебе дали 100 монет на старт!")).toBeOnTheScreen();
+    expectMainChrome();
     expect(complete).toHaveBeenCalledTimes(1);
     const profileId = ports.meta.get("activeProfileId");
     expect(profileId).not.toBeNull();
-    expect(ports.game.getProfile(profileId!)).toMatchObject({ name: "Пух", petName: "Пух" });
+    expect(ports.game.getProfile(profileId!)).toMatchObject({ name: "Пух", petName: "Пух", balance: 110 });
+    expect(ports.meta.get("howToPlayDone")).toBe("1");
   });
 
   it("preserves the draft when moving back through Первый запуск", async () => {
@@ -250,9 +281,8 @@ describe("first-run flow (Appendix A 1–4)", () => {
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Вид 2" }));
-    await reachHowToPlay(user);
-    await user.press(screen.getByRole("button", { name: "Назад" }));
-
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.type(nameField(), "Пух");
     expectNameChip("Пух");
     await user.press(screen.getByRole("button", { name: "Назад" }));
     expectSelectedAppearanceOption("Вид 2");
@@ -261,12 +291,39 @@ describe("first-run flow (Appendix A 1–4)", () => {
 
   it("moves back through individual Как играть steps", async () => {
     const { user } = await renderApp();
-    await reachHowToPlay(user);
+    await reachTour(user);
     await user.press(screen.getByRole("button", { name: "Дальше" }));
-    expect(screen.getByText("Шаг 2 из 3")).toBeOnTheScreen();
+    expectTourChrome(tourById["plan-buckets"]!);
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    expect(screen.getByText("Шаг 1 из 3")).toBeOnTheScreen();
+    expectTourChrome(tourById["main-plan"]!);
+  });
+
+  it("still offers Как играть after a quit on Стартовый бюджет", async () => {
+    const ports = createFakePorts();
+    const { user, view } = await renderApp(ports);
+    await finishName(user);
+    expect(screen.getByText("Тебе дали 100 монет на старт!")).toBeOnTheScreen();
+
+    await view.unmount();
+    await render(<FinPetApp ports={ports} />);
+    expect(screen.getByText("Потому что начался новый игровой день.")).toBeOnTheScreen();
+    await userEvent.setup().press(screen.getByRole("button", { name: "Понятно" }));
+    expectTourChrome(tourById["main-plan"]!);
+  });
+
+  it("does not auto-start Как играть on a later launch after skip", async () => {
+    const ports = createFakePorts();
+    const { user, view } = await renderApp(ports);
+    await reachTour(user);
+    await user.press(screen.getByRole("button", { name: "Пропустить" }));
+    expectMainChrome();
+
+    await view.unmount();
+    await render(<FinPetApp ports={ports} />);
+    expect(screen.queryByText(tourById["main-plan"]!)).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Пропустить" })).not.toBeOnTheScreen();
+    expectMainChrome();
   });
 
   it("validates the pet name after blur and restarts an abandoned draft", async () => {
@@ -301,8 +358,8 @@ describe("first-run flow (Appendix A 1–4)", () => {
     await fireEvent.changeText(petName, ` ${family.repeat(20)} `);
     expect(screen.getByRole("button", { name: "Дальше" })).toBeEnabled();
     await user.press(screen.getByRole("button", { name: "Дальше" }));
-    await user.press(screen.getByRole("button", { name: "Пропустить" }));
 
+    expect(screen.getByText("Тебе дали 100 монет на старт!")).toBeOnTheScreen();
     const profileId = ports.meta.get("activeProfileId");
     expect(profileId).not.toBeNull();
     expect(ports.game.getProfile(profileId!)).toMatchObject({
@@ -319,13 +376,14 @@ describe("first-run flow (Appendix A 1–4)", () => {
         throw new Error("write failed");
       });
     const { user } = await renderApp(ports);
-    await reachHowToPlay(user);
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.type(nameField(), "Пух");
 
-    await user.press(screen.getByRole("button", { name: "Пропустить" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Не получилось начать игру. Попробуй ещё раз.");
-    expect(screen.getByText("Шаг 1 из 3")).toBeOnTheScreen();
+    expectNameChip("Пух");
 
-    await user.press(screen.getByRole("button", { name: "Пропустить" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
     expect(screen.getByText("Тебе дали 100 монет на старт!")).toBeOnTheScreen();
     expect(complete).toHaveBeenCalledTimes(2);
     const profileId = ports.meta.get("activeProfileId");
@@ -338,7 +396,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     seedReturningChild(ports);
     const { user } = await renderApp(ports);
 
-    expect(screen.queryByText(content.hints[0]!.title)).not.toBeOnTheScreen();
+    expect(screen.queryByText(tourById["main-plan"]!)).not.toBeOnTheScreen();
     expectMainChrome();
     expect(screen.queryByText("Пособие +10 монет")).not.toBeOnTheScreen();
     expect(screen.queryByText("Потому что начался новый игровой день.")).not.toBeOnTheScreen();

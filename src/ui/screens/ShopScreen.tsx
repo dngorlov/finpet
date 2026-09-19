@@ -12,6 +12,8 @@ import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { TextButton } from "../components/TextButton";
+import { TourAnchor } from "../howToPlay/TourAnchor";
+import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
@@ -31,6 +33,7 @@ function engineItem(item: CatalogItemContent) {
 
 export default function ShopScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
+  const tour = useHowToPlayTour();
   const [tab, setTab] = useState<Tab>("mandatory");
   const [balance, setBalance] = useState(0);
   const [bought, setBought] = useState<string[]>([]);
@@ -55,6 +58,7 @@ export default function ShopScreen({ navigation }: Props) {
   const items = content.catalog.filter((item) => item.kind === tab);
 
   const buy = (item: CatalogItemContent) => {
+    if (tour.active) return;
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
     const day = game.dayState(profileId);
@@ -100,7 +104,10 @@ export default function ShopScreen({ navigation }: Props) {
           <TextButton label={strings.shopWaitAllowance} onPress={() => setWaiting(true)} />
           <TextButton
             label={strings.shopDoTask}
-            onPress={() => navigation.navigate("TaskList")}
+            onPress={() => {
+              if (tour.active) return;
+              navigation.navigate("TaskList");
+            }}
           />
           <PrimaryButton label={strings.shopPostpone} onPress={() => setPhase({ name: "list" })} />
         </>
@@ -111,7 +118,7 @@ export default function ShopScreen({ navigation }: Props) {
 
   return (
     <Screen footer={footer}>
-      <BackButton />
+      {tour.active ? null : <BackButton />}
       <Text style={styles.title}>{strings.navShop}</Text>
       {phase.name === "list" ? (
         <>
@@ -129,35 +136,43 @@ export default function ShopScreen({ navigation }: Props) {
               onPress={() => setTab("optional")}
             />
           </View>
-          {items.map((item) => (
-            <Pressable
-              key={item.id}
-              role="button"
-              aria-label={item.name}
-              onPress={() => setPhase({ name: "item", item })}
-              style={styles.itemHit}
-            >
-              <Card>
-                <Text style={styles.section}>{item.name}</Text>
-                <Text style={styles.body}>
-                  {item.kind === "mandatory" ? strings.navPlanPictogram : strings.navShopPictogram}{" "}
-                  {strings.shopCategory(item.kind)}
-                </Text>
-                <Text style={styles.body}>{strings.shopPrice(item.price)}</Text>
-                <Text style={styles.body}>
-                  {item.effect.meter === "care" ? strings.careIcon : strings.moodIcon}{" "}
-                  {strings.shopImpact(
-                    item.effect.meter === "care" ? strings.care : strings.mood,
-                    item.effect.delta,
-                  )}
-                </Text>
-                <Text style={styles.body}>{strings.shopAfterBuy(balance - item.price)}</Text>
-                {bought.includes(item.id) ? (
-                  <Badge icon={strings.selectedCheck} word={strings.shopBought} value="" />
-                ) : null}
-              </Card>
-            </Pressable>
-          ))}
+          {items.map((item) => {
+            const row = (
+              <Pressable
+                role="button"
+                aria-label={item.name}
+                onPress={() => setPhase({ name: "item", item })}
+                style={styles.itemHit}
+              >
+                <Card>
+                  <Text style={styles.section}>{item.name}</Text>
+                  <Text style={styles.body}>
+                    {item.kind === "mandatory" ? strings.navPlanPictogram : strings.navShopPictogram}{" "}
+                    {strings.shopCategory(item.kind)}
+                  </Text>
+                  <Text style={styles.body}>{strings.shopPrice(item.price)}</Text>
+                  <Text style={styles.body}>
+                    {item.effect.meter === "care" ? strings.careIcon : strings.moodIcon}{" "}
+                    {strings.shopImpact(
+                      item.effect.meter === "care" ? strings.care : strings.mood,
+                      item.effect.delta,
+                    )}
+                  </Text>
+                  <Text style={styles.body}>{strings.shopAfterBuy(balance - item.price)}</Text>
+                  {bought.includes(item.id) ? (
+                    <Badge icon={strings.selectedCheck} word={strings.shopBought} value="" />
+                  ) : null}
+                </Card>
+              </Pressable>
+            );
+            return item.id === "lunch" ? (
+              <TourAnchor key={item.id} id="shop-lunch">
+                {row}
+              </TourAnchor>
+            ) : (
+              <View key={item.id}>{row}</View>
+            );
+          })}
         </>
       ) : null}
       {phase.name === "item" ? (

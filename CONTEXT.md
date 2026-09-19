@@ -105,7 +105,7 @@ _Avoid_: уровень, эволюция
 ### Learning
 
 **Как играть (How to play)**:
-A brief, replayable explanation of the game in which the child's Питомец speaks scripted guidance.
+A brief, replayable walkthrough of the hub and the План, Магазин, and Копилка screens: the rest of the screen is dimmed, one control is spotlighted, and a short overlay explains it. It does not spend coins, lock a plan, or run a Задание. The Питомец does not speak these steps.
 _Avoid_: онбординг, Помощник
 
 **Помощник (Helper)**:

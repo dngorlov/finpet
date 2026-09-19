@@ -14,6 +14,8 @@ import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { TextButton } from "../components/TextButton";
+import { TourAnchor } from "../howToPlay/TourAnchor";
+import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
@@ -29,6 +31,7 @@ type Phase =
 
 export default function SavingsScreen(_props: Props) {
   const { game, meta, content } = useSession();
+  const tour = useHowToPlayTour();
   const [savings, setSavings] = useState<SavingsView | null>(null);
   const [goals, setGoals] = useState<GoalOption[]>([]);
   const [balance, setBalance] = useState(0);
@@ -74,6 +77,7 @@ export default function SavingsScreen(_props: Props) {
   const accumulated = savings.activeGoal ? savings.activeGoal.cost - savings.activeGoal.remaining : 0;
 
   const putIn = (amount: number) => {
+    if (tour.active) return;
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId || amount <= 0) return;
     const day = game.dayState(profileId);
@@ -99,6 +103,7 @@ export default function SavingsScreen(_props: Props) {
   };
 
   const takeOut = (amount: number) => {
+    if (tour.active) return;
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId || amount <= 0) return;
     const day = game.dayState(profileId);
@@ -163,14 +168,16 @@ export default function SavingsScreen(_props: Props) {
     if (phase.name === "home") {
       return (
         <>
-          <PrimaryButton
-            label={strings.savingsDeposit}
-            disabled={balance <= 0}
-            onPress={() => setPhase({ name: "deposit", amount: 0 })}
-          />
+          <TourAnchor id="savings-deposit">
+            <PrimaryButton
+              label={strings.savingsDeposit}
+              disabled={balance <= 0}
+              onPress={() => setPhase({ name: "deposit", amount: 0 })}
+            />
+          </TourAnchor>
           <TextButton
             label={strings.savingsWithdraw}
-            disabled={savings.pot <= 0}
+            disabled={savings.pot <= 0 || tour.active}
             onPress={() => setPhase({ name: "withdraw", amount: 0 })}
           />
         </>
@@ -192,7 +199,7 @@ export default function SavingsScreen(_props: Props) {
 
   return (
     <Screen footer={footer}>
-      <BackButton />
+      {tour.active ? null : <BackButton />}
       <Text style={styles.title}>{strings.navSavings}</Text>
       <Text style={styles.pot}>{strings.savingsPot(savings.pot)}</Text>
       <Card>
@@ -222,6 +229,7 @@ export default function SavingsScreen(_props: Props) {
               selected={goal.isActive}
               disabled={achieved}
               onPress={() => {
+                if (tour.active) return;
                 const profileId = meta.get(META_KEYS.activeProfileId);
                 if (!profileId) return;
                 game.setActiveGoal(profileId, goal.key);

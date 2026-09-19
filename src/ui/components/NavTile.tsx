@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { strings } from "../strings";
 import { colors, minTarget, radius, spacing, type } from "../theme";
 
@@ -11,6 +11,7 @@ export function NavTile({
   highlighted,
   hint,
   disabled,
+  style,
 }: {
   pictogram: string;
   word: string;
@@ -18,6 +19,7 @@ export function NavTile({
   highlighted?: boolean;
   hint?: string;
   disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
     <Pressable
@@ -33,6 +35,7 @@ export function NavTile({
         highlighted && !disabled ? styles.shellHighlighted : null,
         disabled ? styles.shellDisabled : null,
         !disabled && pressed ? styles.shellPressed : null,
+        style,
       ]}
     >
       <View

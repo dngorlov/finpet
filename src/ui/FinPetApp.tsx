@@ -1,8 +1,12 @@
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet } from "react-native";
+import { useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { HowToPlayOverlay } from "./howToPlay/HowToPlayOverlay";
+import { HowToPlayTourProvider } from "./howToPlay/HowToPlayTourProvider";
 import { RootNavigator } from "./navigation/RootNavigator";
+import type { RootStackParamList } from "./navigation/types";
 import { SessionProvider } from "./session/SessionProvider";
 import type { SessionPorts } from "./session/types";
 import { colors } from "./theme";
@@ -13,14 +17,21 @@ const INITIAL_METRICS = {
 };
 
 export function FinPetApp({ ports }: { ports: SessionPorts }) {
+  const [navigationRef] = useState(() => createNavigationContainerRef<RootStackParamList>());
+
   return (
     <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         <StatusBar style="dark" />
         <SessionProvider ports={ports}>
-          <NavigationContainer>
-            <RootNavigator />
-          </NavigationContainer>
+          <HowToPlayTourProvider navigationRef={navigationRef}>
+            <View style={styles.stack}>
+              <NavigationContainer ref={navigationRef}>
+                <RootNavigator />
+              </NavigationContainer>
+              <HowToPlayOverlay />
+            </View>
+          </HowToPlayTourProvider>
         </SessionProvider>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -30,6 +41,9 @@ export function FinPetApp({ ports }: { ports: SessionPorts }) {
 const styles = StyleSheet.create({
   safe: {
     backgroundColor: colors.background,
+    flex: 1,
+  },
+  stack: {
     flex: 1,
   },
 });

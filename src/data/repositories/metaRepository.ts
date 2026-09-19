@@ -5,7 +5,7 @@ import type * as schema from "../schema";
 
 type Db = BaseSQLiteDatabase<"sync", unknown, typeof schema>;
 
-/** Key-value store for activeProfileId, onboardingDone, animationsOn, … */
+/** Key-value store for activeProfileId, onboardingDone, howToPlayDone, animationsOn, … */
 export function createMetaRepository(db: Db) {
   return {
     get(key: string): string | null {

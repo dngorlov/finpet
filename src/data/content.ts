@@ -57,7 +57,7 @@ const hintCardSchema = z.object({
 
 const hintFileSchema = z.object({
   contentVersion: z.literal(CONTENT_VERSION),
-  cards: z.array(hintCardSchema).length(3),
+  cards: z.array(hintCardSchema).length(7),
 });
 
 const taskEffectObjectSchema = z.object({

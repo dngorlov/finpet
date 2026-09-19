@@ -16,6 +16,7 @@ import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
+import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
@@ -50,8 +51,9 @@ function meterReasonLines(deltas: DaySummaryView["meterDeltas"]): string[] {
   return lines;
 }
 
-export default function ProgressScreen({ navigation }: Props) {
+export default function ProgressScreen(_props: Props) {
   const { game, meta, content } = useSession();
+  const tour = useHowToPlayTour();
   const [tab, setTab] = useState<Tab>("journal");
   const [rows, setRows] = useState<JournalEntry[]>([]);
   const [lastClosed, setLastClosed] = useState<DaySummaryView | null>(null);
@@ -163,7 +165,7 @@ export default function ProgressScreen({ navigation }: Props) {
       {tab === "glossary" ? (
         <>
           <Card>
-            <PrimaryButton label={strings.howToPlay} onPress={() => navigation.navigate("HowToPlay")} />
+            <PrimaryButton label={strings.howToPlay} onPress={() => tour.start({ replay: true })} />
           </Card>
           {content.terms.map((term) => (
             <Card key={term.id}>

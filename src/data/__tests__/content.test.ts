@@ -34,7 +34,7 @@ describe("loadContent", () => {
     ]);
   });
 
-  it("ships the ten Словарик terms and three hint cards", () => {
+  it("ships the ten Словарик terms and seven Как играть steps", () => {
     expect(content.terms.map((t) => t.term)).toEqual([
       "Баланс",
       "Копилка",
@@ -47,7 +47,15 @@ describe("loadContent", () => {
       "Этап",
       "Игровой день",
     ]);
-    expect(content.hints).toHaveLength(3);
+    expect(content.hints.map((hint) => hint.id)).toEqual([
+      "main-plan",
+      "plan-buckets",
+      "main-shop",
+      "shop-lunch",
+      "main-savings",
+      "savings-deposit",
+      "main-task",
+    ]);
   });
 
   it("ships six playable task scripts plus the backpack correction, every option explained", () => {

@@ -2,7 +2,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
 import DaySummaryScreen from "../screens/DaySummaryScreen";
 import FirstRunScreen from "../screens/FirstRunScreen";
-import HowToPlayScreen from "../screens/HowToPlayScreen";
 import MainScreen from "../screens/MainScreen";
 import PlanScreen from "../screens/PlanScreen";
 import ProgressScreen from "../screens/ProgressScreen";
@@ -28,7 +27,6 @@ export function RootNavigator() {
   return (
     <Stack.Navigator initialRouteName={hasProfile ? "Main" : "FirstRun"} screenOptions={{ headerShown: false }}>
       <Stack.Screen name="FirstRun" component={FirstRunScreen} />
-      <Stack.Screen name="HowToPlay" component={HowToPlayScreen} />
       <Stack.Screen name="StartingBudget" component={StartingBudgetScreen} />
       <Stack.Screen name="Main" component={MainScreen} />
       <Stack.Screen name="Plan" component={PlanScreen} />

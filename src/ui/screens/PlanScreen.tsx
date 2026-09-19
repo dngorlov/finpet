@@ -11,6 +11,8 @@ import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { TextButton } from "../components/TextButton";
+import { TourAnchor } from "../howToPlay/TourAnchor";
+import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
@@ -22,6 +24,7 @@ const EMPTY: PlanBuckets = { mandatory: 0, optional: 0, savings: 0 };
 
 export default function PlanScreen(_props: Props) {
   const { game, meta } = useSession();
+  const tour = useHowToPlayTour();
   const [day, setDay] = useState<DayState | null>(null);
   const [buckets, setBuckets] = useState<PlanBuckets>(EMPTY);
   const [askingConfirm, setAskingConfirm] = useState(false);
@@ -54,7 +57,7 @@ export default function PlanScreen(_props: Props) {
   const check = validatePlan(buckets, day.available);
   const persist = (next: PlanBuckets) => {
     const profileId = meta.get(META_KEYS.activeProfileId);
-    if (!profileId || confirmed) return;
+    if (!profileId || confirmed || tour.active) return;
     setBuckets(next);
     game.saveDraftPlan(profileId, day.dayId, next);
   };
@@ -62,11 +65,16 @@ export default function PlanScreen(_props: Props) {
   const askConfirm = () => {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId || !check.ok || confirmed) return;
+    if (tour.active) {
+      setAskingConfirm(true);
+      return;
+    }
     game.saveDraftPlan(profileId, day.dayId, buckets);
     setAskingConfirm(true);
   };
 
   const confirm = () => {
+    if (tour.active) return;
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
     const result = game.confirmPlan(profileId, day.dayId);
@@ -91,36 +99,40 @@ export default function PlanScreen(_props: Props) {
         )
       }
     >
-      <BackButton />
+      {tour.active ? null : <BackButton />}
       <Text style={styles.title}>{strings.navPlan}</Text>
       <Text style={styles.body}>{strings.planAvailable(day.available)}</Text>
       {confirmed ? (
-        <Card>
-          <BucketActual label={strings.bucketMandatory} pictogram={strings.navPlanPictogram} plan={day.plan.buckets.mandatory} actual={day.actual.mandatory} />
-          <BucketActual label={strings.bucketOptional} pictogram={strings.navShopPictogram} plan={day.plan.buckets.optional} actual={day.actual.optional} />
-          <BucketActual label={strings.bucketSavings} pictogram={strings.navSavingsPictogram} plan={day.plan.buckets.savings} actual={day.actual.savings} />
-        </Card>
+        <TourAnchor id="plan-buckets">
+          <Card>
+            <BucketActual label={strings.bucketMandatory} pictogram={strings.navPlanPictogram} plan={day.plan.buckets.mandatory} actual={day.actual.mandatory} />
+            <BucketActual label={strings.bucketOptional} pictogram={strings.navShopPictogram} plan={day.plan.buckets.optional} actual={day.actual.optional} />
+            <BucketActual label={strings.bucketSavings} pictogram={strings.navSavingsPictogram} plan={day.plan.buckets.savings} actual={day.actual.savings} />
+          </Card>
+        </TourAnchor>
       ) : (
-        <Card>
-          <AmountStepper
-            label={strings.bucketMandatory}
-            pictogram={strings.navPlanPictogram}
-            value={buckets.mandatory}
-            onChange={(mandatory) => persist({ ...buckets, mandatory })}
-          />
-          <AmountStepper
-            label={strings.bucketOptional}
-            pictogram={strings.navShopPictogram}
-            value={buckets.optional}
-            onChange={(optional) => persist({ ...buckets, optional })}
-          />
-          <AmountStepper
-            label={strings.bucketSavings}
-            pictogram={strings.navSavingsPictogram}
-            value={buckets.savings}
-            onChange={(savings) => persist({ ...buckets, savings })}
-          />
-        </Card>
+        <TourAnchor id="plan-buckets">
+          <Card>
+            <AmountStepper
+              label={strings.bucketMandatory}
+              pictogram={strings.navPlanPictogram}
+              value={buckets.mandatory}
+              onChange={(mandatory) => persist({ ...buckets, mandatory })}
+            />
+            <AmountStepper
+              label={strings.bucketOptional}
+              pictogram={strings.navShopPictogram}
+              value={buckets.optional}
+              onChange={(optional) => persist({ ...buckets, optional })}
+            />
+            <AmountStepper
+              label={strings.bucketSavings}
+              pictogram={strings.navSavingsPictogram}
+              value={buckets.savings}
+              onChange={(savings) => persist({ ...buckets, savings })}
+            />
+          </Card>
+        </TourAnchor>
       )}
       {confirmed ? null : <Text style={styles.body}>{strings.planRemainder(check.remainder)}</Text>}
       {confirmed || check.ok ? null : <Text style={styles.body}>{strings.planOverBudget}</Text>}

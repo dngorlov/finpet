@@ -475,6 +475,7 @@ export function seedReturningChild(ports: SessionPorts, input?: Partial<CreatePr
   ports.game.openDay(id);
   ports.meta.set(META_KEYS.activeProfileId, id);
   ports.meta.set(META_KEYS.onboardingDone, "1");
+  ports.meta.set(META_KEYS.howToPlayDone, "1");
   return id;
 }
 

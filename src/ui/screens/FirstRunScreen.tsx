@@ -3,7 +3,6 @@ import { BackHandler, StyleSheet, Text, TextInput, View, type Role } from "react
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { createLocalId } from "../../data/localId";
 import { BeadSlider } from "../components/BeadSlider";
-import { HowToPlay } from "../components/HowToPlay";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { TextButton } from "../components/TextButton";
@@ -22,7 +21,7 @@ import { strings } from "../strings";
 import { colors, minTarget, radius, spacing, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "FirstRun">;
-type Phase = "pet" | "name" | "rules";
+type Phase = "pet" | "name";
 type FirstRunDraft = {
   profileId: string;
   species: SpeciesKey;
@@ -48,7 +47,6 @@ export default function FirstRunScreen({ navigation }: Props) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (phase === "rules") return;
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
       if (phase === "pet") return false;
       setPhase("pet");
@@ -57,53 +55,33 @@ export default function FirstRunScreen({ navigation }: Props) {
     return () => subscription.remove();
   }, [phase]);
 
-  if (phase === "rules") {
-    const finish = () => {
-      if (saving) return;
-      const firstGoal = content.goals[0];
-      if (!firstGoal) {
-        setSaveError(strings.firstRunSaveFailed);
-        return;
-      }
-      setSaving(true);
-      setSaveError(null);
-      try {
-        firstRun.complete({
-          id: draft.profileId,
-          name: draft.petName.trim(),
-          petName: draft.petName.trim(),
-          species: draft.species,
-          color: draft.color,
-          accessory: draft.accessory,
-          contentVersion: content.contentVersion,
-          goals: content.goals.map((goal) => ({ key: goal.id, cost: goal.cost })),
-          activeGoalKey: firstGoal.id,
-        });
-        navigation.reset({ index: 0, routes: [{ name: "StartingBudget" }] });
-      } catch {
-        setSaveError(strings.firstRunSaveFailed);
-        setSaving(false);
-      }
-    };
-
-    return (
-      <HowToPlay
-        cards={content.hints}
-        pet={{
-          species: draft.species,
-          color: draft.color,
-          accessory: draft.accessory,
-          petName: draft.petName.trim(),
-        }}
-        replay={false}
-        error={saveError}
-        busy={saving}
-        onBack={() => setPhase("name")}
-        onFinish={finish}
-        onClose={finish}
-      />
-    );
-  }
+  const completeFirstRun = () => {
+    if (saving) return;
+    const firstGoal = content.goals[0];
+    if (!firstGoal) {
+      setSaveError(strings.firstRunSaveFailed);
+      return;
+    }
+    setSaving(true);
+    setSaveError(null);
+    try {
+      firstRun.complete({
+        id: draft.profileId,
+        name: draft.petName.trim(),
+        petName: draft.petName.trim(),
+        species: draft.species,
+        color: draft.color,
+        accessory: draft.accessory,
+        contentVersion: content.contentVersion,
+        goals: content.goals.map((goal) => ({ key: goal.id, cost: goal.cost })),
+        activeGoalKey: firstGoal.id,
+      });
+      navigation.reset({ index: 0, routes: [{ name: "StartingBudget" }] });
+    } catch {
+      setSaveError(strings.firstRunSaveFailed);
+      setSaving(false);
+    }
+  };
 
   if (phase === "pet") {
     return (
@@ -119,13 +97,12 @@ export default function FirstRunScreen({ navigation }: Props) {
     <NamePhase
       draft={draft}
       petNameTouched={petNameTouched}
+      error={saveError}
+      busy={saving}
       onChange={(change) => setDraft((current) => ({ ...current, ...change }))}
       onPetNameBlur={() => setPetNameTouched(true)}
       onBack={() => setPhase("pet")}
-      onNext={() => {
-        setSaveError(null);
-        setPhase("rules");
-      }}
+      onNext={completeFirstRun}
     />
   );
 }
@@ -185,6 +162,8 @@ function blankIfWhitespace(value: string): string {
 function NamePhase({
   draft,
   petNameTouched,
+  error,
+  busy,
   onChange,
   onPetNameBlur,
   onBack,
@@ -192,6 +171,8 @@ function NamePhase({
 }: {
   draft: FirstRunDraft;
   petNameTouched: boolean;
+  error: string | null;
+  busy: boolean;
   onChange: (change: Partial<Pick<FirstRunDraft, "petName">>) => void;
   onPetNameBlur: () => void;
   onBack: () => void;
@@ -203,7 +184,11 @@ function NamePhase({
       footer={
         <>
           <TextButton label={strings.back} onPress={onBack} />
-          <PrimaryButton label={strings.next} disabled={!isValidName(draft.petName)} onPress={onNext} />
+          <PrimaryButton
+            label={strings.next}
+            disabled={!isValidName(draft.petName) || busy}
+            onPress={onNext}
+          />
         </>
       }
     >
@@ -237,6 +222,11 @@ function NamePhase({
         />
         {petNameTouched && !isValidName(draft.petName) ? (
           <Text style={styles.validation}>{strings.nameValidation}</Text>
+        ) : null}
+        {error ? (
+          <Text role="alert" style={styles.validation}>
+            {error}
+          </Text>
         ) : null}
       </View>
     </Screen>
