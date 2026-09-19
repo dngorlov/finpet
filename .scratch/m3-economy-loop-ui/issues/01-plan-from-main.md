@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -27,3 +27,7 @@
 ## Done when
 
 A returning child can confirm a valid План from Main, cannot edit it afterwards, and Main reflects «План готов». `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+SessionGame now includes dayState, plan save/confirm, purchase, savings, goals, and journal reads. Fakes implement the full slice. Plan screen drafts with ± steppers, blocks over-budget confirm, locks after a confirmation sheet, and shows plan-vs-actual. Main navigates to Plan, switches to «План готов», and explains that Итоги дня are later. `npm test` 73, typecheck and lint clean.

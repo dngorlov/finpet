@@ -76,6 +76,39 @@ export interface SavingsView {
   activeGoal: { key: string; cost: number; remaining: number; achieved: boolean } | null;
 }
 
+export interface DayState {
+  dayId: string;
+  n: number;
+  plan: {
+    status: "none" | "draft" | "confirmed";
+    buckets: PlanBuckets;
+  };
+  available: number;
+  actual: PlanBuckets;
+}
+
+export interface JournalEntry {
+  id: string;
+  dayN: number;
+  createdAt: number;
+  amount: number;
+  kind: string;
+  labelKey: string;
+  itemId: string | null;
+  goalId: string | null;
+}
+
+export interface GoalOption {
+  key: string;
+  cost: number;
+  status: "active" | "achieved";
+  isActive: boolean;
+}
+
+export type TransferResult =
+  | { status: "ok"; achieved: boolean }
+  | { status: "blocked"; missing: number };
+
 /**
  * Intent-level persistence seam: every coin movement writes its transaction
  * (and purchase/meter rows) atomically and keeps balance == Σ transactions.
@@ -456,7 +489,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       });
     },
 
-    transferToSavings(profileId: string, dayId: string, amount: number) {
+    transferToSavings(profileId: string, dayId: string, amount: number): TransferResult {
       return db.transaction((tx) => {
         requireOpenDay(tx, profileId, dayId);
         if (amount <= 0) throw new Error("Сумма должна быть больше нуля");
@@ -551,6 +584,77 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           .where(eq(tables.goals.id, goal.id))
           .run();
       });
+    },
+
+    dayState(profileId: string): DayState {
+      const open = openDayRow(db, profileId);
+      if (!open) throw new Error("Нет открытого игрового дня");
+      const plan = planForDay(db, open.id);
+      const bought = db.select().from(tables.purchases).where(eq(tables.purchases.dayId, open.id)).all();
+      const deposits = db
+        .select()
+        .from(tables.savingsTransfers)
+        .where(and(eq(tables.savingsTransfers.dayId, open.id), eq(tables.savingsTransfers.kind, "in")))
+        .all();
+      return {
+        dayId: open.id,
+        n: open.n,
+        plan: {
+          status: plan?.status ?? "none",
+          buckets: plan
+            ? { mandatory: plan.mandatory, optional: plan.optional, savings: plan.savings }
+            : { mandatory: 0, optional: 0, savings: 0 },
+        },
+        available: profile(db, profileId).balance,
+        actual: {
+          mandatory: bought.filter((row) => row.kind === "mandatory").reduce((sum, row) => sum + row.price, 0),
+          optional: bought.filter((row) => row.kind === "optional").reduce((sum, row) => sum + row.price, 0),
+          savings: deposits.reduce((sum, row) => sum + row.amount, 0),
+        },
+      };
+    },
+
+    listJournal(profileId: string): JournalEntry[] {
+      profile(db, profileId);
+      const txs = db
+        .select()
+        .from(tables.transactions)
+        .where(eq(tables.transactions.profileId, profileId))
+        .orderBy(desc(tables.transactions.createdAt))
+        .all();
+      const days = db.select().from(tables.days).where(eq(tables.days.profileId, profileId)).all();
+      const nById = new Map(days.map((day) => [day.id, day.n]));
+      return txs.map((tx) => ({
+        id: tx.id,
+        dayN: tx.dayId ? (nById.get(tx.dayId) ?? 0) : 0,
+        createdAt: tx.createdAt,
+        amount: tx.amount,
+        kind: tx.kind,
+        labelKey: tx.labelKey,
+        itemId: tx.itemId,
+        goalId: tx.goalId,
+      }));
+    },
+
+    listGoals(profileId: string): GoalOption[] {
+      profile(db, profileId);
+      return db
+        .select()
+        .from(tables.goals)
+        .where(eq(tables.goals.profileId, profileId))
+        .all()
+        .map((row) => ({
+          key: row.key,
+          cost: row.cost,
+          status: row.status,
+          isActive: row.isActive === 1,
+        }));
+    },
+
+    purchasedItemIds(profileId: string, dayId: string): string[] {
+      requireOpenDay(db, profileId, dayId);
+      const bought = db.select().from(tables.purchases).where(eq(tables.purchases.dayId, dayId)).all();
+      return [...new Set(bought.map((row) => row.itemId))];
     },
 
     savingsState(profileId: string): SavingsView {

@@ -456,3 +456,52 @@ describe("Удалить профиль", () => {
     expect(game.getProfile(demoId)).toMatchObject({ name: "Демо", isDemo: true, petName: "Демо" });
   });
 });
+
+describe("day and journal reads", () => {
+  it("returns dayState, journal, goals, and today's purchased ids", () => {
+    const { game, profileId } = seed();
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+
+    expect(game.dayState(profileId)).toMatchObject({
+      dayId: opened.dayId,
+      n: 1,
+      plan: { status: "none", buckets: { mandatory: 0, optional: 0, savings: 0 } },
+      available: 110,
+      actual: { mandatory: 0, optional: 0, savings: 0 },
+    });
+
+    game.saveDraftPlan(profileId, opened.dayId, { mandatory: 12, optional: 5, savings: 10 });
+    expect(game.confirmPlan(profileId, opened.dayId)).toEqual({ ok: true });
+    expect(game.purchase(profileId, opened.dayId, lunch)).toEqual({ status: "ok" });
+    expect(game.transferToSavings(profileId, opened.dayId, 15)).toEqual({ status: "ok", achieved: false });
+
+    expect(game.dayState(profileId)).toMatchObject({
+      plan: { status: "confirmed", buckets: { mandatory: 12, optional: 5, savings: 10 } },
+      available: 83,
+      actual: { mandatory: 12, optional: 0, savings: 15 },
+    });
+    expect(game.purchasedItemIds(profileId, opened.dayId)).toEqual(["lunch"]);
+    expect(game.listGoals(profileId)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: "skateboard", isActive: true, status: "active" }),
+        expect.objectContaining({ key: "telescope", isActive: false }),
+      ]),
+    );
+
+    const journal = game.listJournal(profileId);
+    expect(journal).toHaveLength(4);
+    expect(journal.map((row) => row.labelKey)).toEqual(
+      expect.arrayContaining(["savings_in", "purchase:lunch", "allowance", "starting_grant"]),
+    );
+    expect(journal.find((row) => row.labelKey === "savings_in")).toMatchObject({
+      dayN: 1,
+      amount: -15,
+      kind: "savings_in",
+    });
+    expect(journal.find((row) => row.labelKey === "starting_grant")).toMatchObject({
+      dayN: 0,
+      amount: 100,
+    });
+  });
+});

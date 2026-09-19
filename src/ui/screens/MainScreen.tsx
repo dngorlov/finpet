@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { STAGE_NAMES } from "../../core/stages";
 import { unlockedTasks } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
-import type { ProfileView, SavingsView } from "../../data/repositories/gameRepository";
+import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
 import { Badge } from "../components/Badge";
 import { Card } from "../components/Card";
 import { MeterBar } from "../components/MeterBar";
@@ -24,6 +24,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "Main">;
 type HubModel = {
   profile: ProfileView;
   savings: SavingsView;
+  day: DayState;
   allowanceCredited: boolean;
   taskTitle: string | null;
   goalName: string;
@@ -37,7 +38,7 @@ const HUB_PET_SIZE = 200;
 export default function MainScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
   const [hub, setHub] = useState<HubModel | null>(null);
-  const [planPrompt, setPlanPrompt] = useState(false);
+  const [hubMessage, setHubMessage] = useState<"needPlan" | "dayLater" | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -46,7 +47,8 @@ export default function MainScreen({ navigation }: Props) {
       const opened = game.openDay(profileId);
       const profile = game.getProfile(profileId);
       const savings = game.savingsState(profileId);
-      const dayN = opened.status === "opened" ? opened.n : 1;
+      const day = game.dayState(profileId);
+      const dayN = opened.status === "opened" ? opened.n : day.n;
       const task = unlockedTasks(content.tasks, dayN, profile.isDemo)[0];
       const active = savings.activeGoal;
       const goal = content.goals.find((g) => g.id === active?.key);
@@ -55,6 +57,7 @@ export default function MainScreen({ navigation }: Props) {
       setHub({
         profile,
         savings,
+        day,
         allowanceCredited: opened.status === "opened" && opened.allowanceCredited,
         taskTitle: task?.title ?? null,
         goalName: goal?.name ?? "",
@@ -62,6 +65,7 @@ export default function MainScreen({ navigation }: Props) {
         cost,
         remaining,
       });
+      setHubMessage(null);
     }, [content, game, meta]),
   );
 
@@ -116,9 +120,9 @@ export default function MainScreen({ navigation }: Props) {
         <NavTile
           pictogram={strings.navPlanPictogram}
           word={strings.navPlan}
-          highlighted
-          hint={strings.composePlanHint}
-          onPress={() => goStub("plan")}
+          highlighted={hub.day.plan.status !== "confirmed"}
+          hint={hub.day.plan.status === "confirmed" ? strings.planReady : strings.composePlanHint}
+          onPress={() => navigation.navigate("Plan")}
         />
         <NavTile
           pictogram={strings.navShopPictogram}
@@ -146,8 +150,14 @@ export default function MainScreen({ navigation }: Props) {
           onPress={() => goStub("adult")}
         />
       </View>
-      {planPrompt ? <Text style={styles.body}>{strings.finishDayNeedPlan}</Text> : null}
-      <PrimaryButton label={strings.finishDay} onPress={() => setPlanPrompt(true)} />
+      {hubMessage === "needPlan" ? <Text style={styles.body}>{strings.finishDayNeedPlan}</Text> : null}
+      {hubMessage === "dayLater" ? <Text style={styles.body}>{strings.finishDayLater}</Text> : null}
+      <PrimaryButton
+        label={strings.finishDay}
+        onPress={() =>
+          setHubMessage(hub.day.plan.status === "confirmed" ? "dayLater" : "needPlan")
+        }
+      />
     </Screen>
   );
 }

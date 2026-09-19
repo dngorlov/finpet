@@ -15,6 +15,7 @@ Seams (approved): navigation-root RNTL via fake `SessionPorts`; device AC for Ap
 - `closeDay` is not called. «Закончить день» after confirm explains that Итоги дня come in M4.
 - FeedbackCard copy lives in `strings`, not a new content file.
 - Пособие sheets when credited; Стартовый бюджет does not get a second sheet.
+- 01 Plan from Main: SessionGame + `dayState`/`listJournal`/`listGoals`/`purchasedItemIds`; Plan screen; Main «План готов». See `.scratch/m3-economy-loop-ui/issues/01-plan-from-main.md`.
 
 ## Fog
 
