@@ -1,6 +1,6 @@
 # 06 — Migrate «Как играть» onto the kit
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 Blocked by: 02, 03
 
@@ -25,3 +25,7 @@ Blocked by: 02, 03
 ## Done when
 
 Local bubble/text-action styles are gone. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+`HowToPlay` now uses kit `Screen` (pinned footer), `SpeechBubble` (tail already points up), `PrimaryButton`, and `TextButton`. The pet stays centered above the bubble with the name visible; `PetView` remains `accessibilityHidden` and TalkBack still uses `strings.petSays`. Footer actions are «Назад» as `TextButton`, the existing primary («Дальше» / «Играть!» / replay «Готово»), and quiet «Пропустить» / replay «Закрыть». Step count, card bodies, skip/finish callbacks, and `HowToPlayScreen` as the thin replay host are unchanged. `npm test` (70) and `npm run typecheck` pass.
