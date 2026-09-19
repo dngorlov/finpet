@@ -3,7 +3,6 @@ import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { STAGE_NAMES } from "../../core/stages";
-import { unlockedTasks } from "../../core/tasks";
 import { ECONOMY } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
@@ -19,6 +18,7 @@ import type { RootStackParamList, StubDestination } from "../navigation/types";
 import { PetView } from "../pet/PetView";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
+import { preferredHubTask } from "../tasks/model";
 import { colors, spacing, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Main">;
@@ -29,6 +29,7 @@ type HubModel = {
   day: DayState;
   allowanceCredited: boolean;
   taskTitle: string | null;
+  taskId: string | null;
   goalName: string;
   accumulated: number;
   cost: number;
@@ -52,7 +53,7 @@ export default function MainScreen({ navigation }: Props) {
       const savings = game.savingsState(profileId);
       const day = game.dayState(profileId);
       const dayN = opened.status === "opened" ? opened.n : day.n;
-      const task = unlockedTasks(content.tasks, dayN, profile.isDemo)[0];
+      const task = preferredHubTask(content.tasks, dayN, profile.isDemo, game.listTaskProgress(profileId));
       const active = savings.activeGoal;
       const goal = content.goals.find((g) => g.id === active?.key);
       const cost = active?.cost ?? 0;
@@ -63,6 +64,7 @@ export default function MainScreen({ navigation }: Props) {
         day,
         allowanceCredited: opened.status === "opened" && opened.allowanceCredited,
         taskTitle: task?.title ?? null,
+        taskId: task?.id ?? null,
         goalName: goal?.name ?? "",
         accumulated: cost - remaining,
         cost,
@@ -123,7 +125,10 @@ export default function MainScreen({ navigation }: Props) {
       {hub.taskTitle ? (
         <Card>
           <Text style={styles.cardTitle}>{hub.taskTitle}</Text>
-          <PrimaryButton label={strings.playTask} onPress={() => goStub("tasks")} />
+          <PrimaryButton
+            label={strings.playTask}
+            onPress={() => hub.taskId && navigation.navigate("TaskRun", { taskId: hub.taskId })}
+          />
         </Card>
       ) : null}
       <View style={styles.grid}>
@@ -147,7 +152,7 @@ export default function MainScreen({ navigation }: Props) {
         <NavTile
           pictogram={strings.navTasksPictogram}
           word={strings.navTasks}
-          onPress={() => goStub("tasks")}
+          onPress={() => navigation.navigate("TaskList")}
         />
         <NavTile
           pictogram={strings.navProgressPictogram}

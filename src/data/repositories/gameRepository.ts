@@ -893,14 +893,13 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     claimTaskReward(profileId: string, dayId: string, taskId: string, correct: boolean): number {
       return db.transaction((tx) => {
         requireOpenDay(tx, profileId, dayId);
-        if (!correct) return 0;
         const existing = tx
           .select()
           .from(tables.taskProgress)
           .where(and(eq(tables.taskProgress.profileId, profileId), eq(tables.taskProgress.taskKey, taskId)))
           .get();
         const alreadyPaid = existing?.rewardPaid === 1;
-        const reward = taskRewardDue(alreadyPaid);
+        const reward = correct ? taskRewardDue(alreadyPaid) : 0;
         if (reward > 0) {
           credit(tx, profileId, dayId, reward, "task_reward", `task_reward:${taskId}`);
         }

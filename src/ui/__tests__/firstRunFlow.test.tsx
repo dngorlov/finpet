@@ -144,11 +144,11 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByText("Сначала составь план дня")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Задания" }));
-    expect(screen.getByText(/скоро/i)).toBeOnTheScreen();
+    expect(screen.getByText("Бюджет")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
     await user.press(screen.getByRole("button", { name: "Играть" }));
-    expect(screen.getByText(/скоро/i)).toBeOnTheScreen();
+    expect(screen.getByText("С чего начнёшь?")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
     await user.press(screen.getByRole("button", { name: "Прогресс" }));

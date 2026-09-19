@@ -1,4 +1,4 @@
-export type StubDestination = "plan" | "shop" | "savings" | "tasks" | "adult";
+export type StubDestination = "plan" | "shop" | "savings" | "adult";
 
 export type RootStackParamList = {
   FirstRun: undefined;
@@ -10,5 +10,8 @@ export type RootStackParamList = {
   Savings: undefined;
   Progress: undefined;
   Settings: undefined;
+  TaskList: undefined;
+  TaskRun: { taskId: string };
+  TaskResult: { taskId: string; reward: number; sceneCoins: number };
   Stub: { destination: StubDestination };
 };

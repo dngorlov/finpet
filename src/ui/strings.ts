@@ -63,6 +63,28 @@ export const strings = {
   feedbackNextSavingsOut: "Что дальше: подумай, нужна ли трата сегодня.",
   feedbackCauseGoal: "Потому что копилка дошла до цели.",
   feedbackNextGoal: "Что дальше: выбери новую цель, если хочешь копить снова.",
+  feedbackCauseTaskReward: "Потому что ты выполнил задание.",
+  feedbackNextTaskReward: "Что дальше: выбери ещё задание или вернись в магазин.",
+  feedbackCauseTaskScene: "Потому что в задании нашлись монеты.",
+  feedbackNextTaskScene: "Что дальше: проверь сдачу и иди дальше.",
+
+  taskTopicBudget: "Бюджет",
+  taskTopicSavings: "Копилки",
+  taskTopicPayments: "Платежи",
+  taskTopicBudgetIcon: "📋",
+  taskTopicSavingsIcon: "🐷",
+  taskTopicPaymentsIcon: "🪙",
+  taskLockedTomorrow: "Откроется: завтра",
+  taskRewardBadge: "+10",
+  taskRewardCoins: "+10 монет",
+  taskCompleted: "Готово",
+  taskBackToList: "В список заданий",
+  taskSpawned: "Новое задание появилось в списке!",
+  verdictLabel: (verdict: "good" | "warn" | "bad") => {
+    if (verdict === "good") return "✅ Верно";
+    if (verdict === "warn") return "🤔 Есть цена";
+    return "⚠️ Попробуй ещё";
+  },
 
   shopMandatoryTab: "Обязательное",
   shopOptionalTab: "Желаемое",
@@ -192,6 +214,5 @@ export const strings = {
   stubPlan: "Скоро: план дня. Пока вернись на главный экран.",
   stubShop: "Скоро: магазин. Пока вернись на главный экран.",
   stubSavings: "Скоро: копилка. Пока вернись на главный экран.",
-  stubTasks: "Скоро: задания. Пока вернись на главный экран.",
   stubAdult: "Скоро: взрослый раздел. Пока вернись на главный экран.",
 } as const;
