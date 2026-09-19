@@ -66,7 +66,9 @@ export const strings = {
   startingBudgetBody: "Это твой бюджет. Планируй, копи, заботься о питомце",
 
   care: "Забота",
+  careIcon: "🐾",
   mood: "Настроение",
+  moodIcon: "☀",
   meterLine: (label: string, value: number) => `${label} ${value}`,
   balanceWord: "Баланс",
   savingsWord: "Копилка",

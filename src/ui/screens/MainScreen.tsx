@@ -98,8 +98,8 @@ export default function MainScreen({ navigation }: Props) {
         />
       </View>
       <TextButton label={strings.settings} onPress={() => navigation.navigate("Settings")} />
-      <MeterBar icon="♡" label={strings.care} value={hub.profile.care} />
-      <MeterBar icon="☀" label={strings.mood} value={hub.profile.mood} />
+      <MeterBar icon={strings.careIcon} label={strings.care} value={hub.profile.care} />
+      <MeterBar icon={strings.moodIcon} label={strings.mood} value={hub.profile.mood} />
       {hub.allowanceCredited ? <Text style={styles.body}>{strings.allowanceRibbon}</Text> : null}
       <Card>
         <Text style={styles.cardTitle}>{hub.goalName}</Text>
@@ -116,7 +116,7 @@ export default function MainScreen({ navigation }: Props) {
         <NavTile
           pictogram={strings.navPlanPictogram}
           word={strings.navPlan}
-          needed
+          highlighted
           hint={strings.composePlanHint}
           onPress={() => goStub("plan")}
         />

@@ -43,6 +43,9 @@ function expectMainChrome() {
   for (const name of hubDestinations) {
     expect(screen.getByRole("button", { name })).toBeOnTheScreen();
   }
+  const planTile = screen.getByRole("button", { name: "План" });
+  expect(planTile).toBeSelected();
+  expect(planTile).toHaveAccessibleName("План");
   expect(screen.getByText("Составь план дня")).toBeOnTheScreen();
   expect(screen.getByRole("button", { name: "Настройки" })).toBeOnTheScreen();
 }

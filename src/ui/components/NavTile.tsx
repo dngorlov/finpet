@@ -8,27 +8,29 @@ export function NavTile({
   pictogram,
   word,
   onPress,
-  needed,
+  highlighted,
   hint,
 }: {
   pictogram: string;
   word: string;
   onPress: () => void;
-  needed?: boolean;
+  highlighted?: boolean;
   hint?: string;
 }) {
   return (
     <Pressable
       role="button"
       aria-label={word}
+      aria-selected={highlighted}
+      accessibilityHint={hint}
       onPress={onPress}
       style={({ pressed }) => [
         styles.shell,
-        needed ? styles.shellNeeded : null,
+        highlighted ? styles.shellHighlighted : null,
         pressed ? styles.shellPressed : null,
       ]}
     >
-      <View style={[styles.face, needed ? styles.faceNeeded : null]}>
+      <View style={[styles.face, highlighted ? styles.faceHighlighted : null]}>
         <Text
           aria-hidden
           accessibilityElementsHidden
@@ -38,7 +40,7 @@ export function NavTile({
           {pictogram}
         </Text>
         <Text style={styles.word}>{word}</Text>
-        {needed ? (
+        {highlighted ? (
           <Text
             aria-hidden
             accessibilityElementsHidden
@@ -63,7 +65,7 @@ const styles = StyleSheet.create({
     maxWidth: "48%",
     paddingBottom: EDGE,
   },
-  shellNeeded: {
+  shellHighlighted: {
     backgroundColor: colors.accent,
   },
   shellPressed: {
@@ -79,7 +81,7 @@ const styles = StyleSheet.create({
     minHeight: minTarget,
     padding: spacing.s,
   },
-  faceNeeded: {
+  faceHighlighted: {
     backgroundColor: colors.highlight,
   },
   pictogram: {
