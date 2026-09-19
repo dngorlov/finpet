@@ -1,6 +1,6 @@
 # 07 — Migrate Main hub onto the kit
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 Blocked by: 02, 03, 04
 
@@ -32,3 +32,7 @@ Do not change hub data loading, `openDay`, or stub navigation.
 ## Done when
 
 Local tile/card copies are gone. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Main is one scrolling `Screen` (no pinned footer): Badge strip (Этап / Баланс / Копилка), large centered `PetView` (`size={200}`), labelled `TextButton` «Настройки», MeterBars, optional Пособие ribbon, Цель/Задание `Card`s, 2×3 kit `NavTile`s (План `needed` + hint), raised «Закончить день». Local tile/card styles removed. Hub loading and stub navigation unchanged. `npm test` (70) and `npm run typecheck` pass.
