@@ -53,7 +53,7 @@ describe("Итоги дня", () => {
       expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
 
       await user.press(screen.getByRole("button", { name: "Задания" }));
-      expect(screen.getByText(/скоро/i)).toBeOnTheScreen();
+      expect(screen.getByText("Бюджет")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
       await user.press(screen.getByRole("button", { name: "Прогресс" }));

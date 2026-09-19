@@ -104,8 +104,8 @@ export default function ProgressScreen({ navigation }: Props) {
             <Card>
               <Text style={styles.section}>{strings.resultsLastDay(lastClosed.n)}</Text>
               <Text style={styles.body}>{strings.resultsScore(lastClosed.score)}</Text>
-              <FactLine icon={strings.careIcon} label={strings.scoreMandatory(lastClosed.facts.mandatoryCovered)} />
-              <FactLine icon={strings.navPlanPictogram} label={strings.scoreWithinPlan(lastClosed.facts.withinPlan)} />
+              <FactLine icon={strings.careIcon} label={strings.resultsScoreMandatory(lastClosed.facts.mandatoryCovered)} />
+              <FactLine icon={strings.navPlanPictogram} label={strings.resultsScoreWithinPlan(lastClosed.facts.withinPlan)} />
               <FactLine icon={strings.savingsIcon} label={strings.scoreDeposited(lastClosed.facts.deposited)} />
               <BucketLine
                 pictogram={strings.navPlanPictogram}
