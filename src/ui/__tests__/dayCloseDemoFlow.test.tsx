@@ -6,30 +6,12 @@ import {
   createFakePorts,
   seedReturningChild,
 } from "../testSupport/fakePorts";
-
-const sixUnlocked = [
-  "Первый план",
-  "Сломался рюкзак",
-  "Копилка мечты",
-  "Большая распродажа",
-  "Две цены",
-  "Чек",
-] as const;
+import { confirmTinyPlan, sixUnlocked } from "../testSupport/flowHelpers";
 
 async function renderApp(ports = createFakePorts()) {
   const user = userEvent.setup();
   await render(<FinPetApp ports={ports} />);
   return { user, ports };
-}
-
-async function confirmTinyPlan(user: ReturnType<typeof userEvent.setup>) {
-  await user.press(screen.getByRole("button", { name: "План" }));
-  await user.press(screen.getByRole("button", { name: "Обязательные, больше" }));
-  await user.press(screen.getByRole("button", { name: "Желаемые, больше" }));
-  await user.press(screen.getByRole("button", { name: "Копилка, больше" }));
-  await user.press(screen.getByRole("button", { name: "Подтвердить план" }));
-  await user.press(screen.getByRole("button", { name: "Подтвердить план" }));
-  await user.press(screen.getByRole("button", { name: "Назад" }));
 }
 
 async function closeDemoDayAndAdvance(
@@ -64,7 +46,7 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       expect(screen.getByText("Обязательные +0")).toBeOnTheScreen();
       expect(screen.getByText("По плану +1")).toBeOnTheScreen();
       expect(screen.getByText("Копилка +0")).toBeOnTheScreen();
-      expect(screen.getByText("Забота -15: обязательное не купили.")).toBeOnTheScreen();
+      expect(screen.getByText("Забота -15: пропущены обязательные расходы")).toBeOnTheScreen();
       expect(screen.getByText("Настроение без изменений")).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Ждём завтра!" })).toBeOnTheScreen();
 
@@ -94,9 +76,13 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       await user.press(screen.getByRole("button", { name: "Понятно" }));
 
       expect(screen.getByText("Демо: дни идут подряд")).toBeOnTheScreen();
+      expect(screen.getByText("Первый план")).toBeOnTheScreen();
+      expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Задания" }));
       for (const title of sixUnlocked) {
         expect(screen.getByText(title)).toBeOnTheScreen();
       }
+      await user.press(screen.getByRole("button", { name: "Назад" }));
 
       for (let n = 0; n < 5; n += 1) {
         await closeDemoDayAndAdvance(user, ports);
@@ -114,14 +100,20 @@ describe("Итоги дня + Демо-режим combined loop", () => {
 
       await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
       await user.press(screen.getByRole("button", { name: "Сбросить демо" }));
+      expect(screen.getByText("Демо вернётся к первому игровому дню")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Готово" }));
       await user.press(screen.getByRole("button", { name: "Понятно" }));
 
       expect(screen.getByText("Демо: дни идут подряд")).toBeOnTheScreen();
       expect(screen.getByText("Этап Новичок")).toBeOnTheScreen();
       expect(screen.getByText("Баланс 110")).toBeOnTheScreen();
+      expect(screen.getByText("Первый план")).toBeOnTheScreen();
+      expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Задания" }));
       for (const title of sixUnlocked) {
         expect(screen.getByText(title)).toBeOnTheScreen();
       }
+      await user.press(screen.getByRole("button", { name: "Назад" }));
 
       await user.press(screen.getByRole("button", { name: "Прогресс" }));
       expect(screen.getByText("Стартовый бюджет +100")).toBeOnTheScreen();

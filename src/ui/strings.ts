@@ -46,7 +46,6 @@ export const strings = {
   composePlanHint: "Составь план дня",
   planReady: "План готов",
   finishDayNeedPlan: "Сначала составь план дня",
-  finishDayLater: "Итоги дня появятся позже. Пока играй дальше.",
   daySummaryTitle: "Итоги дня",
   waitTomorrow: "Ждём завтра!",
   nextDay: "Следующий день",
@@ -59,7 +58,6 @@ export const strings = {
   scoreYesIcon: "✅",
   scoreNoIcon: "⚠️",
   scoreFact: (word: string, points: number) => `${word} ${points > 0 ? `+${points}` : "+0"}`,
-  meterReasonCareSkip: "Забота -15: обязательное не купили.",
   meterReasonMoodOverspend: "Настроение -5: желаемое сверх плана.",
   meterReasonUnchanged: (label: string) => `${label} без изменений`,
   nextDayPlanNeeds: "Завтра сначала запланируй обязательное.",
@@ -243,6 +241,7 @@ export const strings = {
   demoMode: "Демо-режим",
   demoName: "Демо",
   demoConfirmBody: "Демо создаёт отдельный тестовый профиль",
+  demoResetConfirmBody: "Демо вернётся к первому игровому дню",
   demoBanner: "Демо: дни идут подряд",
   demoReset: "Сбросить демо",
 

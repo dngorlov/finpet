@@ -80,4 +80,22 @@ describe("fake SessionGame M4 reads", () => {
     });
     expect(demoPorts.game.dayState(demoId).open).toBe(true);
   });
+
+  it("lets task step and reward write against the last closed day while waiting", () => {
+    const ports = createFakePorts();
+    const profileId = seedReturningChild(ports);
+    const closed = closeScoredDay(ports, profileId);
+    expect(ports.game.dayState(profileId)).toMatchObject({ open: false, dayId: closed.dayId });
+
+    expect(() => ports.game.purchase(profileId, closed.dayId, lunch)).toThrow();
+
+    ports.game.applyTaskStep(profileId, closed.dayId, {
+      next: "exit",
+      verdict: "good",
+      explanation: "replay",
+      effects: [],
+      spawnTask: "budget_fix_backpack",
+    });
+    expect(ports.game.claimTaskReward(profileId, closed.dayId, "budget_first_plan", true)).toBe(10);
+  });
 });

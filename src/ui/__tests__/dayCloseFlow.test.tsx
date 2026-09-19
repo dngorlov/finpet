@@ -2,6 +2,7 @@ import { render, screen, userEvent } from "@testing-library/react-native";
 import { loadContent } from "../../data/content";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
+import { confirmTinyPlan } from "../testSupport/flowHelpers";
 
 const content = loadContent();
 
@@ -9,16 +10,6 @@ async function renderApp(ports = createFakePorts()) {
   const user = userEvent.setup();
   await render(<FinPetApp ports={ports} />);
   return { user, ports };
-}
-
-async function confirmTinyPlan(user: ReturnType<typeof userEvent.setup>) {
-  await user.press(screen.getByRole("button", { name: "План" }));
-  await user.press(screen.getByRole("button", { name: "Обязательные, больше" }));
-  await user.press(screen.getByRole("button", { name: "Желаемые, больше" }));
-  await user.press(screen.getByRole("button", { name: "Копилка, больше" }));
-  await user.press(screen.getByRole("button", { name: "Подтвердить план" }));
-  await user.press(screen.getByRole("button", { name: "Подтвердить план" }));
-  await user.press(screen.getByRole("button", { name: "Назад" }));
 }
 
 describe("Итоги дня", () => {
@@ -37,7 +28,7 @@ describe("Итоги дня", () => {
       expect(screen.getByText("Обязательные +0")).toBeOnTheScreen();
       expect(screen.getByText("По плану +1")).toBeOnTheScreen();
       expect(screen.getByText("Копилка +0")).toBeOnTheScreen();
-      expect(screen.getByText("Забота -15: обязательное не купили.")).toBeOnTheScreen();
+      expect(screen.getByText("Забота -15: пропущены обязательные расходы")).toBeOnTheScreen();
       expect(screen.getByText("Настроение без изменений")).toBeOnTheScreen();
       expect(screen.getByText("Завтра сначала запланируй обязательное.")).toBeOnTheScreen();
       expect(screen.queryByText(/доверяет/)).not.toBeOnTheScreen();
@@ -53,6 +44,11 @@ describe("Итоги дня", () => {
       expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
 
       await user.press(screen.getByRole("button", { name: "Задания" }));
+      expect(screen.getByText("Бюджет")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Первый план" }));
+      await user.press(screen.getByRole("button", { name: "Купить обед (10)" }));
+      expect(screen.getByRole("status", { name: "✅ Верно" })).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Назад" }));
       expect(screen.getByText("Бюджет")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
 

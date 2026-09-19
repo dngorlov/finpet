@@ -382,6 +382,31 @@ describe("task reward", () => {
       .get() as { status: string };
     expect(spawned.status).toBe("available");
   });
+
+  it("lets task step and reward write against the last closed day while waiting", () => {
+    const { game, profileId } = seed();
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+    game.closeDay(profileId, tinyCatalog);
+    expect(game.dayState(profileId)).toMatchObject({ open: false, dayId: opened.dayId });
+
+    expect(() => game.purchase(profileId, opened.dayId, lunch)).toThrow(/уже закрыт/);
+
+    game.applyTaskStep(profileId, opened.dayId, {
+      next: "exit",
+      verdict: "good",
+      explanation: "replay",
+      effects: [],
+      spawnTask: "budget_fix_backpack",
+    });
+    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", true)).toBe(10);
+    expect(game.listTaskProgress(profileId)).toEqual(
+      expect.arrayContaining([
+        { taskKey: "budget_fix_backpack", status: "available", rewardPaid: false },
+        { taskKey: "budget_first_plan", status: "completed", rewardPaid: true },
+      ]),
+    );
+  });
 });
 
 describe("schema roundtrip", () => {

@@ -65,7 +65,7 @@ export type CloseDayResult = DaySummaryView;
 
 export interface TaskProgressView {
   taskKey: string;
-  status: string;
+  status: "available" | "completed";
   rewardPaid: boolean;
 }
 
@@ -270,6 +270,16 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     const day = conn.select().from(tables.days).where(eq(tables.days.id, dayId)).get();
     if (!day || day.profileId !== profileId) throw new Error("Игровой день не найден");
     if (day.closedAt !== null) throw new Error("Игровой день уже закрыт");
+    return day;
+  }
+
+  function requireDayForTask(conn: GameDb, profileId: string, dayId: string) {
+    const day = conn.select().from(tables.days).where(eq(tables.days.id, dayId)).get();
+    if (!day || day.profileId !== profileId) throw new Error("Игровой день не найден");
+    if (day.closedAt === null) return day;
+    if (openDayRow(conn, profileId)) throw new Error("Игровой день уже закрыт");
+    const last = latestClosedDay(conn, profileId);
+    if (!last || last.id !== dayId) throw new Error("Игровой день уже закрыт");
     return day;
   }
 
@@ -720,7 +730,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         .all()
         .map((row) => ({
           taskKey: row.taskKey,
-          status: row.status,
+          status: row.status === "completed" ? ("completed" as const) : ("available" as const),
           rewardPaid: row.rewardPaid === 1,
         }));
     },
@@ -854,7 +864,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
 
     applyTaskStep(profileId: string, dayId: string, result: TaskStepResult): void {
       db.transaction((tx) => {
-        requireOpenDay(tx, profileId, dayId);
+        requireDayForTask(tx, profileId, dayId);
         for (const effect of result.effects) {
           if (effect.meter && effect.delta) {
             applyMeter(tx, profileId, dayId, effect.meter, effect.delta, "task");
@@ -892,7 +902,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
 
     claimTaskReward(profileId: string, dayId: string, taskId: string, correct: boolean): number {
       return db.transaction((tx) => {
-        requireOpenDay(tx, profileId, dayId);
+        requireDayForTask(tx, profileId, dayId);
         const existing = tx
           .select()
           .from(tables.taskProgress)

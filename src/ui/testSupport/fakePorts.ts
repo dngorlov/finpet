@@ -70,6 +70,10 @@ function requireOpen(row: StoredProfile, dayId: string): void {
   if (!row.dayOpen || row.dayId !== dayId) throw new Error("Игровой день не найден");
 }
 
+function requireDayForTask(row: StoredProfile, dayId: string): void {
+  if (row.dayId !== dayId) throw new Error("Игровой день не найден");
+}
+
 function appendJournal(
   row: StoredProfile,
   input: {
@@ -362,7 +366,7 @@ export function createFakePorts(): SessionPorts {
       },
       applyTaskStep(profileId, dayId, result: TaskStepResult) {
         const row = requireRow(profiles, profileId);
-        requireOpen(row, dayId);
+        requireDayForTask(row, dayId);
         for (const effect of result.effects) {
           if (effect.meter && effect.delta) {
             if (effect.meter === "care") {
@@ -386,7 +390,7 @@ export function createFakePorts(): SessionPorts {
       },
       claimTaskReward(profileId, dayId, taskId, correct) {
         const row = requireRow(profiles, profileId);
-        requireOpen(row, dayId);
+        requireDayForTask(row, dayId);
         const existing = row.tasks.find((task) => task.taskKey === taskId);
         const alreadyPaid = existing?.rewardPaid === true;
         const reward = correct ? taskRewardDue(alreadyPaid) : 0;

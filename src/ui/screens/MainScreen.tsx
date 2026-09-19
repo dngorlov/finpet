@@ -3,7 +3,6 @@ import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { STAGE_NAMES } from "../../core/stages";
-import { unlockedTasks } from "../../core/tasks";
 import { ECONOMY } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
@@ -29,7 +28,7 @@ type HubModel = {
   savings: SavingsView;
   day: DayState;
   allowanceCredited: boolean;
-  taskTitles: string[];
+  taskTitle: string | null;
   taskId: string | null;
   goalName: string;
   accumulated: number;
@@ -54,7 +53,6 @@ export default function MainScreen({ navigation }: Props) {
       const savings = game.savingsState(profileId);
       const day = game.dayState(profileId);
       const dayN = opened.status === "opened" ? opened.n : day.n;
-      const unlocked = unlockedTasks(content.tasks, dayN, profile.isDemo);
       const task = preferredHubTask(content.tasks, dayN, profile.isDemo, game.listTaskProgress(profileId));
       const active = savings.activeGoal;
       const goal = content.goals.find((g) => g.id === active?.key);
@@ -65,11 +63,7 @@ export default function MainScreen({ navigation }: Props) {
         savings,
         day,
         allowanceCredited: opened.status === "opened" && opened.allowanceCredited,
-        taskTitles: profile.isDemo
-          ? unlocked.map((row) => row.title)
-          : task
-            ? [task.title]
-            : [],
+        taskTitle: task?.title ?? null,
         taskId: task?.id ?? null,
         goalName: goal?.name ?? "",
         accumulated: cost - remaining,
@@ -130,13 +124,9 @@ export default function MainScreen({ navigation }: Props) {
         <Text style={styles.body}>{strings.goalRatio(hub.accumulated, hub.cost)}</Text>
         <Text style={styles.body}>{strings.goalRemaining(hub.remaining)}</Text>
       </Card>
-      {hub.taskTitles.length ? (
+      {hub.taskTitle ? (
         <Card>
-          {hub.taskTitles.map((title) => (
-            <Text key={title} style={styles.cardTitle}>
-              {title}
-            </Text>
-          ))}
+          <Text style={styles.cardTitle}>{hub.taskTitle}</Text>
           <PrimaryButton
             label={strings.playTask}
             onPress={() => hub.taskId && navigation.navigate("TaskRun", { taskId: hub.taskId })}

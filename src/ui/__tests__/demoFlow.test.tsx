@@ -2,6 +2,7 @@ import { render, screen, userEvent } from "@testing-library/react-native";
 import type { CatalogItem } from "../../core/economy";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
+import { sixUnlocked } from "../testSupport/flowHelpers";
 
 const lunch: CatalogItem = {
   id: "lunch",
@@ -16,15 +17,6 @@ const candy: CatalogItem = {
   effect: { meter: "mood", delta: 5 },
 };
 const tinyCatalog: CatalogItem[] = [lunch, candy];
-
-const sixUnlocked = [
-  "Первый план",
-  "Сломался рюкзак",
-  "Копилка мечты",
-  "Большая распродажа",
-  "Две цены",
-  "Чек",
-] as const;
 
 async function renderApp(ports = createFakePorts()) {
   const user = userEvent.setup();
@@ -71,7 +63,11 @@ describe("Демо-режим panel", () => {
       expect(screen.getByText("Этап Новичок")).toBeOnTheScreen();
       expect(screen.getByText("Баланс 110")).toBeOnTheScreen();
       expect(screen.getByLabelText(/Питомец Демо/)).toBeOnTheScreen();
+      expect(screen.getByText("Первый план")).toBeOnTheScreen();
+      expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Задания" }));
       expectUnlockedTitles();
+      await user.press(screen.getByRole("button", { name: "Назад" }));
       expect(ports.game.getProfile(childId)).toEqual(childBefore);
       expect(ports.game.listTaskProgress(childId)).toEqual(childTasksBefore);
 
@@ -87,12 +83,18 @@ describe("Демо-режим panel", () => {
 
       await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
       await user.press(screen.getByRole("button", { name: "Сбросить демо" }));
+      expect(screen.getByText("Демо вернётся к первому игровому дню")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Готово" }));
       await user.press(screen.getByRole("button", { name: "Понятно" }));
 
       expect(screen.getByText("Демо: дни идут подряд")).toBeOnTheScreen();
       expect(screen.getByText("Этап Новичок")).toBeOnTheScreen();
       expect(screen.getByText("Баланс 110")).toBeOnTheScreen();
+      expect(screen.getByText("Первый план")).toBeOnTheScreen();
+      expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Задания" }));
       expectUnlockedTitles();
+      await user.press(screen.getByRole("button", { name: "Назад" }));
 
       await user.press(screen.getByRole("button", { name: "Прогресс" }));
       expect(screen.getByText("Стартовый бюджет +100")).toBeOnTheScreen();

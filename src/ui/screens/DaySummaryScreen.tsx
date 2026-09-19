@@ -33,7 +33,10 @@ function ScoreRow({ word, points, earned }: { word: string; points: number; earn
 
 function meterReason(summary: DaySummaryView): { care: string; mood: string } {
   return {
-    care: summary.meterDeltas.care < 0 ? strings.meterReasonCareSkip : strings.meterReasonUnchanged(strings.care),
+    care:
+      summary.meterDeltas.care < 0
+        ? strings.meterReasonSkippedMandatory(summary.meterDeltas.care)
+        : strings.meterReasonUnchanged(strings.care),
     mood:
       summary.meterDeltas.mood < 0
         ? strings.meterReasonMoodOverspend

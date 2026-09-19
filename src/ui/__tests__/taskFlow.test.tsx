@@ -10,11 +10,11 @@ async function renderApp(ports = createFakePorts()) {
 
 async function playFirstPlanGoodPath(user: ReturnType<typeof userEvent.setup>) {
   await user.press(screen.getByRole("button", { name: "Купить обед (10)" }));
-  expect(screen.getByLabelText("✅ Верно")).toBeOnTheScreen();
+  expect(screen.getByRole("status", { name: "✅ Верно" })).toBeOnTheScreen();
   expect(screen.getByText("Обязательные расходы — самое важное. Сначала нужды, потом мечты.")).toBeOnTheScreen();
   await user.press(screen.getByRole("button", { name: "Дальше" }));
   await user.press(screen.getByRole("button", { name: "5 монет" }));
-  expect(screen.getByLabelText("✅ Верно")).toBeOnTheScreen();
+  expect(screen.getByRole("status", { name: "✅ Верно" })).toBeOnTheScreen();
   await user.press(screen.getByRole("button", { name: "Дальше" }));
 }
 
@@ -64,7 +64,7 @@ describe("Задания", () => {
     await user.press(screen.getByRole("button", { name: "Задания" }));
     await user.press(screen.getByRole("button", { name: "Первый план" }));
     await user.press(screen.getByRole("button", { name: "Сначала мороженое (7)" }));
-    expect(screen.getByLabelText("⚠️ Попробуй ещё")).toBeOnTheScreen();
+    expect(screen.getByRole("status", { name: "⚠️ Попробуй ещё" })).toBeOnTheScreen();
     expect(screen.getByText("На обед больше не хватает. Желаемое подождёт, а питомец — нет.")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Дальше" }));
     expect(screen.getByText("С чего начнёшь?")).toBeOnTheScreen();
@@ -80,7 +80,7 @@ describe("Задания", () => {
     await user.press(screen.getByRole("button", { name: "Задания" }));
     await user.press(screen.getByRole("button", { name: "Сломался рюкзак" }));
     await user.press(screen.getByRole("button", { name: "Сначала яйцо" }));
-    expect(screen.getByLabelText("⚠️ Попробуй ещё")).toBeOnTheScreen();
+    expect(screen.getByRole("status", { name: "⚠️ Попробуй ещё" })).toBeOnTheScreen();
     expect(screen.getByText("Новое задание появилось в списке!")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Дальше" }));
     expect(screen.queryByText("+10 монет")).not.toBeOnTheScreen();
