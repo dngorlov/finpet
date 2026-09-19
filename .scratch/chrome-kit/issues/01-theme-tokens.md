@@ -1,6 +1,6 @@
 # 01 — Expand theme tokens
 
-Status: claimed
+Status: resolved
 Type: task
 Blocked by:
 
@@ -23,3 +23,7 @@ Expand `src/ui/theme.ts` so the chrome kit has a type scale and raised/disabled/
 ## Done when
 
 `src/ui/theme.ts` exports the new tokens and existing screens still typecheck against the old names they already use (`type.title`, `type.body`, `colors.accent`, etc.).
+
+## Answer
+
+Added `type.section` (20) and `type.button` (16); cream/orange `raisedFace`, `raisedEdge`, `disabledFace`, `badgeFill`; `radius.card` 20. Existing `type.title`/`type.body`/`colors.accent`/`colors.fill` unchanged.

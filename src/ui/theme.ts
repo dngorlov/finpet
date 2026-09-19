@@ -1,7 +1,9 @@
-/** Type scale and spacing; main text ≥16 sp (UX constraints). */
+/** Type scale and spacing; body and button ≥16 sp (UX constraints). */
 export const type = {
   title: 28,
+  section: 20,
   body: 16,
+  button: 16,
 } as const;
 
 export const spacing = {
@@ -16,9 +18,17 @@ export const colors = {
   subtle: "#5F6368",
   card: "#FFFFFF",
   accent: "#E07A3D",
+  raisedFace: "#E07A3D",
+  raisedEdge: "#C45F28",
+  disabledFace: "#C5C0B8",
+  badgeFill: "#FFE6C7",
   track: "#E6E0D8",
   fill: "#5B8C5A",
   highlight: "#F4D9A6",
+} as const;
+
+export const radius = {
+  card: 20,
 } as const;
 
 /** Minimum touch target (UX constraints). */

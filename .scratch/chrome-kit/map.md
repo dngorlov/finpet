@@ -10,7 +10,8 @@ This is a visual consistency pass. Do not change persistence, routing, first-run
 
 - One PR branch: `chrome-kit`. Tickets live under `.scratch/chrome-kit/issues/`.
 - Kit first, then screen migrations in parallel, then one flow-test ticket.
-- ROADMAP §4 already records this chrome (working-tree update on this branch).
+- ROADMAP §4 already records this chrome.
+- 01 theme tokens: `type.section` / `type.button`, `colors.raisedFace|raisedEdge|disabledFace|badgeFill`, `radius.card`. Meter `fill` kept. See `src/ui/theme.ts`.
 
 ## Fog
 
