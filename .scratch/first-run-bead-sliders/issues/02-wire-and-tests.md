@@ -29,3 +29,7 @@ Replace FirstRun appearance Chip rows with three BeadSliders and update the navi
 ## Done when
 
 `npm test` and `npm run typecheck` pass. FirstRun appearance no longer imports Chip.
+
+## Answer
+
+Питомец phase now renders three `BeadSlider` instances (Вид 🐣, Окрас 🎨, Аксессуар 🎀) with pictograms in `strings.ts`; `AppearanceGroup` / `Chip` removed from `FirstRunScreen.tsx` only. `firstRunFlow.test.tsx` asserts legends, `aria-selected` without hidden ✓, enabled unselected stops, and tap coverage for all three axes. `npm test` (107) and `npm run typecheck` pass on `feat/frbs-02`.
