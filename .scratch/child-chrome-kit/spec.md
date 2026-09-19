@@ -12,7 +12,7 @@ Kids 7–11 who have used other learning games expect chunky raised buttons, big
 
 Restyle every current child-facing screen with one FinPet chrome kit inspired by friendly raised-button learning apps, without copying another product’s mascot, green, or progress mechanics.
 
-The kit is: Screen, Card, PrimaryButton, TextButton, Chip, SpeechBubble, Badge, NavTile, plus the existing PetView, MeterBar, and BackButton. Linear flows pin the primary action at the bottom. Main stays one scrolling hub: badge strip, large centered pet, chunky meters, goal and task Cards, 2×3 pictogram tiles. Selection always includes a visible check, not color alone.
+The kit is: Screen, Card, PrimaryButton, TextButton, Chip, SpeechBubble, Badge, NavTile, plus the existing PetView, MeterBar, and BackButton. Linear flows pin the primary action at the bottom. Main stays one scrolling hub: badge strip, large centered pet, chunky meters, goal and task Cards, 2×3 pictogram tiles. Chip pickers include a visible check, not color alone; Питомец appearance on Первый запуск uses bead sliders instead.
 
 ## User Stories
 
@@ -24,7 +24,7 @@ The kit is: Screen, Card, PrimaryButton, TextButton, Chip, SpeechBubble, Badge, 
 6. As a ребёнок on «Как играть», I want the same pinned bar, so that the explanation feels like the same kind of step as setup.
 7. As a ребёнок on Main, I want the screen to keep scrolling as one hub, so that pet, money, goal, and tiles stay in one place.
 8. As a ребёнок, I want white rounded Cards for Цель and Задание, so that those blocks look like things I can read, not leftover text.
-9. As a ребёнок choosing Вид, Окрас, or Аксессуар, I want the selected Chip to show a check as well as a highlight, so that I know what is selected without relying on color.
+9. As a ребёнок on the Питомец phase choosing Вид, Окрас, or Аксессуар, I want bead sliders with the accent bead in the selected circle, so that I know what is selected without a Chip check or color alone.
 10. As a TalkBack user, I want selected Chips to stay `aria-selected`, so that selection is announced.
 11. As a ребёнок, I want the План tile to show a check plus «Составь план дня» when a plan is still needed, so that the next action is not color-only.
 12. As a ребёнок, I want a SpeechBubble under the pet with a small tail pointing up, so that the pet is clearly the speaker.
@@ -44,7 +44,7 @@ The kit is: Screen, Card, PrimaryButton, TextButton, Chip, SpeechBubble, Badge, 
 26. As a разработчик, I want one kit instead of copied screen styles, so that later План / Магазин / Копилка screens reuse chrome instead of inventing it.
 27. As a разработчик, I want PrimaryButton to replace the current single-style app button everywhere it is a primary action, so that there are not two primaries.
 28. As a разработчик, I want HowToPlay’s quiet actions to use TextButton, so that first run and replay share chrome.
-29. As a разработчик, I want FirstRun chips to use Chip, so that pickers are not a private copy.
+29. As a разработчик, I want Питомец appearance pickers to use one shared bead-slider control, not a private Chip row, so that the three tracks stay consistent.
 30. As a разработчик, I want Main’s local tile and card styles removed in favor of NavTile and Card.
 31. As a returning ребёнок, I want behavior unchanged: same first-run commit rules, same hub numbers, same replay safety.
 32. As an accessibility reviewer, I want status never communicated by color alone, including disabled, selected, and plan-needed.
@@ -58,7 +58,7 @@ The kit is: Screen, Card, PrimaryButton, TextButton, Chip, SpeechBubble, Badge, 
 - Kit members: Screen (cream background, padding, safe layout), Card, PrimaryButton, TextButton, Chip, SpeechBubble, Badge, NavTile. Keep PetView, MeterBar, and BackButton; restyle MeterBar and BackButton to match the kit rather than duplicating them.
 - PrimaryButton: orange fill, darker bottom edge, rounded; on press the face translates down and the edge collapses. Minimum height 48 dp. Disabled: flat grey, no edge, no translation, `aria-disabled`.
 - TextButton: text-styled, 48 dp min height, used for «Пропустить», «Закрыть», and other quiet actions. Back stays the word «Назад» via BackButton or TextButton, never icon-only, never X.
-- Chip: label plus a visible check when selected; `aria-selected`; highlight color is extra, not the only cue.
+- Chip: label plus a visible check when selected; `aria-selected`; highlight color is extra, not the only cue. Does not apply to Питомец appearance on Первый запуск — those axes use bead sliders (accent bead in the selected circle; circle buttons keep `aria-selected`).
 - SpeechBubble: body text in a rounded card; small tail pointing up at the pet; used by HowToPlay. Pet centered above the bubble; name visible. Replay and first-run rules share this layout.
 - Badge: icon + word + number for Этап, Баланс, Копилка on Main. Do not invent gem/heart/XP labels.
 - NavTile: pictogram + word, raised like a skill tile, 2×3 grid preserved. Accessible name is the word. План-needed state: check + existing hint text.
@@ -76,7 +76,7 @@ The kit is: Screen, Card, PrimaryButton, TextButton, Chip, SpeechBubble, Badge, 
 - A good test asserts what a child can see and do: phase order, labels, enabled/disabled, selection announcements, hub numbers, navigation. It does not assert shadow pixels, translateY, border-radius, or theme token names.
 - Use one navigation-root React Native Testing Library seam with injected session ports (the existing first-run flow test). That is the highest existing seam and already covers first run, hub, glossary, replay, settings, and stubs. Do not add a per-component visual snapshot suite.
 - Follow RNTL v14: async `render` + `screen`, `getByRole` / accessible name, `userEvent`. Query visible RU text. `testID` last.
-- Extend the existing flow so it still passes after chrome migration, and add assertions that match new child-visible behavior: selected Chip is selected; План needed exposes a check or equivalent accessible selected/hint; Main shows Этап / Баланс / Копилка as named badges; HowToPlay still announces one bubble; disabled names «Дальше» remains disabled; skip/finish/replay still commit exactly once.
+- Extend the existing flow so it still passes after chrome migration, and add assertions that match new child-visible behavior: appearance option buttons are selected without a Chip check glyph; remaining selected Chips stay selected; План needed exposes a check or equivalent accessible selected/hint; Main shows Этап / Баланс / Копилка as named badges; HowToPlay still announces one bubble; disabled names «Дальше» remains disabled; skip/finish/replay still commit exactly once.
 - Do not test press-translation internals. Device acceptance is the place to confirm the raised edge, depress, pinned bar, bubble tail, and 360 dp + large text.
 - Prior art: `src/ui/__tests__/firstRunFlow.test.tsx`. Replace or extend that file; do not create a parallel “chrome” suite that resteps Appendix A.
 

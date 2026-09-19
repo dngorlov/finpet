@@ -1,6 +1,6 @@
 # 03 — Supersede Chip-row appearance docs
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 
 ## Goal
@@ -27,3 +27,7 @@ Rewrite living docs that still require Chip rows / checks for Первый за�
 ## Done when
 
 Those living docs describe bead sliders for this phase. Kit Chip contract elsewhere is unchanged.
+
+## Answer
+
+Updated `docs/ROADMAP.md` §4.2 FirstRun Питомец, `.scratch/chrome-kit/spec.md` (story 18–19, FirstRun implementation/testing bullets, Further Notes), `.scratch/child-chrome-kit/spec.md` (story 9/29, Chip bullet, testing bullet, Solution), and `.scratch/first-run-redesign/spec.md` Further Notes. Living specs now require bead sliders and accent-bead selection on Питомец; Chip check + `aria-selected` unchanged for remaining Chips. Flow-test bullets no longer require an appearance check glyph. `CONTEXT.md` and resolved chrome-kit issue Answers untouched.
