@@ -4,7 +4,7 @@
 
 **Blocked by:** 02, 03, 04, 05
 
-**Status:** ready
+**Status:** resolved
 
 Type: task
 
@@ -24,3 +24,7 @@ Type: task
 ## Done when
 
 `npm test` covers both M4 flows at the navigation-root seam and `npm run typecheck` passes.
+
+## Answer
+
+Two navigation-root RNTL files at `FinPetApp` + fake ports cover the combined M4 ACs. `tasksLoopFlow.test.tsx` walks day-1 unlock, retry, first +10 then replay 0, Shop BlockedSheet → real Задания list, and backpack spawn of «Почини рюкзак». `dayCloseDemoFlow.test.tsx` confirms a plan, shows Итоги дня, waits on Main, enters Демо-режим, runs five «Следующий день» (`confirmActiveDayPlan` pre-confirms between days), resets the demo, and exits with the child's closed day, Баланс, and task progress intact. Slice tests stay. `npm test` 95 passed; `npm run typecheck` passed.

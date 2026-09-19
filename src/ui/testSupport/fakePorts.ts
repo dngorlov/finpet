@@ -473,3 +473,20 @@ export function seedReturningChild(ports: SessionPorts, input?: Partial<CreatePr
   ports.meta.set(META_KEYS.onboardingDone, "1");
   return id;
 }
+
+/** Confirm the active open day so cadence tests can «Закончить день» without the Plan UI. */
+export function confirmActiveDayPlan(
+  ports: SessionPorts,
+  buckets: PlanBuckets = { mandatory: 1, optional: 1, savings: 1 },
+): void {
+  const profileId = ports.meta.get(META_KEYS.activeProfileId);
+  if (!profileId) throw new Error("Нет активного профиля");
+  const day = ports.game.dayState(profileId);
+  if (!day.open) throw new Error("Игровой день не найден");
+  if (day.plan.status === "confirmed") return;
+  if (day.plan.status === "none") {
+    ports.game.saveDraftPlan(profileId, day.dayId, buckets);
+  }
+  const result = ports.game.confirmPlan(profileId, day.dayId);
+  if (!result.ok) throw new Error("План не подтвердился");
+}
