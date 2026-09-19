@@ -13,7 +13,9 @@ async function renderApp(ports = createFakePorts()) {
 }
 
 describe("economy loop (Appendix A 5, 7–9)", () => {
-  it("plans, buys, blocks a short purchase, saves, and records the Журнал", async () => {
+  it(
+    "plans, buys, blocks a short purchase, saves, and records the Журнал",
+    async () => {
     const ports = createFakePorts();
     const profileId = seedReturningChild(ports);
     const { user } = await renderApp(ports);
@@ -53,6 +55,11 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     await user.press(screen.getByRole("button", { name: "Купить" }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText(/Не хватает/)).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Дождаться пособия" }));
+    expect(screen.getByText(/Пособие придёт/)).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Выполнить задание" }));
+    expect(screen.getByText(/скоро/i)).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Назад" }));
     await user.press(screen.getByRole("button", { name: "Отложить" }));
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
@@ -73,5 +80,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
 
     expect(screen.getByText("План готов")).toBeOnTheScreen();
     expect(screen.getByText("Копилка 1")).toBeOnTheScreen();
-  });
+  },
+  15000,
+);
 });

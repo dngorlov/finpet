@@ -6,19 +6,30 @@ export function Chip({
   label,
   selected,
   onPress,
+  disabled,
+  pictogram,
 }: {
   label: string;
   selected: boolean;
   onPress: () => void;
+  disabled?: boolean;
+  pictogram?: string;
 }) {
   return (
     <Pressable
       role="button"
       aria-label={label}
       aria-selected={selected}
+      aria-disabled={Boolean(disabled)}
+      disabled={disabled}
       onPress={onPress}
-      style={[styles.chip, selected ? styles.chipOn : null]}
+      style={[styles.chip, selected ? styles.chipOn : null, disabled ? styles.chipOff : null]}
     >
+      {pictogram ? (
+        <Text aria-hidden style={styles.label}>
+          {pictogram}
+        </Text>
+      ) : null}
       <Text style={styles.label}>{label}</Text>
       {selected ? (
         <Text
@@ -50,6 +61,9 @@ const styles = StyleSheet.create({
   chipOn: {
     backgroundColor: colors.highlight,
     borderColor: colors.accent,
+  },
+  chipOff: {
+    backgroundColor: colors.disabledFace,
   },
   label: {
     color: colors.text,

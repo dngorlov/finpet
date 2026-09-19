@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
 import type { CatalogItemContent } from "../../data/content";
+import { Badge } from "../components/Badge";
 import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
@@ -14,7 +15,7 @@ import { TextButton } from "../components/TextButton";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
-import { colors, minTarget, type } from "../theme";
+import { colors, minTarget, spacing, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Shop">;
 type Tab = "mandatory" | "optional";
@@ -40,7 +41,6 @@ export default function ShopScreen({ navigation }: Props) {
   const load = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
-    game.openDay(profileId);
     const day = game.dayState(profileId);
     setBalance(day.available);
     setBought(game.purchasedItemIds(profileId, day.dayId));
@@ -118,11 +118,13 @@ export default function ShopScreen({ navigation }: Props) {
           <View style={styles.tabs}>
             <Chip
               label={strings.shopMandatoryTab}
+              pictogram={strings.navPlanPictogram}
               selected={tab === "mandatory"}
               onPress={() => setTab("mandatory")}
             />
             <Chip
               label={strings.shopOptionalTab}
+              pictogram={strings.navShopPictogram}
               selected={tab === "optional"}
               onPress={() => setTab("optional")}
             />
@@ -137,15 +139,22 @@ export default function ShopScreen({ navigation }: Props) {
             >
               <Card>
                 <Text style={styles.section}>{item.name}</Text>
-                <Text style={styles.body}>{item.price} монет</Text>
                 <Text style={styles.body}>
+                  {item.kind === "mandatory" ? strings.navPlanPictogram : strings.navShopPictogram}{" "}
+                  {strings.shopCategory(item.kind)}
+                </Text>
+                <Text style={styles.body}>{strings.shopPrice(item.price)}</Text>
+                <Text style={styles.body}>
+                  {item.effect.meter === "care" ? strings.careIcon : strings.moodIcon}{" "}
                   {strings.shopImpact(
                     item.effect.meter === "care" ? strings.care : strings.mood,
                     item.effect.delta,
                   )}
                 </Text>
                 <Text style={styles.body}>{strings.shopAfterBuy(balance - item.price)}</Text>
-                {bought.includes(item.id) ? <Text style={styles.body}>{strings.shopBought}</Text> : null}
+                {bought.includes(item.id) ? (
+                  <Badge icon={strings.selectedCheck} word={strings.shopBought} value="" />
+                ) : null}
               </Card>
             </Pressable>
           ))}
@@ -155,7 +164,7 @@ export default function ShopScreen({ navigation }: Props) {
         <Card>
           <Text style={styles.section}>{phase.item.name}</Text>
           <Text style={styles.body}>{phase.item.description}</Text>
-          <Text style={styles.body}>{phase.item.price} монет</Text>
+          <Text style={styles.body}>{strings.shopPrice(phase.item.price)}</Text>
           <Text style={styles.body}>
             {strings.shopImpact(
               phase.item.effect.meter === "care" ? strings.care : strings.mood,
@@ -198,7 +207,7 @@ const styles = StyleSheet.create({
   tabs: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: spacing.s,
   },
   itemHit: {
     minHeight: minTarget,

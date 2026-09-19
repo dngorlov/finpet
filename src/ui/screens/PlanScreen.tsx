@@ -29,7 +29,6 @@ export default function PlanScreen(_props: Props) {
   const load = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
-    game.openDay(profileId);
     const next = game.dayState(profileId);
     setDay(next);
     setBuckets(next.plan.buckets);
@@ -123,8 +122,8 @@ export default function PlanScreen(_props: Props) {
           />
         </Card>
       )}
-      <Text style={styles.body}>{strings.planRemainder(check.remainder)}</Text>
-      {check.ok ? null : <Text style={styles.body}>{strings.planOverBudget}</Text>}
+      {confirmed ? null : <Text style={styles.body}>{strings.planRemainder(check.remainder)}</Text>}
+      {confirmed || check.ok ? null : <Text style={styles.body}>{strings.planOverBudget}</Text>}
       {askingConfirm ? (
         <Card>
           <Text style={styles.section}>{strings.confirmPlanTitle}</Text>

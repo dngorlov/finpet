@@ -46,7 +46,7 @@ export const strings = {
   composePlanHint: "Составь план дня",
   planReady: "План готов",
   finishDayNeedPlan: "Сначала составь план дня",
-  finishDayLater: "Итоги дня появятся позже. Пока вернись на главный экран.",
+  finishDayLater: "Итоги дня появятся позже. Пока играй дальше.",
   allowanceRibbon: "Пособие +10 монет",
 
   feedbackBalance: (n: number) => `Баланс ${n > 0 ? "+" : ""}${n}`,
@@ -57,8 +57,6 @@ export const strings = {
   feedbackNextAllowance: "Что дальше: составь план дня.",
   feedbackCausePurchase: "Потому что ты купил вещь для питомца.",
   feedbackNextPurchase: "Что дальше: сверься с планом или отложи в копилку.",
-  feedbackCauseBlocked: "Потому что монет пока не хватает.",
-  feedbackNextBlocked: "Что дальше: подожди пособие, сделай задание или отложи покупку.",
   feedbackCauseSavingsIn: "Потому что ты положил монеты в копилку.",
   feedbackNextSavingsIn: "Что дальше: копи дальше или вернись к плану дня.",
   feedbackCauseSavingsOut: "Потому что ты забрал монеты из копилки.",
@@ -68,6 +66,9 @@ export const strings = {
 
   shopMandatoryTab: "Обязательное",
   shopOptionalTab: "Желаемое",
+  shopPrice: (n: number) => `${n} монет`,
+  shopCategory: (kind: "mandatory" | "optional") =>
+    kind === "mandatory" ? "Обязательные" : "Желаемые",
   shopAfterBuy: (n: number) => `после покупки: ${n} монет`,
   shopImpact: (meter: string, delta: number) => `эффект: ${meter} +${delta}`,
   shopBought: "Куплено",
@@ -91,6 +92,7 @@ export const strings = {
     `В копилке станет ${potAfter}. Мечта отодвинется на ${days} дн.`,
   savingsWithdrawPreviewNone: (potAfter: number) => `В копилке станет ${potAfter}.`,
   savingsAchieved: "Мечта сбылась!",
+  savingsConfetti: "🎉",
   savingsPickGoal: "Выбери новую цель",
   savingsAchievedBadge: "сбылась",
   savingsRemaining: (n: number) => `осталось ${n}`,

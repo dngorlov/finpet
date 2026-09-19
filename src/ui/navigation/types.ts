@@ -9,7 +9,6 @@ export type RootStackParamList = {
   Shop: undefined;
   Savings: undefined;
   Progress: undefined;
-  Glossary: undefined;
   Settings: undefined;
   Stub: { destination: StubDestination };
 };

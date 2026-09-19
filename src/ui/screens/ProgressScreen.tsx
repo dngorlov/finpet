@@ -36,7 +36,6 @@ export default function ProgressScreen({ navigation }: Props) {
     useCallback(() => {
       const profileId = meta.get(META_KEYS.activeProfileId);
       if (!profileId) return;
-      game.openDay(profileId);
       setRows(game.listJournal(profileId));
     }, [game, meta]),
   );

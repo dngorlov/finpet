@@ -34,11 +34,11 @@ export default function SavingsScreen(_props: Props) {
   const [balance, setBalance] = useState(0);
   const [phase, setPhase] = useState<Phase>({ name: "home" });
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
+  const [pendingFeedback, setPendingFeedback] = useState<FeedbackModel | null>(null);
 
   const load = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
-    game.openDay(profileId);
     setSavings(game.savingsState(profileId));
     setGoals(game.listGoals(profileId));
     setBalance(game.getProfile(profileId).balance);
@@ -81,9 +81,10 @@ export default function SavingsScreen(_props: Props) {
     if (result.status === "blocked") return;
     load();
     if (result.achieved) {
+      const potAfter = game.savingsState(profileId).pot;
       setPhase({ name: "celebration" });
-      setFeedback({
-        deltas: { balance: -amount, mood: METERS.goalAchievedMoodBonus },
+      setPendingFeedback({
+        deltas: { balance: -amount, savings: potAfter - savings.pot, mood: METERS.goalAchievedMoodBonus },
         cause: strings.feedbackCauseGoal,
         nextStep: strings.feedbackNextGoal,
       });
@@ -175,7 +176,18 @@ export default function SavingsScreen(_props: Props) {
         </>
       );
     }
-    return <PrimaryButton label={strings.gotIt} onPress={() => setPhase({ name: "home" })} />;
+    return (
+      <PrimaryButton
+        label={strings.gotIt}
+        onPress={() => {
+          setPhase({ name: "home" });
+          if (pendingFeedback) {
+            setFeedback(pendingFeedback);
+            setPendingFeedback(null);
+          }
+        }}
+      />
+    );
   })();
 
   return (
@@ -208,8 +220,8 @@ export default function SavingsScreen(_props: Props) {
               key={goal.key}
               label={achieved ? `${name} (${strings.savingsAchievedBadge})` : name}
               selected={goal.isActive}
+              disabled={achieved}
               onPress={() => {
-                if (achieved) return;
                 const profileId = meta.get(META_KEYS.activeProfileId);
                 if (!profileId) return;
                 game.setActiveGoal(profileId, goal.key);
@@ -254,7 +266,9 @@ export default function SavingsScreen(_props: Props) {
       ) : null}
       {phase.name === "celebration" ? (
         <Card>
-          <Text style={styles.section}>{strings.savingsAchieved}</Text>
+          <Text style={styles.section}>
+            {strings.savingsConfetti} {strings.savingsAchieved}
+          </Text>
         </Card>
       ) : null}
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}

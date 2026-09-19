@@ -67,7 +67,8 @@ describe("Копилка", () => {
     await user.press(screen.getByRole("button", { name: "Сумма, больше" }));
     await user.press(screen.getByRole("button", { name: "Положить" }));
 
-    expect(screen.getByText("Мечта сбылась!")).toBeOnTheScreen();
+    expect(screen.getByText(/Мечта сбылась/)).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Понятно" }));
     expect(screen.getByText("Настроение +10")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     expect(screen.getByText("Выбери новую цель")).toBeOnTheScreen();
