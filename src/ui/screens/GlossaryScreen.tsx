@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BackButton } from "../components/BackButton";
+import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { Screen } from "../components/Screen";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
-import { colors, minTarget, spacing, type } from "../theme";
+import { colors, minTarget, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Glossary">;
 
@@ -15,12 +17,14 @@ export default function GlossaryScreen({ navigation }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
 
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
+    <Screen>
       <BackButton />
       <Text style={styles.title}>{strings.glossaryTitle}</Text>
-      <PrimaryButton label={strings.howToPlay} onPress={() => navigation.navigate("HowToPlay")} />
+      <Card>
+        <PrimaryButton label={strings.howToPlay} onPress={() => navigation.navigate("HowToPlay")} />
+      </Card>
       {content.terms.map((term) => (
-        <View key={term.id} style={styles.row}>
+        <Card key={term.id}>
           <Pressable
             role="button"
             aria-label={term.term}
@@ -31,25 +35,17 @@ export default function GlossaryScreen({ navigation }: Props) {
             <Text style={styles.termLabel}>{term.term}</Text>
           </Pressable>
           {openId === term.id ? <Text style={styles.def}>{term.definition}</Text> : null}
-        </View>
+        </Card>
       ))}
-    </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: colors.background,
-    gap: spacing.m,
-    padding: spacing.l,
-  },
   title: {
     color: colors.text,
     fontSize: type.title,
     fontWeight: "700",
-  },
-  row: {
-    gap: spacing.s,
   },
   term: {
     justifyContent: "center",

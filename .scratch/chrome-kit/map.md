@@ -17,6 +17,7 @@ This is a visual consistency pass. Do not change persistence, routing, first-run
 - 04 MeterBar + BackButton: taller rounded track/fill (`spacing.l`, `radius.card`); BackButton stays the word «Назад» at ≥48 dp with `type.button`. See `src/ui/components/MeterBar.tsx`, `src/ui/components/BackButton.tsx`.
 - 05 FirstRun pet/names: `Screen` pinned footer; kit `Chip`; names «Назад» is `TextButton`. Rules still render `HowToPlay` unwrapped. See `.scratch/chrome-kit/issues/05-migrate-first-run.md`.
 - 06 HowToPlay: pet + name above kit `SpeechBubble`; primary and quiet skip/close (plus «Назад» as `TextButton`) in the pinned `Screen` footer. Replay host unchanged. See `.scratch/chrome-kit/issues/06-migrate-how-to-play.md`.
+- 08 remaining screens: Glossary / StartingBudget / Settings / Stub consume `Screen` + `Card` + kit buttons; accordion, budget reset, and delete-profile unchanged. See `.scratch/chrome-kit/issues/08-migrate-remaining-screens.md`.
 
 ## Fog
 

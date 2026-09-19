@@ -1,9 +1,11 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BackButton } from "../components/BackButton";
+import { Card } from "../components/Card";
+import { Screen } from "../components/Screen";
 import type { RootStackParamList, StubDestination } from "../navigation/types";
 import { strings } from "../strings";
-import { colors, spacing, type } from "../theme";
+import { colors, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Stub">;
 
@@ -17,20 +19,16 @@ const COPY: Record<StubDestination, string> = {
 
 export default function StubScreen({ route }: Props) {
   return (
-    <View style={styles.screen}>
+    <Screen>
       <BackButton />
-      <Text style={styles.body}>{COPY[route.params.destination]}</Text>
-    </View>
+      <Card>
+        <Text style={styles.body}>{COPY[route.params.destination]}</Text>
+      </Card>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: colors.background,
-    flex: 1,
-    gap: spacing.m,
-    padding: spacing.l,
-  },
   body: {
     color: colors.text,
     fontSize: type.body,
