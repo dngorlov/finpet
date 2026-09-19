@@ -13,4 +13,107 @@ export const MIGRATIONS: readonly Migration[] = [
   value TEXT NOT NULL
 );`,
   },
+  {
+    version: 2,
+    up: `
+CREATE TABLE IF NOT EXISTS profiles (
+  id TEXT PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  species TEXT NOT NULL,
+  color TEXT NOT NULL,
+  accessory TEXT NOT NULL,
+  petName TEXT NOT NULL,
+  balance INTEGER NOT NULL,
+  isDemo INTEGER NOT NULL,
+  contentVersion INTEGER NOT NULL,
+  createdAt INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS days (
+  id TEXT PRIMARY KEY NOT NULL,
+  profileId TEXT NOT NULL REFERENCES profiles(id),
+  n INTEGER NOT NULL,
+  openedAt INTEGER NOT NULL,
+  closedAt INTEGER
+);
+CREATE TABLE IF NOT EXISTS plans (
+  id TEXT PRIMARY KEY NOT NULL,
+  profileId TEXT NOT NULL REFERENCES profiles(id),
+  dayId TEXT NOT NULL REFERENCES days(id),
+  mandatory INTEGER NOT NULL,
+  optional INTEGER NOT NULL,
+  savings INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  confirmedAt INTEGER
+);
+CREATE TABLE IF NOT EXISTS transactions (
+  id TEXT PRIMARY KEY NOT NULL,
+  profileId TEXT NOT NULL REFERENCES profiles(id),
+  dayId TEXT REFERENCES days(id),
+  kind TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  itemId TEXT,
+  goalId TEXT,
+  labelKey TEXT NOT NULL,
+  createdAt INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS purchases (
+  id TEXT PRIMARY KEY NOT NULL,
+  profileId TEXT NOT NULL REFERENCES profiles(id),
+  dayId TEXT NOT NULL REFERENCES days(id),
+  itemId TEXT NOT NULL,
+  price INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  createdAt INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS savingsTransfers (
+  id TEXT PRIMARY KEY NOT NULL,
+  profileId TEXT NOT NULL REFERENCES profiles(id),
+  dayId TEXT NOT NULL REFERENCES days(id),
+  amount INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  createdAt INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS goals (
+  id TEXT PRIMARY KEY NOT NULL,
+  profileId TEXT NOT NULL REFERENCES profiles(id),
+  key TEXT NOT NULL,
+  cost INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  isActive INTEGER NOT NULL,
+  achievedAt INTEGER
+);
+CREATE TABLE IF NOT EXISTS petState (
+  profileId TEXT PRIMARY KEY NOT NULL REFERENCES profiles(id),
+  care INTEGER NOT NULL,
+  mood INTEGER NOT NULL,
+  stage INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS meterEvents (
+  id TEXT PRIMARY KEY NOT NULL,
+  profileId TEXT NOT NULL REFERENCES profiles(id),
+  dayId TEXT REFERENCES days(id),
+  meter TEXT NOT NULL,
+  delta INTEGER NOT NULL,
+  source TEXT NOT NULL,
+  createdAt INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS dayScores (
+  id TEXT PRIMARY KEY NOT NULL,
+  profileId TEXT NOT NULL REFERENCES profiles(id),
+  dayId TEXT NOT NULL REFERENCES days(id),
+  mandatoryCovered INTEGER NOT NULL,
+  withinPlan INTEGER NOT NULL,
+  deposited INTEGER NOT NULL,
+  score INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS taskProgress (
+  id TEXT PRIMARY KEY NOT NULL,
+  profileId TEXT NOT NULL REFERENCES profiles(id),
+  taskKey TEXT NOT NULL,
+  status TEXT NOT NULL,
+  rewardPaid INTEGER NOT NULL,
+  completedAt INTEGER
+);
+`,
+  },
 ];

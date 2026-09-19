@@ -75,22 +75,37 @@ describe("runMigrations", () => {
     expect(driver.statements).toHaveLength(0);
   });
 
-  it("initial migration creates the meta table and ends at version 1", () => {
+  it("applies meta then the settled game schema and ends at version 2", () => {
     const driver = new FakeSqlite(0);
 
     runMigrations(driver, MIGRATIONS);
 
-    expect(driver.userVersion).toBe(1);
-    expect(driver.createTableStatements()).toHaveLength(1);
+    expect(driver.userVersion).toBe(2);
     expect(driver.createTableStatements()[0]).toContain("CREATE TABLE IF NOT EXISTS meta");
+    const ddl = driver.statements.join("\n");
+    for (const table of [
+      "profiles",
+      "days",
+      "plans",
+      "transactions",
+      "purchases",
+      "savingsTransfers",
+      "goals",
+      "petState",
+      "meterEvents",
+      "dayScores",
+      "taskProgress",
+    ]) {
+      expect(ddl).toContain(`CREATE TABLE IF NOT EXISTS ${table}`);
+    }
   });
 
   it("real migration set is a no-op on an already migrated database", () => {
-    const driver = new FakeSqlite(1);
+    const driver = new FakeSqlite(2);
 
     runMigrations(driver, MIGRATIONS);
 
-    expect(driver.userVersion).toBe(1);
+    expect(driver.userVersion).toBe(2);
     expect(driver.statements).toHaveLength(0);
   });
 });

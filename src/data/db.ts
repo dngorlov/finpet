@@ -2,12 +2,9 @@ import { openDatabaseSync, type SQLiteDatabase } from "expo-sqlite";
 import { drizzle, type ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite";
 import { MIGRATIONS } from "./migrations";
 import { runMigrations, type MigrationDriver } from "./runMigrations";
+import * as schema from "./schema";
 
-/**
- * M0: schema is only the `meta` table, so drizzle carries an empty schema
- * type; M1 widens it with the settled tables (ROADMAP §3.2).
- */
-export type FinPetDb = ExpoSQLiteDatabase<Record<string, never>>;
+export type FinPetDb = ExpoSQLiteDatabase<typeof schema>;
 
 export interface Database {
   sqlite: SQLiteDatabase;
@@ -30,7 +27,8 @@ export function bootDatabase(): Database {
   if (instance === null) {
     const sqlite = openDatabaseSync("finpet.db");
     runMigrations(asMigrationDriver(sqlite), MIGRATIONS);
-    instance = { sqlite, drizzle: drizzle(sqlite) };
+    sqlite.execSync("PRAGMA foreign_keys = ON;");
+    instance = { sqlite, drizzle: drizzle(sqlite, { schema }) };
   }
   return instance;
 }

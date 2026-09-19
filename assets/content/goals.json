@@ -1,1 +1,23 @@
-{ "contentVersion": 0 }
+{
+  "contentVersion": 1,
+  "goals": [
+    {
+      "id": "skateboard",
+      "name": "Скейтборд",
+      "cost": 90,
+      "description": "Кататься во дворе после школы"
+    },
+    {
+      "id": "telescope",
+      "name": "Телескоп",
+      "cost": 160,
+      "description": "Смотреть на звёзды вечером"
+    },
+    {
+      "id": "bike",
+      "name": "Велосипед",
+      "cost": 240,
+      "description": "Длинные поездки в парк"
+    }
+  ]
+}

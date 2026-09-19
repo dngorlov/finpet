@@ -1,1 +1,69 @@
-{ "contentVersion": 0 }
+{
+  "contentVersion": 1,
+  "items": [
+    {
+      "id": "lunch",
+      "name": "Обед",
+      "kind": "mandatory",
+      "price": 12,
+      "effect": { "meter": "care", "delta": 10 },
+      "description": "Питомцу нужно есть каждый день"
+    },
+    {
+      "id": "school",
+      "name": "Школьные принадлежности",
+      "kind": "mandatory",
+      "price": 10,
+      "effect": { "meter": "care", "delta": 5 },
+      "description": "Тетради и ручки, чтобы учиться"
+    },
+    {
+      "id": "transport",
+      "name": "Проезд",
+      "kind": "mandatory",
+      "price": 8,
+      "effect": { "meter": "care", "delta": 5 },
+      "description": "Доехать до школы и обратно"
+    },
+    {
+      "id": "medicine",
+      "name": "Лекарство",
+      "kind": "mandatory",
+      "price": 15,
+      "effect": { "meter": "care", "delta": 20 },
+      "description": "Если питомцу нездоровится"
+    },
+    {
+      "id": "candy",
+      "name": "Конфета",
+      "kind": "optional",
+      "price": 5,
+      "effect": { "meter": "mood", "delta": 5 },
+      "description": "Сладкое для настроения"
+    },
+    {
+      "id": "stickers",
+      "name": "Стикеры",
+      "kind": "optional",
+      "price": 7,
+      "effect": { "meter": "mood", "delta": 6 },
+      "description": "Наклейки в альбом"
+    },
+    {
+      "id": "cinema",
+      "name": "Кино",
+      "kind": "optional",
+      "price": 20,
+      "effect": { "meter": "mood", "delta": 12 },
+      "description": "Поход в кино с питомцем"
+    },
+    {
+      "id": "toy",
+      "name": "Игрушка",
+      "kind": "optional",
+      "price": 25,
+      "effect": { "meter": "mood", "delta": 10 },
+      "description": "Большая игрушка — стоит дорого"
+    }
+  ]
+}
