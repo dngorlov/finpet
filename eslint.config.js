@@ -41,6 +41,20 @@ module.exports = [
     },
   },
   {
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    ignores: ["src/**/__tests__/**", "src/**/*.test.ts", "src/**/*.node.test.ts"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        {
+          name: "crypto",
+          message:
+            "React Native does not guarantee a global crypto object. Use createLocalId from src/data/localId.",
+        },
+      ],
+    },
+  },
+  {
     files: ["src/core/**/*.ts"],
     rules: {
       "no-restricted-imports": [

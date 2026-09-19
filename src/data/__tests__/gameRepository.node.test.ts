@@ -76,6 +76,32 @@ function sums(sqlite: import("better-sqlite3").Database, profileId: string) {
 }
 
 describe("grants and the balance invariant", () => {
+  it("creates a Профиль ребёнка when the runtime has no global crypto", () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+    Object.defineProperty(globalThis, "crypto", { configurable: true, value: undefined });
+    try {
+      const { game } = openMemoryGame();
+      const profileId = game.createProfile({
+        name: "Миша",
+        species: "sp1",
+        color: "c1",
+        accessory: "a1",
+        petName: "Пух",
+        contentVersion: 1,
+        goals: GOALS,
+        activeGoalKey: "skateboard",
+      });
+
+      expect(game.getProfile(profileId).petName).toBe("Пух");
+    } finally {
+      if (descriptor) {
+        Object.defineProperty(globalThis, "crypto", descriptor);
+      } else {
+        delete (globalThis as { crypto?: Crypto }).crypto;
+      }
+    }
+  });
+
   it("completes Первый запуск atomically and is idempotent for the same profile id", () => {
     const { game, meta, sqlite } = openMemoryGame();
     const input = {

@@ -21,6 +21,7 @@ import {
   type Stage,
 } from "../../core/stages";
 import { taskRewardDue, type TaskStepResult } from "../../core/tasks";
+import { createLocalId } from "../localId";
 import { META_KEYS } from "../metaKeys";
 import * as tables from "../schema";
 import type * as schema from "../schema";
@@ -81,7 +82,7 @@ export interface SavingsView {
  */
 export function createGameRepository(db: GameDb, clock: Clock) {
   const nowMs = () => clock.now().getTime();
-  const newId = (prefix: string) => `${prefix}_${crypto.randomUUID()}`;
+  const newId = (prefix: string) => createLocalId(prefix);
 
   function profile(conn: GameDb, profileId: string) {
     const row = conn.select().from(tables.profiles).where(eq(tables.profiles.id, profileId)).get();
@@ -276,7 +277,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
 
   return {
     createProfile(input: CreateProfileInput): string {
-      const id = input.id ?? crypto.randomUUID();
+      const id = input.id ?? createLocalId("profile");
       db.transaction((tx) => {
         insertProfile(tx, input, id);
       });
@@ -284,7 +285,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     },
 
     completeFirstRun(input: CreateProfileInput): string {
-      const id = input.id ?? crypto.randomUUID();
+      const id = input.id ?? createLocalId("profile");
       const existing = db.select().from(tables.profiles).where(eq(tables.profiles.id, id)).get();
       if (existing) {
         const active = db

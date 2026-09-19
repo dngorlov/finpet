@@ -10,6 +10,7 @@ import {
   type Role,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { createLocalId } from "../../data/localId";
 import { AppButton } from "../components/AppButton";
 import { HowToPlay } from "../components/HowToPlay";
 import type { RootStackParamList } from "../navigation/types";
@@ -44,7 +45,7 @@ export default function FirstRunScreen({ navigation }: Props) {
   const { content, firstRun } = useSession();
   const [phase, setPhase] = useState<Phase>("pet");
   const [draft, setDraft] = useState<FirstRunDraft>(() => ({
-    profileId: crypto.randomUUID(),
+    profileId: createLocalId("profile"),
     species: "sp1",
     color: "c1",
     accessory: "a1",

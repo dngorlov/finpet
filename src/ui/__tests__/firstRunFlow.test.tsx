@@ -19,6 +19,21 @@ async function reachHowToPlay(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("first-run flow (Appendix A 1–4)", () => {
+  it("starts Первый запуск when the runtime has no global crypto", async () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+    Object.defineProperty(globalThis, "crypto", { configurable: true, value: undefined });
+    try {
+      await renderApp();
+      expect(screen.getByText("Питомец")).toBeOnTheScreen();
+    } finally {
+      if (descriptor) {
+        Object.defineProperty(globalThis, "crypto", descriptor);
+      } else {
+        delete (globalThis as { crypto?: Crypto }).crypto;
+      }
+    }
+  });
+
   it("starts with pet customization before names and Как играть", async () => {
     const { user } = await renderApp();
 
