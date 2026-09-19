@@ -66,6 +66,24 @@ describe("first-run flow (Appendix A 1–4)", () => {
     }
   });
 
+  it("starts Первый запуск when the runtime has no Intl.Segmenter", () => {
+    const descriptor = Object.getOwnPropertyDescriptor(Intl, "Segmenter");
+    Object.defineProperty(Intl, "Segmenter", { configurable: true, value: undefined });
+    try {
+      expect(() => {
+        jest.isolateModules(() => {
+          require("../FinPetApp");
+        });
+      }).not.toThrow();
+    } finally {
+      if (descriptor) {
+        Object.defineProperty(Intl, "Segmenter", descriptor);
+      } else {
+        delete (Intl as { Segmenter?: typeof Intl.Segmenter }).Segmenter;
+      }
+    }
+  });
+
   it("starts with pet customization before names and Как играть", async () => {
     const { user } = await renderApp();
 

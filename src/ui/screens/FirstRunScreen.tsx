@@ -33,7 +33,6 @@ type FirstRunDraft = {
 };
 
 const TEXTBOX_ROLE = "textbox" as Role;
-const GRAPHEME_SEGMENTER = new Intl.Segmenter("ru", { granularity: "grapheme" });
 
 export default function FirstRunScreen({ navigation }: Props) {
   const { content, firstRun } = useSession();
@@ -245,8 +244,15 @@ function NamesPhase({
   );
 }
 
+function graphemeLength(value: string): number {
+  if (typeof Intl.Segmenter === "function") {
+    return Array.from(new Intl.Segmenter("ru", { granularity: "grapheme" }).segment(value)).length;
+  }
+  return Array.from(value).length;
+}
+
 function isValidName(value: string): boolean {
-  const length = Array.from(GRAPHEME_SEGMENTER.segment(value.trim())).length;
+  const length = graphemeLength(value.trim());
   return length >= 1 && length <= 20;
 }
 
