@@ -16,6 +16,7 @@ Seams (approved): navigation-root RNTL via fake `SessionPorts`; device AC for Ap
 - SessionGame M4 reads are live: expanded `closeDay`, `lastClosedDay`, `listTaskProgress`, `dayState.open`; fake `openDay` blocks non-demo after close ([01-session-reads.md](issues/01-session-reads.md)).
 - Progress Итоги fills from `lastClosedDay` (no UI stage recompute); Журнал labels `task_reward:*` / `task_scene` ([05-progress-itogi.md](issues/05-progress-itogi.md)).
 - AdultGate stays M5; this milestone ships a thin demo panel.
+- DaySummary + waiting hub: confirmed «Закончить день» calls `closeDay` / `lastClosedDay`; normal Main freezes План/Магазин/Копилка until tomorrow ([03-day-close.md](issues/03-day-close.md)).
 
 ## Fog
 

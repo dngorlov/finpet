@@ -40,7 +40,7 @@ const HUB_PET_SIZE = 200;
 export default function MainScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
   const [hub, setHub] = useState<HubModel | null>(null);
-  const [hubMessage, setHubMessage] = useState<"needPlan" | "dayLater" | null>(null);
+  const [hubMessage, setHubMessage] = useState<"needPlan" | null>(null);
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
 
   useFocusEffect(
@@ -88,6 +88,7 @@ export default function MainScreen({ navigation }: Props) {
   }
 
   const goStub = (destination: StubDestination) => navigation.navigate("Stub", { destination });
+  const waiting = !hub.day.open;
 
   return (
     <Screen>
@@ -100,6 +101,7 @@ export default function MainScreen({ navigation }: Props) {
         <Badge icon={strings.balanceIcon} word={strings.balanceWord} value={hub.profile.balance} />
         <Badge icon={strings.savingsIcon} word={strings.savingsWord} value={hub.savings.pot} />
       </View>
+      {waiting ? <Text style={styles.body}>{strings.waitingBanner}</Text> : null}
       <View style={styles.pet}>
         <PetView
           species={hub.profile.species}
@@ -130,18 +132,29 @@ export default function MainScreen({ navigation }: Props) {
         <NavTile
           pictogram={strings.navPlanPictogram}
           word={strings.navPlan}
-          highlighted={hub.day.plan.status !== "confirmed"}
-          hint={hub.day.plan.status === "confirmed" ? strings.planReady : strings.composePlanHint}
+          highlighted={!waiting && hub.day.plan.status !== "confirmed"}
+          hint={
+            waiting
+              ? strings.waitingEconomyHint
+              : hub.day.plan.status === "confirmed"
+                ? strings.planReady
+                : strings.composePlanHint
+          }
+          disabled={waiting}
           onPress={() => navigation.navigate("Plan")}
         />
         <NavTile
           pictogram={strings.navShopPictogram}
           word={strings.navShop}
+          hint={waiting ? strings.waitingEconomyHint : undefined}
+          disabled={waiting}
           onPress={() => navigation.navigate("Shop")}
         />
         <NavTile
           pictogram={strings.navSavingsPictogram}
           word={strings.navSavings}
+          hint={waiting ? strings.waitingEconomyHint : undefined}
+          disabled={waiting}
           onPress={() => navigation.navigate("Savings")}
         />
         <NavTile
@@ -161,13 +174,21 @@ export default function MainScreen({ navigation }: Props) {
         />
       </View>
       {hubMessage === "needPlan" ? <Text style={styles.body}>{strings.finishDayNeedPlan}</Text> : null}
-      {hubMessage === "dayLater" ? <Text style={styles.body}>{strings.finishDayLater}</Text> : null}
-      <PrimaryButton
-        label={strings.finishDay}
-        onPress={() =>
-          setHubMessage(hub.day.plan.status === "confirmed" ? "dayLater" : "needPlan")
-        }
-      />
+      {waiting ? null : (
+        <PrimaryButton
+          label={strings.finishDay}
+          onPress={() => {
+            if (hub.day.plan.status !== "confirmed") {
+              setHubMessage("needPlan");
+              return;
+            }
+            const profileId = meta.get(META_KEYS.activeProfileId);
+            if (!profileId) return;
+            game.closeDay(profileId, content.catalog);
+            navigation.navigate("DaySummary");
+          }}
+        />
+      )}
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}
     </Screen>
   );
