@@ -2,19 +2,24 @@ import { ECONOMY, METERS } from "../../core/config";
 import {
   applyMeterDelta,
   checkPurchase,
+  dayCloseMeterDeltas,
   validatePlan,
   type CatalogItem,
   type PlanBuckets,
 } from "../../core/economy";
 import { applyGoalProgress, checkWithdrawal, estimateDaysToGoal, potFromTransfers } from "../../core/savings";
+import { dayScore, explainStageChange, stageFromScores } from "../../core/stages";
+import { taskRewardDue, type TaskStepResult } from "../../core/tasks";
 import { loadContent } from "../../data/content";
 import { META_KEYS } from "../../data/metaKeys";
 import type {
   CreateProfileInput,
   DayState,
+  DaySummaryView,
   GoalOption,
   JournalEntry,
   ProfileView,
+  TaskProgressView,
 } from "../../data/repositories/gameRepository";
 import type { SessionPorts } from "../session/types";
 
@@ -31,6 +36,9 @@ type StoredProfile = ProfileView & {
   journal: JournalEntry[];
   purchases: PurchaseRow[];
   transfers: TransferRow[];
+  scores: number[];
+  lastClosed: DaySummaryView | null;
+  tasks: TaskProgressView[];
 };
 
 function viewOf(row: StoredProfile): ProfileView {
@@ -44,6 +52,9 @@ function viewOf(row: StoredProfile): ProfileView {
     journal: _journal,
     purchases: _purchases,
     transfers: _transfers,
+    scores: _scores,
+    lastClosed: _lastClosed,
+    tasks: _tasks,
     ...view
   } = row;
   return view;
@@ -98,10 +109,11 @@ function actuals(row: StoredProfile): PlanBuckets {
 }
 
 function dayStateOf(row: StoredProfile): DayState {
-  if (!row.dayOpen) throw new Error("Нет открытого игрового дня");
+  if (!row.dayOpen && !row.lastClosed) throw new Error("Нет открытого игрового дня");
   return {
     dayId: row.dayId,
     n: row.dayN,
+    open: row.dayOpen,
     plan: { status: row.planStatus, buckets: { ...row.buckets } },
     available: row.balance,
     actual: actuals(row),
@@ -141,6 +153,9 @@ export function createFakePorts(): SessionPorts {
       journal: [],
       purchases: [],
       transfers: [],
+      scores: [],
+      lastClosed: null,
+      tasks: [],
     };
     appendJournal(row, {
       amount: ECONOMY.startingBudget,
@@ -192,10 +207,18 @@ export function createFakePorts(): SessionPorts {
       },
       openDay(profileId) {
         const row = requireRow(profiles, profileId);
-        const dayId = `${profileId}#${row.dayN}`;
         if (row.dayOpen) {
-          return { status: "opened" as const, dayId, n: row.dayN, allowanceCredited: false };
+          return { status: "opened" as const, dayId: row.dayId, n: row.dayN, allowanceCredited: false };
         }
+        if (row.lastClosed && !row.isDemo) {
+          return { status: "blocked" as const };
+        }
+        if (row.lastClosed) {
+          row.dayN += 1;
+          row.planStatus = "none";
+          row.buckets = emptyBuckets();
+        }
+        const dayId = `${profileId}#${row.dayN}`;
         row.dayOpen = true;
         row.dayId = dayId;
         row.balance += ECONOMY.allowance;
@@ -330,6 +353,102 @@ export function createFakePorts(): SessionPorts {
         const row = requireRow(profiles, profileId);
         requireOpen(row, dayId);
         return [...new Set(row.purchases.filter((item) => item.dayId === dayId).map((item) => item.itemId))];
+      },
+      lastClosedDay(profileId) {
+        return requireRow(profiles, profileId).lastClosed;
+      },
+      listTaskProgress(profileId) {
+        return requireRow(profiles, profileId).tasks.map((task) => ({ ...task }));
+      },
+      applyTaskStep(profileId, dayId, result: TaskStepResult) {
+        const row = requireRow(profiles, profileId);
+        requireOpen(row, dayId);
+        for (const effect of result.effects) {
+          if (effect.meter && effect.delta) {
+            if (effect.meter === "care") {
+              row.care = applyMeterDelta(row.care, effect.delta);
+            } else {
+              row.mood = applyMeterDelta(row.mood, effect.delta);
+            }
+          }
+          if (effect.coins && effect.coins > 0) {
+            row.balance += effect.coins;
+            appendJournal(row, {
+              amount: effect.coins,
+              kind: "task_scene",
+              labelKey: "task_scene",
+            });
+          }
+        }
+        if (result.spawnTask && !row.tasks.some((task) => task.taskKey === result.spawnTask)) {
+          row.tasks.push({ taskKey: result.spawnTask, status: "available", rewardPaid: false });
+        }
+      },
+      claimTaskReward(profileId, dayId, taskId, correct) {
+        const row = requireRow(profiles, profileId);
+        requireOpen(row, dayId);
+        if (!correct) return 0;
+        const existing = row.tasks.find((task) => task.taskKey === taskId);
+        const alreadyPaid = existing?.rewardPaid === true;
+        const reward = taskRewardDue(alreadyPaid);
+        if (reward > 0) {
+          row.balance += reward;
+          appendJournal(row, {
+            amount: reward,
+            kind: "task_reward",
+            labelKey: `task_reward:${taskId}`,
+          });
+        }
+        if (existing) {
+          existing.status = "completed";
+          existing.rewardPaid = alreadyPaid || reward > 0;
+        } else {
+          row.tasks.push({ taskKey: taskId, status: "completed", rewardPaid: reward > 0 });
+        }
+        return reward;
+      },
+      closeDay(profileId, catalog) {
+        const row = requireRow(profiles, profileId);
+        if (!row.dayOpen) throw new Error("Нет открытого игрового дня");
+        const bought = row.purchases.filter((item) => item.dayId === row.dayId);
+        const mandatoryIds = catalog.filter((item) => item.kind === "mandatory").map((item) => item.id);
+        const boughtIds = new Set(bought.map((item) => item.itemId));
+        const mandatoryCovered = mandatoryIds.every((id) => boughtIds.has(id));
+        const actualSpend = bought.reduce((sum, item) => sum + item.price, 0);
+        const confirmed = row.planStatus === "confirmed" ? row.buckets : null;
+        const withinPlan =
+          confirmed !== null && actualSpend <= confirmed.mandatory + confirmed.optional;
+        const deposited = row.transfers.some((item) => item.dayId === row.dayId && item.kind === "in");
+        const score = dayScore({ mandatoryCovered, withinPlan, deposited });
+        const optionalSpend = bought
+          .filter((item) => item.kind === "optional")
+          .reduce((sum, item) => sum + item.price, 0);
+        const meterDeltas = dayCloseMeterDeltas({
+          missedMandatory: !mandatoryCovered,
+          optionalSpend,
+          optionalPlan: confirmed ? confirmed.optional : null,
+        });
+        if (meterDeltas.care) row.care = applyMeterDelta(row.care, meterDeltas.care);
+        if (meterDeltas.mood) row.mood = applyMeterDelta(row.mood, meterDeltas.mood);
+        const previousStage = row.stage;
+        row.scores.push(score);
+        const stage = stageFromScores(row.scores);
+        row.stage = stage;
+        row.dayOpen = false;
+        const summary: DaySummaryView = {
+          dayId: row.dayId,
+          n: row.dayN,
+          score,
+          facts: { mandatoryCovered, withinPlan, deposited },
+          plan: { ...row.buckets },
+          actual: actuals(row),
+          meterDeltas,
+          stage,
+          previousStage,
+          stageExplanation: explainStageChange(previousStage, stage),
+        };
+        row.lastClosed = summary;
+        return summary;
       },
     },
   };

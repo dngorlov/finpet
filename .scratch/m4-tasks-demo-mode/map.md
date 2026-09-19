@@ -13,6 +13,7 @@ Seams (approved): navigation-root RNTL via fake `SessionPorts`; device AC for Ap
 - Reuse M1 `applyTaskStep` / `claimTaskReward` / `closeDay` / `createProfile({ isDemo })`. No second engine.
 - Reward: `good` or `warn` exit is correct; `bad` exit completes without pay and leaves `rewardPaid` false.
 - No schema shape change: `lastClosedDay` reconstructs from existing `dayScores` / plans / purchases / meterEvents.
+- SessionGame M4 reads are live: expanded `closeDay`, `lastClosedDay`, `listTaskProgress`, `dayState.open`; fake `openDay` blocks non-demo after close ([01-session-reads.md](issues/01-session-reads.md)).
 - AdultGate stays M5; this milestone ships a thin demo panel.
 
 ## Fog

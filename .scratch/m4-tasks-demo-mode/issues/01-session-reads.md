@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready
+**Status:** resolved
 
 Type: task
 
@@ -30,3 +30,8 @@ Type: task
 ## Done when
 
 `SessionGame` and fakes expose the M4 reads/writes; node tests cover `lastClosedDay`, `listTaskProgress`, `dayState.open`, and expanded `closeDay`. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+SessionGame now returns `DaySummaryView` from `closeDay`, reloads it via `lastClosedDay` from existing tables, lists `{ taskKey, status, rewardPaid }`, and keeps hub `dayState` with `open: false` after a close. Fakes block a non-demo `openDay` after close and stay back-to-back for `isDemo`.
+

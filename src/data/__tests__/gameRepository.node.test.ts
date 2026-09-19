@@ -466,6 +466,7 @@ describe("day and journal reads", () => {
     expect(game.dayState(profileId)).toMatchObject({
       dayId: opened.dayId,
       n: 1,
+      open: true,
       plan: { status: "none", buckets: { mandatory: 0, optional: 0, savings: 0 } },
       available: 110,
       actual: { mandatory: 0, optional: 0, savings: 0 },
@@ -503,5 +504,59 @@ describe("day and journal reads", () => {
       dayN: 0,
       amount: 100,
     });
+  });
+
+  it("returns an expanded day summary from closeDay and lastClosedDay", () => {
+    const { game, profileId } = seed();
+
+    expect(game.lastClosedDay(profileId)).toBeNull();
+    expect(game.listTaskProgress(profileId)).toEqual([]);
+
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+    const closed = playScoredDay(game, profileId);
+
+    expect(closed).toMatchObject({
+      dayId: opened.dayId,
+      n: 1,
+      score: 4,
+      facts: { mandatoryCovered: true, withinPlan: true, deposited: true },
+      plan: { mandatory: 12, optional: 5, savings: 15 },
+      actual: { mandatory: 12, optional: 5, savings: 15 },
+      meterDeltas: { care: 0, mood: 0 },
+      stage: "friend",
+      previousStage: "novice",
+    });
+    expect(closed.stageExplanation).toMatch(/Друг/);
+    expect(game.lastClosedDay(profileId)).toEqual(closed);
+    expect(game.dayState(profileId)).toMatchObject({
+      open: false,
+      dayId: opened.dayId,
+      n: 1,
+      plan: { status: "confirmed", buckets: { mandatory: 12, optional: 5, savings: 15 } },
+      actual: { mandatory: 12, optional: 5, savings: 15 },
+    });
+  });
+
+  it("lists task progress after a spawn and a first reward", () => {
+    const { game, profileId } = seed();
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+
+    game.applyTaskStep(profileId, opened.dayId, {
+      next: "exit",
+      verdict: "bad",
+      explanation: "исправить",
+      effects: [],
+      spawnTask: "budget_fix_backpack",
+    });
+    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", true)).toBe(10);
+
+    expect(game.listTaskProgress(profileId)).toEqual(
+      expect.arrayContaining([
+        { taskKey: "budget_fix_backpack", status: "available", rewardPaid: false },
+        { taskKey: "budget_first_plan", status: "completed", rewardPaid: true },
+      ]),
+    );
   });
 });

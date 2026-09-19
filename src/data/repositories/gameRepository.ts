@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import type { Clock } from "../../core/clock";
 import { ECONOMY, METERS } from "../../core/config";
@@ -48,11 +48,25 @@ export type OpenDayResult =
 export type ConfirmPlanResult = { ok: true } | { ok: false; remainder: number };
 export type WithdrawResult = { ok: true; potAfter: number } | { ok: false; potAfter: number };
 
-export interface CloseDayResult {
+export interface DaySummaryView {
+  dayId: string;
+  n: number;
   score: number;
+  facts: { mandatoryCovered: boolean; withinPlan: boolean; deposited: boolean };
+  plan: PlanBuckets;
+  actual: PlanBuckets;
+  meterDeltas: { care: number; mood: number };
   stage: Stage;
+  previousStage: Stage;
   stageExplanation: string | null;
-  meters: { care: number; mood: number };
+}
+
+export type CloseDayResult = DaySummaryView;
+
+export interface TaskProgressView {
+  taskKey: string;
+  status: string;
+  rewardPaid: boolean;
 }
 
 /** Read model for the hub and PetView (appearance + meters + Баланс). */
@@ -79,6 +93,7 @@ export interface SavingsView {
 export interface DayState {
   dayId: string;
   n: number;
+  open: boolean;
   plan: {
     status: "none" | "draft" | "confirmed";
     buckets: PlanBuckets;
@@ -256,6 +271,101 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     if (!day || day.profileId !== profileId) throw new Error("Игровой день не найден");
     if (day.closedAt !== null) throw new Error("Игровой день уже закрыт");
     return day;
+  }
+
+  function latestClosedDay(conn: GameDb, profileId: string) {
+    return conn
+      .select()
+      .from(tables.days)
+      .where(and(eq(tables.days.profileId, profileId), isNotNull(tables.days.closedAt)))
+      .orderBy(desc(tables.days.n))
+      .get();
+  }
+
+  function emptyBuckets(): PlanBuckets {
+    return { mandatory: 0, optional: 0, savings: 0 };
+  }
+
+  function planBuckets(plan: { mandatory: number; optional: number; savings: number } | undefined): PlanBuckets {
+    return plan
+      ? { mandatory: plan.mandatory, optional: plan.optional, savings: plan.savings }
+      : emptyBuckets();
+  }
+
+  function actualForDay(conn: GameDb, dayId: string): PlanBuckets {
+    const bought = conn.select().from(tables.purchases).where(eq(tables.purchases.dayId, dayId)).all();
+    const deposits = conn
+      .select()
+      .from(tables.savingsTransfers)
+      .where(and(eq(tables.savingsTransfers.dayId, dayId), eq(tables.savingsTransfers.kind, "in")))
+      .all();
+    return {
+      mandatory: bought.filter((row) => row.kind === "mandatory").reduce((sum, row) => sum + row.price, 0),
+      optional: bought.filter((row) => row.kind === "optional").reduce((sum, row) => sum + row.price, 0),
+      savings: deposits.reduce((sum, row) => sum + row.amount, 0),
+    };
+  }
+
+  function dayStateFrom(
+    conn: GameDb,
+    profileId: string,
+    day: { id: string; n: number },
+    open: boolean,
+  ): DayState {
+    const plan = planForDay(conn, day.id);
+    return {
+      dayId: day.id,
+      n: day.n,
+      open,
+      plan: {
+        status: plan?.status ?? "none",
+        buckets: planBuckets(plan),
+      },
+      available: profile(conn, profileId).balance,
+      actual: actualForDay(conn, day.id),
+    };
+  }
+
+  function orderedScores(conn: GameDb, profileId: string) {
+    const days = conn.select().from(tables.days).where(eq(tables.days.profileId, profileId)).all();
+    const scores = conn.select().from(tables.dayScores).where(eq(tables.dayScores.profileId, profileId)).all();
+    const nById = new Map(days.map((day) => [day.id, day.n]));
+    return scores
+      .map((row) => ({ ...row, n: nById.get(row.dayId) ?? 0 }))
+      .sort((a, b) => a.n - b.n);
+  }
+
+  function readDaySummary(conn: GameDb, profileId: string, dayId: string): DaySummaryView | null {
+    const day = conn.select().from(tables.days).where(eq(tables.days.id, dayId)).get();
+    const scoreRow = conn.select().from(tables.dayScores).where(eq(tables.dayScores.dayId, dayId)).get();
+    if (!day || !scoreRow) return null;
+    const upto = orderedScores(conn, profileId).filter((row) => row.n <= day.n);
+    const previousStage = stageFromScores(upto.slice(0, -1).map((row) => row.score));
+    const stage = stageFromScores(upto.map((row) => row.score));
+    const events = conn
+      .select()
+      .from(tables.meterEvents)
+      .where(and(eq(tables.meterEvents.dayId, dayId), eq(tables.meterEvents.source, "day_close")))
+      .all();
+    return {
+      dayId: day.id,
+      n: day.n,
+      score: scoreRow.score,
+      facts: {
+        mandatoryCovered: scoreRow.mandatoryCovered === 1,
+        withinPlan: scoreRow.withinPlan === 1,
+        deposited: scoreRow.deposited === 1,
+      },
+      plan: planBuckets(planForDay(conn, dayId)),
+      actual: actualForDay(conn, dayId),
+      meterDeltas: {
+        care: events.filter((event) => event.meter === "care").reduce((sum, event) => sum + event.delta, 0),
+        mood: events.filter((event) => event.meter === "mood").reduce((sum, event) => sum + event.delta, 0),
+      },
+      stage,
+      previousStage,
+      stageExplanation: explainStageChange(previousStage, stage),
+    };
   }
 
   function insertProfile(conn: GameDb, input: CreateProfileInput, id: string) {
@@ -588,30 +698,31 @@ export function createGameRepository(db: GameDb, clock: Clock) {
 
     dayState(profileId: string): DayState {
       const open = openDayRow(db, profileId);
-      if (!open) throw new Error("Нет открытого игрового дня");
-      const plan = planForDay(db, open.id);
-      const bought = db.select().from(tables.purchases).where(eq(tables.purchases.dayId, open.id)).all();
-      const deposits = db
+      if (open) return dayStateFrom(db, profileId, open, true);
+      const closed = latestClosedDay(db, profileId);
+      if (closed) return dayStateFrom(db, profileId, closed, false);
+      throw new Error("Нет открытого игрового дня");
+    },
+
+    lastClosedDay(profileId: string): DaySummaryView | null {
+      profile(db, profileId);
+      const last = latestClosedDay(db, profileId);
+      if (!last) return null;
+      return readDaySummary(db, profileId, last.id);
+    },
+
+    listTaskProgress(profileId: string): TaskProgressView[] {
+      profile(db, profileId);
+      return db
         .select()
-        .from(tables.savingsTransfers)
-        .where(and(eq(tables.savingsTransfers.dayId, open.id), eq(tables.savingsTransfers.kind, "in")))
-        .all();
-      return {
-        dayId: open.id,
-        n: open.n,
-        plan: {
-          status: plan?.status ?? "none",
-          buckets: plan
-            ? { mandatory: plan.mandatory, optional: plan.optional, savings: plan.savings }
-            : { mandatory: 0, optional: 0, savings: 0 },
-        },
-        available: profile(db, profileId).balance,
-        actual: {
-          mandatory: bought.filter((row) => row.kind === "mandatory").reduce((sum, row) => sum + row.price, 0),
-          optional: bought.filter((row) => row.kind === "optional").reduce((sum, row) => sum + row.price, 0),
-          savings: deposits.reduce((sum, row) => sum + row.amount, 0),
-        },
-      };
+        .from(tables.taskProgress)
+        .where(eq(tables.taskProgress.profileId, profileId))
+        .all()
+        .map((row) => ({
+          taskKey: row.taskKey,
+          status: row.status,
+          rewardPaid: row.rewardPaid === 1,
+        }));
     },
 
     listJournal(profileId: string): JournalEntry[] {
@@ -718,7 +829,6 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           .where(eq(tables.dayScores.profileId, profileId))
           .all();
         const scores = [...previous.map((row) => row.score), score];
-        const from = stageFromCode(pet(tx, profileId).stage);
         const to = stageFromScores(scores);
         tx.insert(tables.dayScores)
           .values({
@@ -736,13 +846,9 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           .where(eq(tables.petState.profileId, profileId))
           .run();
         tx.update(tables.days).set({ closedAt: nowMs() }).where(eq(tables.days.id, day.id)).run();
-        const meters = pet(tx, profileId);
-        return {
-          score,
-          stage: to,
-          stageExplanation: explainStageChange(from, to),
-          meters: { care: meters.care, mood: meters.mood },
-        };
+        const summary = readDaySummary(tx, profileId, day.id);
+        if (!summary) throw new Error("Нет итогов закрытого дня");
+        return summary;
       });
     },
 
