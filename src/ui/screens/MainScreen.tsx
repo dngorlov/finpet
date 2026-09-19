@@ -6,7 +6,7 @@ import { STAGE_NAMES } from "../../core/stages";
 import { unlockedTasks } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
 import type { ProfileView, SavingsView } from "../../data/repositories/gameRepository";
-import { AppButton } from "../components/AppButton";
+import { PrimaryButton } from "../components/PrimaryButton";
 import { MeterBar } from "../components/MeterBar";
 import type { RootStackParamList, StubDestination } from "../navigation/types";
 import { PetView } from "../pet/PetView";
@@ -107,7 +107,7 @@ export default function MainScreen({ navigation }: Props) {
       {hub.taskTitle ? (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{hub.taskTitle}</Text>
-          <AppButton label={strings.playTask} onPress={() => goStub("tasks")} />
+          <PrimaryButton label={strings.playTask} onPress={() => goStub("tasks")} />
         </View>
       ) : null}
       <View style={styles.grid}>
@@ -119,7 +119,7 @@ export default function MainScreen({ navigation }: Props) {
         <NavTile label={strings.navAdult} onPress={() => goStub("adult")} />
       </View>
       {planPrompt ? <Text style={styles.body}>{strings.finishDayNeedPlan}</Text> : null}
-      <AppButton label={strings.finishDay} onPress={() => setPlanPrompt(true)} />
+      <PrimaryButton label={strings.finishDay} onPress={() => setPlanPrompt(true)} />
     </ScrollView>
   );
 }

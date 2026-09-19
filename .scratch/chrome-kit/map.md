@@ -12,6 +12,7 @@ This is a visual consistency pass. Do not change persistence, routing, first-run
 - Kit first, then screen migrations in parallel, then one flow-test ticket.
 - ROADMAP §4 already records this chrome.
 - 01 theme tokens: `type.section` / `type.button`, `colors.raisedFace|raisedEdge|disabledFace|badgeFill`, `radius.card`. Meter `fill` kept. See `src/ui/theme.ts`.
+- 02 buttons: `PrimaryButton` replaces `AppButton`; `TextButton` added for later screens. See `.scratch/chrome-kit/issues/02-primary-text-buttons.md`.
 
 ## Fog
 

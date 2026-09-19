@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
-import { AppButton } from "../components/AppButton";
+import { PrimaryButton } from "../components/PrimaryButton";
 import { strings } from "../strings";
 import { colors, spacing, type } from "../theme";
 
@@ -12,7 +12,7 @@ export default function StartingBudgetScreen({ navigation }: Props) {
     <View style={styles.screen}>
       <Text style={styles.title}>{strings.startingBudgetTitle}</Text>
       <Text style={styles.body}>{strings.startingBudgetBody}</Text>
-      <AppButton
+      <PrimaryButton
         label={strings.gotIt}
         onPress={() => navigation.reset({ index: 0, routes: [{ name: "Main" }] })}
       />

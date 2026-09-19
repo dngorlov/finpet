@@ -4,7 +4,7 @@ import type { HintCardContent } from "../../data/content";
 import { PetView } from "../pet/PetView";
 import { strings } from "../strings";
 import { colors, minTarget, spacing, type } from "../theme";
-import { AppButton } from "./AppButton";
+import { PrimaryButton } from "./PrimaryButton";
 
 type HowToPlayPet = {
   species: string;
@@ -97,7 +97,7 @@ export function HowToPlay({
       ) : null}
       <View style={styles.actions}>
         <TextAction label={strings.back} onPress={goBack} />
-        <AppButton
+        <PrimaryButton
           label={last ? (replay ? strings.done : strings.play) : strings.next}
           disabled={busy}
           onPress={next}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BackButton } from "../components/BackButton";
-import { AppButton } from "../components/AppButton";
+import { PrimaryButton } from "../components/PrimaryButton";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
@@ -18,7 +18,7 @@ export default function GlossaryScreen({ navigation }: Props) {
     <ScrollView contentContainerStyle={styles.screen}>
       <BackButton />
       <Text style={styles.title}>{strings.glossaryTitle}</Text>
-      <AppButton label={strings.howToPlay} onPress={() => navigation.navigate("HowToPlay")} />
+      <PrimaryButton label={strings.howToPlay} onPress={() => navigation.navigate("HowToPlay")} />
       {content.terms.map((term) => (
         <View key={term.id} style={styles.row}>
           <Pressable

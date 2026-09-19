@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { createLocalId } from "../../data/localId";
-import { AppButton } from "../components/AppButton";
+import { PrimaryButton } from "../components/PrimaryButton";
 import { HowToPlay } from "../components/HowToPlay";
 import type { RootStackParamList } from "../navigation/types";
 import {
@@ -181,7 +181,7 @@ function PetPhase({
         value={draft.accessory}
         onChange={(accessory) => onChange({ accessory })}
       />
-      <AppButton label={strings.next} onPress={onNext} />
+      <PrimaryButton label={strings.next} onPress={onNext} />
     </ScrollView>
   );
 }
@@ -240,8 +240,8 @@ function NamesPhase({
       {petNameTouched && !isValidName(draft.petName) ? (
         <Text style={styles.validation}>{strings.nameValidation}</Text>
       ) : null}
-      <AppButton label={strings.back} onPress={onBack} />
-      <AppButton label={strings.next} disabled={!namesValid} onPress={onNext} />
+      <PrimaryButton label={strings.back} onPress={onBack} />
+      <PrimaryButton label={strings.next} disabled={!namesValid} onPress={onNext} />
     </ScrollView>
   );
 }

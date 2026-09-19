@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, type PressableProps } from "react-native";
 import { colors, minTarget, spacing, type } from "../theme";
 
-export function AppButton({
+export function TextButton({
   label,
   disabled,
   onPress,
@@ -9,13 +9,13 @@ export function AppButton({
 }: { label: string } & PressableProps) {
   return (
     <Pressable
+      {...rest}
       role="button"
       aria-label={label}
       aria-disabled={Boolean(disabled)}
       disabled={disabled}
       onPress={onPress}
-      style={[styles.button, disabled ? styles.disabled : null]}
-      {...rest}
+      style={styles.button}
     >
       <Text style={styles.label}>{label}</Text>
     </Pressable>
@@ -25,19 +25,13 @@ export function AppButton({
 const styles = StyleSheet.create({
   button: {
     alignItems: "center",
-    backgroundColor: colors.accent,
-    borderRadius: 12,
     justifyContent: "center",
     minHeight: minTarget,
     paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
-  },
-  disabled: {
-    opacity: 0.4,
   },
   label: {
-    color: colors.card,
-    fontSize: type.body,
+    color: colors.accent,
+    fontSize: type.button,
     fontWeight: "700",
   },
 });
