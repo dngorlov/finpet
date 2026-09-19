@@ -1,6 +1,6 @@
 # 04 — Restyle MeterBar and BackButton
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 Blocked by: 01
 
@@ -23,3 +23,7 @@ Restyle the existing `MeterBar` and `BackButton` to the kit. Do not duplicate th
 ## Done when
 
 Both components use kit tokens. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Restyled in place: MeterBar uses a taller pill track/fill (`spacing.l` + `radius.card`) and still shows icon + `strings.meterLine`; `colors.fill` unchanged. BackButton still renders the word «Назад» on a `minTarget` (48) hit area with `type.button`, never icon-only. Public props and accessible names unchanged.

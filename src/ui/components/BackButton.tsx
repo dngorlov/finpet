@@ -1,7 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { strings } from "../strings";
-import { colors, minTarget, type } from "../theme";
+import { colors, minTarget, spacing, type } from "../theme";
 
 export function BackButton() {
   const navigation = useNavigation();
@@ -23,10 +23,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: minTarget,
     minWidth: minTarget,
+    paddingHorizontal: spacing.s,
   },
   label: {
     color: colors.text,
-    fontSize: type.body,
+    fontSize: type.button,
     fontWeight: "700",
   },
 });

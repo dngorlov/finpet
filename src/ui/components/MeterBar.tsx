@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { strings } from "../strings";
-import { colors, spacing, type } from "../theme";
+import { colors, radius, spacing, type } from "../theme";
 
 export function MeterBar({ icon, label, value }: { icon: string; label: string; value: number }) {
   return (
@@ -35,12 +35,13 @@ const styles = StyleSheet.create({
   },
   track: {
     backgroundColor: colors.track,
-    borderRadius: 8,
-    height: 12,
+    borderRadius: radius.card,
+    height: spacing.l,
     overflow: "hidden",
   },
   fill: {
     backgroundColor: colors.fill,
-    height: 12,
+    borderRadius: radius.card,
+    height: spacing.l,
   },
 });
