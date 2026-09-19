@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react";
-import {
-  BackHandler,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  type Role,
-} from "react-native";
+import { BackHandler, StyleSheet, Text, TextInput, View, type Role } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { createLocalId } from "../../data/localId";
-import { PrimaryButton } from "../components/PrimaryButton";
+import { Chip } from "../components/Chip";
 import { HowToPlay } from "../components/HowToPlay";
+import { PrimaryButton } from "../components/PrimaryButton";
+import { Screen } from "../components/Screen";
+import { TextButton } from "../components/TextButton";
 import type { RootStackParamList } from "../navigation/types";
 import {
   ACCESSORY_KEYS,
@@ -152,7 +146,7 @@ function PetPhase({
   onNext: () => void;
 }) {
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
+    <Screen footer={<PrimaryButton label={strings.next} onPress={onNext} />}>
       <Text style={styles.title}>{strings.firstRunPet}</Text>
       <PetView
         species={draft.species}
@@ -160,29 +154,28 @@ function PetPhase({
         accessory={draft.accessory}
         pose="idle"
       />
-      <ChipRow
+      <AppearanceGroup
         legend={strings.speciesLegend}
         keys={SPECIES_KEYS}
         labelOf={strings.speciesName}
         value={draft.species}
         onChange={(species) => onChange({ species })}
       />
-      <ChipRow
+      <AppearanceGroup
         legend={strings.colorLegend}
         keys={COLOR_KEYS}
         labelOf={strings.colorName}
         value={draft.color}
         onChange={(color) => onChange({ color })}
       />
-      <ChipRow
+      <AppearanceGroup
         legend={strings.accessoryLegend}
         keys={ACCESSORY_KEYS}
         labelOf={strings.accessoryName}
         value={draft.accessory}
         onChange={(accessory) => onChange({ accessory })}
       />
-      <PrimaryButton label={strings.next} onPress={onNext} />
-    </ScrollView>
+    </Screen>
   );
 }
 
@@ -207,7 +200,15 @@ function NamesPhase({
 }) {
   const namesValid = isValidName(draft.playerName) && isValidName(draft.petName);
   return (
-    <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
+    <Screen
+      keyboardShouldPersistTaps="handled"
+      footer={
+        <>
+          <TextButton label={strings.back} onPress={onBack} />
+          <PrimaryButton label={strings.next} disabled={!namesValid} onPress={onNext} />
+        </>
+      }
+    >
       <Text style={styles.title}>{strings.firstRunNames}</Text>
       <PetView
         species={draft.species}
@@ -240,9 +241,7 @@ function NamesPhase({
       {petNameTouched && !isValidName(draft.petName) ? (
         <Text style={styles.validation}>{strings.nameValidation}</Text>
       ) : null}
-      <PrimaryButton label={strings.back} onPress={onBack} />
-      <PrimaryButton label={strings.next} disabled={!namesValid} onPress={onNext} />
-    </ScrollView>
+    </Screen>
   );
 }
 
@@ -251,7 +250,7 @@ function isValidName(value: string): boolean {
   return length >= 1 && length <= 20;
 }
 
-function ChipRow<K extends string>({
+function AppearanceGroup<K extends string>({
   legend,
   keys,
   labelOf,
@@ -269,16 +268,12 @@ function ChipRow<K extends string>({
       <Text style={styles.legend}>{legend}</Text>
       <View style={styles.chipRow}>
         {keys.map((key) => (
-          <Pressable
+          <Chip
             key={key}
-            role="button"
-            aria-label={labelOf(key)}
-            aria-selected={value === key}
+            label={labelOf(key)}
+            selected={value === key}
             onPress={() => onChange(key)}
-            style={[styles.chip, value === key ? styles.chipOn : null]}
-          >
-            <Text style={styles.chipLabel}>{labelOf(key)}</Text>
-          </Pressable>
+          />
         ))}
       </View>
     </View>
@@ -286,12 +281,6 @@ function ChipRow<K extends string>({
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: colors.background,
-    flexGrow: 1,
-    gap: spacing.m,
-    padding: spacing.l,
-  },
   title: {
     color: colors.text,
     fontSize: type.title,
@@ -322,22 +311,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.s,
-  },
-  chip: {
-    backgroundColor: colors.card,
-    borderColor: colors.track,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: "center",
-    minHeight: minTarget,
-    paddingHorizontal: spacing.m,
-  },
-  chipOn: {
-    backgroundColor: colors.highlight,
-    borderColor: colors.accent,
-  },
-  chipLabel: {
-    color: colors.text,
-    fontSize: type.body,
   },
 });

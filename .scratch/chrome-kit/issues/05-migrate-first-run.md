@@ -1,6 +1,6 @@
 # 05 — Migrate Первый запуск onto the kit
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 Blocked by: 02, 03, 04
 
@@ -24,3 +24,7 @@ Blocked by: 02, 03, 04
 ## Done when
 
 Local chip styles are gone. `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Pet and names phases now use `Screen` with a pinned footer so «Дальше» stays reachable: kit `Chip` (`label` / `selected` / `aria-selected`) replaced local `ChipRow`; names «Назад» is a quiet `TextButton`, not a second `PrimaryButton`. Rules still `return <HowToPlay ... />` unchanged. Draft, grapheme validation, hardware back, and `firstRun.complete` timing are untouched. `npm test` (70) and `npm run typecheck` pass.
