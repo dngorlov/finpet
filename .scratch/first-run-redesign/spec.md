@@ -12,7 +12,7 @@ The existing first-run journey also combines appearance and both names on one se
 
 Replace the rules-first stack with one pet-first Первый запуск journey:
 
-1. **Питомец:** choose Вид, Окрас, and Аксессуар while watching a live preview.
+1. **Питомец:** live preview on top, then three bead sliders (Вид, Окрас, Аксессуар) beneath it — discrete tracks with accent/dim beads, tap or drag, preview follows the nearest stop. Full control recipe: `.scratch/first-run-bead-sliders/spec.md`.
 2. **Имена:** enter the child's game name and the pet's name while keeping the customized pet visible.
 3. **Как играть:** the named pet explains three short rules in first-person speech bubbles.
 
@@ -88,6 +88,7 @@ The same pet-spoken «Как играть» explanation remains replayable from 
 - Replace the separate rules-first and combined profile-setup flow with one FirstRun state machine. It owns the current phase and a single in-memory draft containing the stable profile id, appearance, child game name, and pet name. The reusable «Как играть» presentation owns its local rule-step index.
 - Render the state machine through separate phase components for Питомец, Имена, and «Как играть». These components share the draft but do not persist independently.
 - A complete default Вид, Окрас, and Аксессуар are selected initially. The child is not required to alter them.
+- On Питомец only, appearance axes use the shared bead-slider control (not Chip rows): preview above three tracks; see `.scratch/first-run-bead-sliders/spec.md`.
 - The naming phase trims surrounding whitespace. Each resulting name must contain 1–20 visible characters. No character-class restriction is added.
 - Show validation feedback after an invalid field loses focus. Keep the primary action disabled while either field is invalid.
 - Treat completion of «Как играть» as the sole first-run commit boundary. Both «Играть!» on step 3 and «Пропустить» call the same completion operation.
@@ -151,7 +152,7 @@ The same pet-spoken «Как играть» explanation remains replayable from 
   3. «Сначала составь план дня. Потом покупай, откладывай в Копилку и смотри, что получилось.»
 - Existing product documents and the domain glossary already use Первый запуск for the complete journey and «Как играть» for the replayable pet-spoken explanation.
 - The pre-existing deletion of `eas.json` is unrelated and must not be modified as part of this work.
-- On the Питомец phase, Вид, Окрас, and Аксессуар are chosen with bead sliders above the live preview (see `.scratch/first-run-bead-sliders/spec.md`); that control is not part of the chrome kit.
+- On the Питомец phase, Вид, Окрас, and Аксессуар are chosen with bead sliders below the live preview (see `.scratch/first-run-bead-sliders/spec.md`); that control is not part of the chrome kit.
 
 ## Comments
 
