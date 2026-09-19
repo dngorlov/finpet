@@ -151,6 +151,7 @@ The same pet-spoken «Как играть» explanation remains replayable from 
   3. «Сначала составь план дня. Потом покупай, откладывай в Копилку и смотри, что получилось.»
 - Existing product documents and the domain glossary already use Первый запуск for the complete journey and «Как играть» for the replayable pet-spoken explanation.
 - The pre-existing deletion of `eas.json` is unrelated and must not be modified as part of this work.
+- On the Питомец phase, Вид, Окрас, and Аксессуар are chosen with bead sliders above the live preview (see `.scratch/first-run-bead-sliders/spec.md`); that control is not part of the chrome kit.
 
 ## Comments
 

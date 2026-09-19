@@ -6,7 +6,7 @@ Status: ready-for-agent
 
 ФинПет currently looks like a stack of flat cream rectangles. Buttons, chips, cards, nav tiles, and speech bubbles are copied inside screens instead of shared, so each surface has a slightly different shape and the app does not feel like one game. Kids comparing it to familiar learning apps see a settings-form hub rather than a mascot-forward home.
 
-The primary action does not look pressable. Disabled «Дальше» only fades. Selection on appearance chips and the План tile is mostly a color change. Этап, Баланс, and Копилка sit as plain text. «Как играть» stacks controls in the scroll instead of keeping the next action in reach.
+The primary action does not look pressable. Disabled «Дальше» only fades. Selection on the План tile is mostly a color change. Этап, Баланс, and Копилка sit as plain text. «Как играть» stacks controls in the scroll instead of keeping the next action in reach.
 
 ## Solution
 
@@ -33,8 +33,8 @@ The child still plays ФинПет: cream/orange, Russian sentence case, Пит�
 15. As a ребёнок, I want the 2×3 destinations as NavTiles with a pictogram plus the existing word, so that the hub feels like a game map instead of a settings grid.
 16. As a TalkBack user, I want each NavTile’s accessible name to stay the word (План, Магазин, …), so that decoration is not announced twice.
 17. As a ребёнок whose План is not confirmed, I want the План tile to show a check plus «Составь план дня», so that the next step is not color-only.
-18. As a ребёнок picking Вид, Окрас, or Аксессуар, I want the selected Chip to show a visible check, so that selection is not color-only.
-19. As a TalkBack user, I want selected Chips to stay `aria-selected`, so that tests and TalkBack share the same state.
+18. As a ребёнок on the Питомец phase of Первый запуск picking Вид, Окрас, or Аксессуар, I want bead sliders whose selected stop shows the accent bead in its circle, so that selection is obvious without a Chip check.
+19. As a TalkBack user, I want selected Chips (everywhere Chip remains) to stay `aria-selected`, so that tests and TalkBack share the same state.
 20. As a ребёнок on «Как играть», I want the pet centered above a SpeechBubble with a tail pointing up, so that the pet is clearly speaking.
 21. As a ребёнок on «Как играть», I want the pet’s name visible next to that bubble, so that replay still feels personal.
 22. As a TalkBack user, I want each bubble announced once as «Питомец [имя] говорит: …», so that the decorative pet is not read twice.
@@ -62,7 +62,7 @@ The child still plays ФинПет: cream/orange, Russian sentence case, Пит�
 - Badge: icon + word + number for Этап, Баланс, Копилка on Main. Do not invent XP or lives.
 - Main structure, top to bottom: Badge strip; large centered PetView; Settings control; MeterBars; optional Пособие ribbon; Цель Card; Задание Card; 2×3 NavTiles; raised «Закончить день». No bottom tab bar. No vertical lesson path.
 - HowToPlay / rules phase: pet centered, name visible, SpeechBubble below with tail pointing up; primary + quiet action in the pinned footer. Keep existing replay labels and TalkBack bubble announcement. Decorative PetView stays hidden from the reading order on those steps.
-- FirstRun appearance and names: same phases and validation; Chips from the kit; primary in the pinned footer on all three phases so «Дальше» is always reachable.
+- FirstRun appearance and names: same phases and validation; Питомец phase uses bead sliders for Вид, Окрас, and Аксессуар (accent bead in the selected circle; circle buttons keep today’s option names and `aria-selected`; not kit Chip); primary in the pinned footer on all three phases so «Дальше» is always reachable.
 - MeterBar: taller rounded track/fill; keep icon + number; do not switch to discrete hearts.
 - System font only. No bundled rounded webfont. No uppercase Latin headings.
 - Press translation on PrimaryButton and raised NavTiles is the 1 s visual response, not an M6 animation-toggle feature. It must remain understandable if the OS reduces motion (edge can stay; bounce is forbidden).
@@ -74,7 +74,7 @@ The child still plays ФинПет: cream/orange, Russian sentence case, Пит�
 - A good test asserts what the child can see and do: words, roles, enabled/disabled, selection checks, badge text, navigation, pinned actions present, first-run commit unchanged. It does not assert shadow height, exact hex, border radius, or snapshot the tree for styling.
 - Use one navigation-root React Native Testing Library seam with the existing injected session ports (`FinPetApp` + fakes), the same seam as Первый запуск. Do not add a second visual-regression or per-component screenshot seam.
 - Follow RNTL v14: async `render`, `screen`, `userEvent`, role/name queries.
-- Extend the existing first-run flow coverage rather than a parallel suite: pet-first journey still completes once; selected appearance Chip is selected and not color-only (check is present); names still disable then enable «Дальше»; «Как играть» still announces the bubble once; skip/finish still commit once; replay still uses «Готово» / «Закрыть» with no second commit.
+- Extend the existing first-run flow coverage rather than a parallel suite: pet-first journey still completes once; selected appearance option buttons stay selected (`aria-selected` / `toBeSelected`) without requiring a Chip check glyph; names still disable then enable «Дальше»; «Как играть» still announces the bubble once; skip/finish still commit once; replay still uses «Готово» / «Закрыть» with no second commit.
 - Cover Main for a returning child: Badge texts for Этап / Баланс / Копилка; NavTiles still named План, Магазин, Копилка, Задания, Прогресс, Взрослый раздел; highlighted План includes the plan hint; Settings still opens.
 - Cover glossary and stub chrome only as far as existing flow already walks them (Прогресс → terms → «Как играть» → back). Do not snapshot glossary layout.
 - Do not test press-translation math. Device acceptance is the place to confirm the raised edge, depress on press, pinned bar at 360 dp with large text, and that indicators/chips do not look like unlabeled icons.
@@ -93,5 +93,6 @@ The child still plays ФинПет: cream/orange, Russian sentence case, Пит�
 ## Further Notes
 
 - Current shared pieces are only the flat primary button, text BackButton, MeterBar, PetView, and the whole HowToPlay screen. Chip rows, cards, tiles, and quiet text actions are local — that is the reuse gap this spec closes.
+- Питомец-phase Вид / Окрас / Аксессуар pickers are bead sliders (`.scratch/first-run-bead-sliders/spec.md`), not kit Chip. Chip’s visible check plus `aria-selected` still applies to every Chip that remains (Demo, Магазин, Копилка, Прогресс, План-needed NavTile, and similar).
 - Pictograms are decoration. If a tile has both an emoji and a word, queries must keep using the word.
 - Device follow-up (same Android SDK gap as earlier milestones): 360 dp portrait, enlarged text, raised buttons look pressable, pinned CTA visible on first run, airplane mode still irrelevant to chrome but hub must remain offline.

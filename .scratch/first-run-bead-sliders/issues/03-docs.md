@@ -1,6 +1,6 @@
 # 03 — Supersede Chip-row appearance docs
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 
 ## Goal
