@@ -11,8 +11,8 @@ The one-time journey in which a child creates a Профиль ребёнка an
 _Avoid_: онбординг (ambiguous: may mean only the «Как играть» cards)
 
 **Профиль ребёнка (Child profile)**:
-A local game identity: a game name plus the child's pet. No account, no personal data.
-_Avoid_: аккаунт, регистрация, пользователь
+A local game identity: the child's Питомец (its name and appearance). No account, no personal data.
+_Avoid_: аккаунт, регистрация, пользователь, имя игрока, game name
 
 **Демо-режим (Demo mode)**:
 An isolated test profile that walks the mandatory game loop through consecutive Game Days without waiting for real dates, resettable to its initial state.
