@@ -19,7 +19,7 @@ export type HowToPlayTourApi = {
   beatId: TourBeatId | null;
   body: string;
   anchor: TourAnchorRect | null;
-  start: (opts?: { replay?: boolean }) => void;
+  start: () => void;
   next: () => void;
   back: () => void;
   skip: () => void;
@@ -69,28 +69,25 @@ export function HowToPlayTourProvider({
     }
   }, [meta, navigationRef]);
 
-  const start = useCallback(
-    (_opts?: { replay?: boolean }) => {
-      const profileId = meta.get(META_KEYS.activeProfileId);
-      let beats: TourBeatId[] = TOUR_BEATS.map((beat) => beat.id);
-      if (profileId) {
-        const profile = game.getProfile(profileId);
-        const day = game.dayState(profileId);
-        const task = preferredHubTask(
-          content.tasks,
-          day.n,
-          profile.isDemo,
-          game.listTaskProgress(profileId),
-        );
-        if (!task) beats = beats.filter((id) => id !== TASK_BEAT_ID);
-      } else {
-        beats = beats.filter((id) => id !== TASK_BEAT_ID);
-      }
-      setAnchors({});
-      setRunning({ beats, index: 0 });
-    },
-    [content.tasks, game, meta],
-  );
+  const start = useCallback(() => {
+    const profileId = meta.get(META_KEYS.activeProfileId);
+    let beats: TourBeatId[] = TOUR_BEATS.map((beat) => beat.id);
+    if (profileId) {
+      const profile = game.getProfile(profileId);
+      const day = game.dayState(profileId);
+      const task = preferredHubTask(
+        content.tasks,
+        day.n,
+        profile.isDemo,
+        game.listTaskProgress(profileId),
+      );
+      if (!task) beats = beats.filter((id) => id !== TASK_BEAT_ID);
+    } else {
+      beats = beats.filter((id) => id !== TASK_BEAT_ID);
+    }
+    setAnchors({});
+    setRunning({ beats, index: 0 });
+  }, [content.tasks, game, meta]);
 
   const next = useCallback(() => {
     if (!running) return;

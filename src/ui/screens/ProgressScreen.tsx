@@ -165,7 +165,7 @@ export default function ProgressScreen(_props: Props) {
       {tab === "glossary" ? (
         <>
           <Card>
-            <PrimaryButton label={strings.howToPlay} onPress={() => tour.start({ replay: true })} />
+            <PrimaryButton label={strings.howToPlay} onPress={() => tour.start()} />
           </Card>
           {content.terms.map((term) => (
             <Card key={term.id}>

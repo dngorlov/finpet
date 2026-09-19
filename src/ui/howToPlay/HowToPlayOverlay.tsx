@@ -10,15 +10,16 @@ const DIM = "rgba(0,0,0,0.55)";
 
 export function HowToPlayOverlay() {
   const tour = useHowToPlayTour();
+  const { active, back } = tour;
 
   useEffect(() => {
-    if (!tour.active) return;
+    if (!active) return;
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
-      tour.back();
+      back();
       return true;
     });
     return () => subscription.remove();
-  }, [tour]);
+  }, [active, back]);
 
   if (!tour.active) return null;
 
@@ -54,7 +55,7 @@ export function HowToPlayOverlay() {
         <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.dim]} />
       )}
       <View pointerEvents="box-none" style={styles.chromeWrap}>
-        <View style={styles.chrome}>
+        <View accessibilityViewIsModal style={styles.chrome}>
           <Text style={styles.body}>{tour.body}</Text>
           <TextButton label={strings.back} onPress={tour.back} />
           <PrimaryButton label={strings.next} onPress={tour.next} />
