@@ -16,13 +16,22 @@ async function renderApp(ports = createFakePorts()) {
 
 async function reachHowToPlay(user: ReturnType<typeof userEvent.setup>) {
   await user.press(screen.getByRole("button", { name: "Дальше" }));
-  await user.type(screen.getByRole("textbox", { name: "Имя" }), "Пух");
+  await user.type(screen.getByRole("textbox", { name: "Меня зовут" }), "Пух");
   await user.press(screen.getByRole("button", { name: "Дальше" }));
 }
 
-function expectNameIntro(line: string) {
-  expect(screen.getByText(line)).toBeOnTheScreen();
-  expect(screen.getByLabelText(line)).toBeOnTheScreen();
+function nameField() {
+  return screen.getByRole("textbox", { name: "Меня зовут" });
+}
+
+function expectNameChip(value: string) {
+  expect(screen.getByText("Меня зовут")).toBeOnTheScreen();
+  expect(screen.getAllByRole("textbox")).toHaveLength(1);
+  expect(nameField()).toHaveDisplayValue(value);
+  if (value === "") {
+    expect(screen.getByPlaceholderText("____")).toBeOnTheScreen();
+  }
+  expect(screen.queryByText("Имя")).not.toBeOnTheScreen();
   expect(screen.queryByLabelText(/Питомец .* говорит:/)).not.toBeOnTheScreen();
 }
 
@@ -118,7 +127,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByRole("button", { name: "Аксессуар 1" })).not.toBeDisabled();
 
     await user.press(screen.getByRole("button", { name: "Дальше" }));
-    expect(screen.getByText("Имя")).toBeOnTheScreen();
+    expectNameChip("");
   });
 
   it("walks pet, Имя, pet-spoken rules, starting budget, and the hub", async () => {
@@ -130,19 +139,15 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expectSelectedAppearanceOption("Вид 2");
     await user.press(screen.getByRole("button", { name: "Дальше" }));
 
-    expect(screen.getByText("Имя")).toBeOnTheScreen();
+    expectNameChip("");
     expect(screen.getByRole("img", { name: /Питомец, Вид 2/ })).toBeOnTheScreen();
-    expectNameIntro("Меня зовут ____");
-    expect(screen.getAllByRole("textbox")).toHaveLength(1);
-    expect(screen.getByRole("textbox", { name: "Имя" })).toHaveDisplayValue("");
     expect(screen.queryByText("А тебя как зовут?")).not.toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Дальше" })).toBeDisabled();
     expect(complete).not.toHaveBeenCalled();
 
-    await user.type(screen.getByRole("textbox", { name: "Имя" }), "Пух");
-    expectNameIntro("Меня зовут Пух");
+    await user.type(nameField(), "Пух");
+    expectNameChip("Пух");
     expect(screen.getByRole("img", { name: /Питомец, Вид 2/ })).toBeOnTheScreen();
-    expect(screen.queryByText("Пух")).not.toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Дальше" })).toBeEnabled();
     await user.press(screen.getByRole("button", { name: "Дальше" }));
 
@@ -248,8 +253,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     await reachHowToPlay(user);
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
-    expect(screen.getByRole("textbox", { name: "Имя" })).toHaveDisplayValue("Пух");
-    expectNameIntro("Меня зовут Пух");
+    expectNameChip("Пух");
     await user.press(screen.getByRole("button", { name: "Назад" }));
     expectSelectedAppearanceOption("Вид 2");
     expect(complete).not.toHaveBeenCalled();
@@ -271,9 +275,9 @@ describe("first-run flow (Appendix A 1–4)", () => {
     await user.press(screen.getByRole("button", { name: "Вид 2" }));
     await user.press(screen.getByRole("button", { name: "Дальше" }));
 
-    const petName = screen.getByRole("textbox", { name: "Имя" });
+    const petName = nameField();
     await user.type(petName, "                     ");
-    expectNameIntro("Меня зовут ____");
+    expectNameChip("");
     await fireEvent(petName, "blur");
     expect(screen.getByText("Введи от 1 до 20 символов")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Дальше" })).toBeDisabled();
@@ -288,7 +292,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     const ports = createFakePorts();
     const { user } = await renderApp(ports);
     await user.press(screen.getByRole("button", { name: "Дальше" }));
-    const petName = screen.getByRole("textbox", { name: "Имя" });
+    const petName = nameField();
     const family = "👨‍👩‍👧‍👦";
 
     await fireEvent.changeText(petName, family.repeat(21));

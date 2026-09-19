@@ -114,3 +114,7 @@ The Профиль ребёнка is the pet (name + appearance). Первый �
 - Grill locked: pet name only; phase title «Имя»; one replacing SpeechBubble; live echo of «Меня зовут ____»; field under the bubble with no legend; accessible name «Имя»; «Дальше» confirms into «Как играть»; autofocus on; TalkBack is the visible sentence; leftover `name` column duplicates `petName`; glossary already says Профиль ребёнка is the pet.
 - CONTEXT.md was updated during grilling. Do not restore “a game name plus the child's pet.”
 - The first-run redesign spec’s stories about «Как тебя зовут в игре?» and both names required before «Дальше» are superseded here; appearance, «Как играть», and commit timing from that spec remain in force.
+
+## Comments
+
+**2026-09-19 — layout superseded.** Domain and persistence (pet name only; dual-write `name`/`petName`) still stand. The form layout — title «Имя», wide bubble, field below, autofocus, accessible name «Имя» — is superseded by `.scratch/first-run-name-cloud/spec.md`.

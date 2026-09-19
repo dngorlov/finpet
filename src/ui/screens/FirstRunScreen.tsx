@@ -6,7 +6,6 @@ import { BeadSlider } from "../components/BeadSlider";
 import { HowToPlay } from "../components/HowToPlay";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
-import { SpeechBubble } from "../components/SpeechBubble";
 import { TextButton } from "../components/TextButton";
 import type { RootStackParamList } from "../navigation/types";
 import {
@@ -20,7 +19,7 @@ import {
 import { PetView } from "../pet/PetView";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
-import { colors, minTarget, spacing, type } from "../theme";
+import { colors, minTarget, radius, spacing, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "FirstRun">;
 type Phase = "pet" | "name" | "rules";
@@ -179,10 +178,6 @@ function PetPhase({
   );
 }
 
-function nameIntro(value: string): string {
-  return value.trim() === "" ? strings.nameIntroEmpty : strings.nameIntro(value);
-}
-
 function NamePhase({
   draft,
   petNameTouched,
@@ -198,7 +193,7 @@ function NamePhase({
   onBack: () => void;
   onNext: () => void;
 }) {
-  const intro = nameIntro(draft.petName);
+  const chipValue = draft.petName.trim() === "" ? "" : draft.petName;
   return (
     <Screen
       keyboardShouldPersistTaps="handled"
@@ -209,28 +204,38 @@ function NamePhase({
         </>
       }
     >
-      <Text style={styles.title}>{strings.firstRunName}</Text>
-      <PetView
-        species={draft.species}
-        color={draft.color}
-        accessory={draft.accessory}
-        pose="idle"
-      />
-      <SpeechBubble accessibilityLabel={intro}>
-        <Text style={styles.body}>{intro}</Text>
-      </SpeechBubble>
-      <TextInput
-        role={TEXTBOX_ROLE}
-        aria-label={strings.firstRunName}
-        autoFocus
-        value={draft.petName}
-        onChangeText={(petName) => onChange({ petName })}
-        onBlur={onPetNameBlur}
-        style={styles.input}
-      />
-      {petNameTouched && !isValidName(draft.petName) ? (
-        <Text style={styles.validation}>{strings.nameValidation}</Text>
-      ) : null}
+      <View style={styles.speaker}>
+        <View style={styles.cloud}>
+          <View style={styles.cloudCard}>
+            <Text style={styles.body}>{strings.namePrompt}</Text>
+            <View style={styles.chip}>
+              <TextInput
+                role={TEXTBOX_ROLE}
+                aria-label={strings.namePrompt}
+                placeholder={strings.nameBlank}
+                placeholderTextColor={colors.subtle}
+                value={chipValue}
+                onChangeText={(petName) => onChange({ petName: petName.trim() === "" ? "" : petName })}
+                onBlur={onPetNameBlur}
+                style={styles.chipInput}
+              />
+              <Text aria-hidden style={styles.pen}>
+                {strings.namePen}
+              </Text>
+            </View>
+          </View>
+          <View aria-hidden accessibilityElementsHidden style={styles.cloudTail} />
+        </View>
+        <PetView
+          species={draft.species}
+          color={draft.color}
+          accessory={draft.accessory}
+          pose="idle"
+        />
+        {petNameTouched && !isValidName(draft.petName) ? (
+          <Text style={styles.validation}>{strings.nameValidation}</Text>
+        ) : null}
+      </View>
     </Screen>
   );
 }
@@ -253,22 +258,64 @@ const styles = StyleSheet.create({
     fontSize: type.title,
     fontWeight: "700",
   },
+  speaker: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    flexGrow: 1,
+    gap: spacing.m,
+    justifyContent: "center",
+  },
+  cloud: {
+    alignItems: "center",
+  },
+  cloudCard: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderRadius: radius.card,
+    flexDirection: "row",
+    gap: spacing.s,
+    padding: spacing.m,
+  },
+  cloudTail: {
+    borderLeftColor: "transparent",
+    borderLeftWidth: 8,
+    borderRightColor: "transparent",
+    borderRightWidth: 8,
+    borderTopColor: colors.card,
+    borderTopWidth: 10,
+    height: 0,
+    width: 0,
+  },
   body: {
     color: colors.text,
     fontSize: type.body,
   },
-  input: {
+  chip: {
+    alignItems: "center",
     backgroundColor: colors.card,
     borderColor: colors.track,
     borderRadius: 8,
     borderWidth: 1,
+    flexDirection: "row",
+    maxWidth: 180,
+    minHeight: minTarget,
+    minWidth: 120,
+    paddingRight: spacing.s,
+  },
+  chipInput: {
+    color: colors.text,
+    flex: 1,
     fontSize: type.body,
     minHeight: minTarget,
-    paddingHorizontal: spacing.m,
+    paddingHorizontal: spacing.s,
+  },
+  pen: {
+    fontSize: type.body,
   },
   validation: {
     color: colors.text,
     fontSize: type.body,
+    textAlign: "center",
   },
   sliders: {
     gap: spacing.l,
