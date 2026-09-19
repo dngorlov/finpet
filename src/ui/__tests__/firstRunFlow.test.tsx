@@ -1,9 +1,12 @@
-import { fireEvent, render, screen, userEvent } from "@testing-library/react-native";
+import { fireEvent, render, screen, userEvent, within } from "@testing-library/react-native";
 import { loadContent } from "../../data/content";
 import { FinPetApp } from "../FinPetApp";
+import { strings } from "../strings";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
 
 const content = loadContent();
+const firstRule = strings.petSays("Пух", content.hints[0]!.body);
+const hubDestinations = ["План", "Магазин", "Копилка", "Задания", "Прогресс", "Взрослый раздел"] as const;
 
 async function renderApp(ports = createFakePorts()) {
   const user = userEvent.setup();
@@ -16,6 +19,32 @@ async function reachHowToPlay(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByRole("textbox", { name: "Как тебя зовут в игре?" }), "Миша");
   await user.type(screen.getByRole("textbox", { name: "Как зовут питомца?" }), "Пух");
   await user.press(screen.getByRole("button", { name: "Дальше" }));
+}
+
+function expectSelectedChip(name: string) {
+  const chip = screen.getByRole("button", { name });
+  expect(chip).toBeSelected();
+  expect(chip).toHaveAccessibleName(name);
+  expect(within(chip).queryByText(strings.selectedCheck)).not.toBeOnTheScreen();
+  expect(
+    within(chip).getByText(strings.selectedCheck, { includeHiddenElements: true }),
+  ).toBeOnTheScreen();
+}
+
+function expectHowToPlayBubble() {
+  expect(screen.getAllByLabelText(firstRule)).toHaveLength(1);
+  expect(screen.queryByRole("img")).not.toBeOnTheScreen();
+}
+
+function expectMainChrome() {
+  expect(screen.getByText("Этап Новичок")).toBeOnTheScreen();
+  expect(screen.getByText("Баланс 110")).toBeOnTheScreen();
+  expect(screen.getByText("Копилка 0")).toBeOnTheScreen();
+  for (const name of hubDestinations) {
+    expect(screen.getByRole("button", { name })).toBeOnTheScreen();
+  }
+  expect(screen.getByText("Составь план дня")).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "Настройки" })).toBeOnTheScreen();
 }
 
 describe("first-run flow (Appendix A 1–4)", () => {
@@ -40,9 +69,13 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByText("Питомец")).toBeOnTheScreen();
     expect(screen.getByRole("img", { name: /Питомец.*Вид 1.*Окрас 1.*Аксессуар 1/ })).toBeOnTheScreen();
     expect(screen.queryByText(content.hints[0]!.body)).not.toBeOnTheScreen();
+    expectSelectedChip("Вид 1");
+    expect(screen.getByRole("button", { name: "Вид 2" })).not.toBeSelected();
 
     await user.press(screen.getByRole("button", { name: "Вид 2" }));
     expect(screen.getByRole("img", { name: /Питомец.*Вид 2.*Окрас 1.*Аксессуар 1/ })).toBeOnTheScreen();
+    expectSelectedChip("Вид 2");
+    expect(screen.getByRole("button", { name: "Вид 1" })).not.toBeSelected();
 
     await user.press(screen.getByRole("button", { name: "Дальше" }));
     expect(screen.getByText("Имена")).toBeOnTheScreen();
@@ -54,6 +87,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Вид 2" }));
+    expectSelectedChip("Вид 2");
     await user.press(screen.getByRole("button", { name: "Дальше" }));
 
     expect(screen.getByText("Имена")).toBeOnTheScreen();
@@ -62,16 +96,13 @@ describe("first-run flow (Appendix A 1–4)", () => {
 
     await user.type(screen.getByRole("textbox", { name: "Как тебя зовут в игре?" }), "Миша");
     await user.type(screen.getByRole("textbox", { name: "Как зовут питомца?" }), "Пух");
+    expect(screen.getByRole("button", { name: "Дальше" })).toBeEnabled();
     await user.press(screen.getByRole("button", { name: "Дальше" }));
 
     expect(screen.getByText("Как играть")).toBeOnTheScreen();
     expect(screen.getByText("Шаг 1 из 3")).toBeOnTheScreen();
     expect(screen.getByText("Пух")).toBeOnTheScreen();
-    expect(
-      screen.getByLabelText(
-        "Питомец Пух говорит: Привет! Я твой питомец. Твои решения помогают заботиться обо мне и копить на цели.",
-      ),
-    ).toBeOnTheScreen();
+    expectHowToPlayBubble();
     expect(screen.queryByRole("button", { name: "Карточка 1" })).not.toBeOnTheScreen();
     expect(complete).not.toHaveBeenCalled();
 
@@ -92,8 +123,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByText("Новичок")).toBeOnTheScreen();
     expect(screen.getByText("Забота 50")).toBeOnTheScreen();
     expect(screen.getByText("Настроение 50")).toBeOnTheScreen();
-    expect(screen.getByText("Баланс 110")).toBeOnTheScreen();
-    expect(screen.getByText("Копилка 0")).toBeOnTheScreen();
+    expectMainChrome();
     expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
     expect(screen.getByText("0 / 90")).toBeOnTheScreen();
     expect(screen.getByText("осталось 90")).toBeOnTheScreen();
@@ -125,11 +155,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     const profileBeforeReplay = ports.game.getProfile(activeProfileId!);
     await user.press(screen.getByRole("button", { name: "Как играть" }));
     expect(screen.getByText("Шаг 1 из 3")).toBeOnTheScreen();
-    expect(
-      screen.getByLabelText(
-        "Питомец Пух говорит: Привет! Я твой питомец. Твои решения помогают заботиться обо мне и копить на цели.",
-      ),
-    ).toBeOnTheScreen();
+    expectHowToPlayBubble();
     expect(screen.getByRole("button", { name: "Закрыть" })).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Дальше" }));
     await user.press(screen.getByRole("button", { name: "Дальше" }));
@@ -168,7 +194,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByRole("textbox", { name: "Как тебя зовут в игре?" })).toHaveDisplayValue("Миша");
     expect(screen.getByRole("textbox", { name: "Как зовут питомца?" })).toHaveDisplayValue("Пух");
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    expect(screen.getByRole("button", { name: "Вид 2" })).toBeSelected();
+    expectSelectedChip("Вид 2");
     expect(complete).not.toHaveBeenCalled();
   });
 
@@ -254,8 +280,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     const { user } = await renderApp(ports);
 
     expect(screen.queryByText(content.hints[0]!.title)).not.toBeOnTheScreen();
-    expect(screen.getByText("Баланс 110")).toBeOnTheScreen();
-    expect(screen.getByText("Новичок")).toBeOnTheScreen();
+    expectMainChrome();
     expect(screen.queryByText("Пособие +10 монет")).not.toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Настройки" }));

@@ -1,6 +1,6 @@
 # 09 — Extend the first-run flow coverage
 
-Status: ready-for-agent
+Status: resolved
 Type: task
 Blocked by: 05, 06, 07, 08
 
@@ -30,3 +30,17 @@ Do not assert shadow height, hex, radius, translateY, or snapshot the tree for s
 ## Done when
 
 `npx jest src/ui/__tests__/firstRunFlow.test.tsx` passes. No new test files for chrome.
+
+## Answer
+
+Extended `src/ui/__tests__/firstRunFlow.test.tsx` only (same `FinPetApp` + fake ports seam). No production changes, no new test files, no visual snapshots.
+
+Chrome assertions added:
+
+- Selected appearance Chip: `toBeSelected()` + accessible name stays the option word; `✓` is queried with `includeHiddenElements` so it is in the tree for sighted users but not the accessible name.
+- Names «Дальше»: still `toBeDisabled()` until both fields are filled, then `toBeEnabled()`.
+- «Как играть»: one `getByLabelText` via `strings.petSays`; decorative PetView is not in the reading order (`queryByRole("img")` absent). Replay still «Готово» / «Закрыть» with a single commit.
+- Main / returning child: Badge texts `Этап Новичок`, `Баланс 110`, `Копилка 0`; NavTiles named План, Магазин, Копилка, Задания, Прогресс, Взрослый раздел; highlighted План includes «Составь план дня»; Settings remains a labelled button that opens.
+
+`npx jest src/ui/__tests__/firstRunFlow.test.tsx` and `npm run typecheck` both passed.
+

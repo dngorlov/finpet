@@ -19,6 +19,7 @@ This is a visual consistency pass. Do not change persistence, routing, first-run
 - 06 HowToPlay: pet + name above kit `SpeechBubble`; primary and quiet skip/close (plus «Назад» as `TextButton`) in the pinned `Screen` footer. Replay host unchanged. See `.scratch/chrome-kit/issues/06-migrate-how-to-play.md`.
 - 07 Main hub: one scrolling `Screen` with Badge strip, large centered PetView, labelled Настройки, MeterBars, Cards, 2×3 NavTiles, raised «Закончить день». See `.scratch/chrome-kit/issues/07-migrate-main.md`.
 - 08 remaining screens: Glossary / StartingBudget / Settings / Stub consume `Screen` + `Card` + kit buttons; accordion, budget reset, and delete-profile unchanged. See `.scratch/chrome-kit/issues/08-migrate-remaining-screens.md`.
+- 09 flow tests: first-run seam now covers chip checks, Этап badge, NavTile names, plan hint, and labelled Settings. See `.scratch/chrome-kit/issues/09-flow-tests.md`.
 
 ## Fog
 
