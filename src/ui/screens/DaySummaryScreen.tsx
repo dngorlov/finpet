@@ -7,6 +7,7 @@ import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
+import { StatusStrip } from "../components/StatusStrip";
 import type { RootStackParamList } from "../navigation/types";
 import { PetView } from "../pet/PetView";
 import { useSession } from "../session/SessionProvider";
@@ -52,7 +53,7 @@ export default function DaySummaryScreen({ navigation }: Props) {
 
   if (!summary || !profile) {
     return (
-      <Screen>
+      <Screen header={<StatusStrip />}>
         <BackButton />
         <Text style={styles.title}>{strings.daySummaryTitle}</Text>
       </Screen>
@@ -63,7 +64,7 @@ export default function DaySummaryScreen({ navigation }: Props) {
   const primary = profile.isDemo ? strings.nextDay : strings.waitTomorrow;
 
   return (
-    <Screen footer={<PrimaryButton label={primary} onPress={() => navigation.goBack()} />}>
+    <Screen header={<StatusStrip />} footer={<PrimaryButton label={primary} onPress={() => navigation.goBack()} />}>
       <BackButton />
       <Text style={styles.title}>{strings.daySummaryTitle}</Text>
       <PetView

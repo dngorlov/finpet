@@ -10,6 +10,7 @@ import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
+import { StatusStrip } from "../components/StatusStrip";
 import { TextButton } from "../components/TextButton";
 import { TourAnchor } from "../howToPlay/TourAnchor";
 import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
@@ -46,7 +47,7 @@ export default function PlanScreen(_props: Props) {
 
   if (!day) {
     return (
-      <Screen>
+      <Screen header={<StatusStrip />}>
         <BackButton />
         <Text style={styles.body}>{strings.appName}</Text>
       </Screen>
@@ -88,14 +89,15 @@ export default function PlanScreen(_props: Props) {
 
   return (
     <Screen
+      header={<StatusStrip />}
       footer={
         confirmed ? null : askingConfirm ? (
           <>
             <TextButton label={strings.close} onPress={() => setAskingConfirm(false)} />
-            <PrimaryButton label={strings.confirmPlan} onPress={confirm} />
+            <PrimaryButton label={strings.confirmPlan} disabled={tour.active} onPress={confirm} />
           </>
         ) : (
-          <PrimaryButton label={strings.confirmPlan} disabled={!check.ok} onPress={askConfirm} />
+          <PrimaryButton label={strings.confirmPlan} disabled={!check.ok || tour.active} onPress={askConfirm} />
         )
       }
     >

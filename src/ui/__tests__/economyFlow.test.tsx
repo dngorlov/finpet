@@ -79,7 +79,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
     expect(screen.getByText("План готов")).toBeOnTheScreen();
-    expect(screen.getByText("Копилка 1")).toBeOnTheScreen();
+    expect(screen.getByText("1")).toBeOnTheScreen();
   },
   15000,
 );

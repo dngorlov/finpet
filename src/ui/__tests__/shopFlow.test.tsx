@@ -34,9 +34,11 @@ describe("Магазин", () => {
     expect(screen.getByText("Забота +10")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     expect(screen.getByText("Куплено")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 98")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Забота 60")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    expect(screen.getByText("Баланс 98")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 98")).toBeOnTheScreen();
     expect(screen.getByText("Забота 60")).toBeOnTheScreen();
   });
 
@@ -55,7 +57,7 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Понятно" }));
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    expect(screen.getByText("Баланс 105")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 105")).toBeOnTheScreen();
     expect(screen.getByText("Настроение 55")).toBeOnTheScreen();
   });
 

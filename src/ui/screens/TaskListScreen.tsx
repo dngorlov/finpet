@@ -9,6 +9,7 @@ import { BackButton } from "../components/BackButton";
 import { Badge } from "../components/Badge";
 import { Card } from "../components/Card";
 import { Screen } from "../components/Screen";
+import { StatusStrip } from "../components/StatusStrip";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
@@ -44,7 +45,7 @@ export default function TaskListScreen({ navigation }: Props) {
   const corrections = correctionTasks(content.tasks, progress);
 
   return (
-    <Screen>
+    <Screen header={<StatusStrip />}>
       <BackButton />
       <Text style={styles.title}>{strings.navTasks}</Text>
       {TASK_TOPICS.map((topic) => (

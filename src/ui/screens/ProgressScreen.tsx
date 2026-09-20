@@ -16,6 +16,7 @@ import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
+import { StatusStrip } from "../components/StatusStrip";
 import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
@@ -92,7 +93,7 @@ export default function ProgressScreen(_props: Props) {
   const achievedGoals = goals.filter((goal) => goal.status === "achieved").length;
 
   return (
-    <Screen>
+    <Screen header={<StatusStrip />}>
       <BackButton />
       <Text style={styles.title}>{strings.navProgress}</Text>
       <View style={styles.tabs}>

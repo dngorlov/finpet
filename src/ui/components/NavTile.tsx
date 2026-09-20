@@ -10,6 +10,7 @@ export function NavTile({
   onPress,
   highlighted,
   hint,
+  detail,
   disabled,
   style,
 }: {
@@ -18,6 +19,7 @@ export function NavTile({
   onPress: () => void;
   highlighted?: boolean;
   hint?: string;
+  detail?: string;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
@@ -74,6 +76,7 @@ export function NavTile({
             {strings.waitingLockIcon}
           </Text>
         ) : null}
+        {detail ? <Text style={styles.hint}>{detail}</Text> : null}
         {hint ? <Text style={styles.hint}>{hint}</Text> : null}
       </View>
     </Pressable>

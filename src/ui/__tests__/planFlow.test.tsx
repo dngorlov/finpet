@@ -40,7 +40,7 @@ describe("plan from Main", () => {
     await user.press(screen.getByRole("button", { name: "Назад" }));
     expect(screen.getByText("План готов")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "План" })).not.toBeSelected();
-    expect(screen.getByText("Баланс 110")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 110")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Закончить день" }));
     expect(screen.getByText("Итоги дня")).toBeOnTheScreen();

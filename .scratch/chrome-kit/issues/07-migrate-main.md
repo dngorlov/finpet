@@ -36,3 +36,5 @@ Local tile/card copies are gone. `npm test` and `npm run typecheck` pass.
 ## Answer
 
 Main is one scrolling `Screen` (no pinned footer): Badge strip (Этап / Баланс / Копилка), large centered `PetView` (`size={200}`), labelled `TextButton` «Настройки», MeterBars, optional Пособие ribbon, Цель/Задание `Card`s, 2×3 kit `NavTile`s (План `needed` + hint), raised «Закончить день». Local tile/card styles removed. Hub loading and stub navigation unchanged. `npm test` (70) and `npm run typecheck` pass.
+
+Superseded 2026-09-20 by `.scratch/play-status-strip/spec.md`: the scrolling Badge trio and labelled mid-page Настройки are replaced by the pinned play-screen strip (⚙-only Настройки; Копилка pot on the tile).

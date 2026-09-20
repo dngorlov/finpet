@@ -24,6 +24,8 @@ describe("Итоги дня", () => {
       await user.press(screen.getByRole("button", { name: "Закончить день" }));
 
       expect(screen.getByText("Итоги дня")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Настройки" })).toBeOnTheScreen();
       expect(screen.getAllByText("план 1 · потрачено 0")).toHaveLength(3);
       expect(screen.getByText("Обязательные +0")).toBeOnTheScreen();
       expect(screen.getByText("По плану +1")).toBeOnTheScreen();
@@ -40,6 +42,7 @@ describe("Итоги дня", () => {
       expect(screen.getByRole("button", { name: "План" })).toBeDisabled();
       expect(screen.getByRole("button", { name: "Магазин" })).toBeDisabled();
       expect(screen.getByRole("button", { name: "Копилка" })).toBeDisabled();
+      expect(screen.getByText("0")).toBeOnTheScreen();
       expect(screen.getAllByText("Откроется завтра").length).toBeGreaterThanOrEqual(3);
       expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
 
@@ -85,6 +88,8 @@ describe("Итоги дня", () => {
     expect(screen.getByText("Забота без изменений")).toBeOnTheScreen();
     expect(screen.getByText("Настроение без изменений")).toBeOnTheScreen();
     expect(screen.getByText("Питомец доверяет тебе: теперь ты Друг!")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Этап Друг")).toBeOnTheScreen();
+    expect(screen.getByText("Друг")).toBeOnTheScreen();
     expect(screen.queryByText("Завтра сначала запланируй обязательное.")).not.toBeOnTheScreen();
   });
 

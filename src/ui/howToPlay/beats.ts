@@ -1,3 +1,16 @@
+export const TOUR_CHROME_OVERLAP = 72;
+
+export function tourCenterScrollY(
+  childYInContent: number,
+  childHeight: number,
+  frameHeight: number,
+  chromeOverlap: number,
+) {
+  const overlap = Math.min(chromeOverlap, frameHeight * 0.4);
+  const visibleHeight = Math.max(1, frameHeight - overlap);
+  return Math.max(0, childYInContent + childHeight / 2 - overlap - visibleHeight / 2);
+}
+
 export const TOUR_BEATS = [
   { id: "main-plan", route: "Main", advance: "tap" },
   { id: "plan-buckets", route: "Plan", advance: "next" },
@@ -25,8 +38,4 @@ export function hubTapRoute(id: TourBeatId): "Plan" | "Shop" | "Savings" | null 
   if (id === "main-shop") return "Shop";
   if (id === "main-savings") return "Savings";
   return null;
-}
-
-export function tourScrollsToEnd(id: TourBeatId) {
-  return id === "main-plan" || id === "main-shop" || id === "main-savings" || id === "savings-deposit";
 }

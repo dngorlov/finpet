@@ -39,11 +39,13 @@ describe("Задания", () => {
       await user.press(screen.getByRole("button", { name: "Первый план" }));
       expect(screen.getByText("Сегодня школьная ярмарка! У питомца нет обеда, а ты хочешь мороженое. У тебя 20 монет.")).toBeOnTheScreen();
       expect(screen.getByText("С чего начнёшь?")).toBeOnTheScreen();
+      expect(screen.queryByRole("button", { name: "Настройки" })).not.toBeOnTheScreen();
 
       await playFirstPlanGoodPath(user);
 
       expect(screen.getByText("+10 монет")).toBeOnTheScreen();
       expect(screen.getByText("Баланс +10")).toBeOnTheScreen();
+      expect(screen.queryByRole("button", { name: "Настройки" })).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Понятно" }));
       await user.press(screen.getByRole("button", { name: "В список заданий" }));
 

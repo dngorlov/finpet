@@ -10,7 +10,7 @@
 - Onboarding: brief intro to the game's purpose + the three decision types (spend on required item / spend on desired item / postpone)
 - Guest mode, no mandatory registration; child profile = game name + selected character
 - The intro hint is returnable at any time
-- **Resolved:** Первый запуск is ordered Питомец → Имя. The child first chooses the pet's Вид, Окрас, and Аксессуар, then names only the Питомец on «Имя» (compact in-cloud chip). Valid Имя «Дальше» writes the Профиль ребёнка (leftover `name` equals `petName`) and opens Стартовый бюджет. After tutorial Пособие (centered, dimmed, chip «Начало игрового дня», «Дальше»), «Как играть» is a skippable dim/spotlight walkthrough of the live hub (План, Магазин, Копилка, Задание): tooltip next to the control, frozen scroll, tap-to-open hub tiles, overlay «Назад» / «Пропустить» and destination «Дальше», no coin spend, no locked plan, no Задание run. The same overlay re-opens from Словарик without writing profile data. Profile = the pet (name + appearance); no account; Первый запуск does not collect a name for the ребёнок. (ROADMAP §2.5, §4.2)
+- **Resolved:** Первый запуск is ordered Питомец → Имя. The child first chooses the pet's Вид, Окрас, and Аксессуар, then names only the Питомец on «Имя» (compact in-cloud chip). Valid Имя «Дальше» writes the Профиль ребёнка (leftover `name` equals `petName`) and opens Стартовый бюджет. After tutorial Пособие (centered, dimmed, chip «Начало игрового дня», «Дальше»), «Как играть» is a skippable dim/spotlight walkthrough of the live hub (План, Магазин, Копилка, Задание): tooltip next to the control, tap-to-open hub tiles, overlay «Назад» / «Пропустить» and destination «Дальше», no coin spend, no locked plan, no Задание run. The same overlay re-opens from Словарик without writing profile data. Profile = the pet (name + appearance); no account; Первый запуск does not collect a name for the ребёнок. (ROADMAP §2.5, §4.2)
 
 ## 2. Pet Creation
 - Pet appearance customization
@@ -21,7 +21,7 @@
 ## 3. Main Screen
 - Simultaneously visible without complex navigation: pet, available balance, savings amount, current goal, key status indicators, active task
 - Reachable from main screen: budget plan, tasks, purchases, savings, progress, adult section
-- **Resolved:** hub layout — pet + Этап badge + Забота/Настроение bars on top; Баланс and Копилка badges; active-goal and active-task cards; a 2×3 nav grid (План, Магазин, Копилка, Задания, Прогресс, Взрослый раздел) — everything ≤2 taps. Key status indicators = Забота and Настроение, drawn as icon + bar + number (never color alone). (ROADMAP §2.2, §4.2)
+- **Resolved:** hub layout — pinned play-screen strip (Забота icon+bar, Настроение icon+bar, Баланс icon+number, Этап DVD dots + current name, ⚙ Настройки) on Main, План, Магазин, Копилка, Задания list, Прогресс, and Итоги дня; pet + chunky Забота/Настроение bars (icon + label + bar + number) on Main; Копилка pot on the hub tile and the Копилка screen (not the strip); active-goal and active-task cards; a 2×3 nav grid (План, Магазин, Копилка, Задания, Прогресс, Взрослый раздел) — everything ≤2 taps. Key status indicators = Забота and Настроение. (ROADMAP §2.2, §4.2)
 
 ## 4. Game Currency & Income
 - Only in-game currency (no real money anywhere)

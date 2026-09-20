@@ -21,19 +21,19 @@ export function FinPetApp({ ports }: { ports: SessionPorts }) {
 
   return (
     <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
-      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-        <StatusBar style="dark" />
-        <SessionProvider ports={ports}>
-          <HowToPlayTourProvider navigationRef={navigationRef}>
-            <View style={styles.stack}>
+      <SessionProvider ports={ports}>
+        <HowToPlayTourProvider navigationRef={navigationRef}>
+          <View style={styles.stack}>
+            <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+              <StatusBar style="dark" />
               <NavigationContainer ref={navigationRef}>
                 <RootNavigator />
               </NavigationContainer>
-              <HowToPlayOverlay />
-            </View>
-          </HowToPlayTourProvider>
-        </SessionProvider>
-      </SafeAreaView>
+            </SafeAreaView>
+            <HowToPlayOverlay />
+          </View>
+        </HowToPlayTourProvider>
+      </SessionProvider>
     </SafeAreaProvider>
   );
 }

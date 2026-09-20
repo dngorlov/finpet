@@ -11,6 +11,7 @@ import { Chip } from "../components/Chip";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
+import { StatusStrip } from "../components/StatusStrip";
 import { TextButton } from "../components/TextButton";
 import { TourAnchor } from "../howToPlay/TourAnchor";
 import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
@@ -86,7 +87,11 @@ export default function ShopScreen({ navigation }: Props) {
       return (
         <>
           <TextButton label={strings.shopPostpone} onPress={() => setPhase({ name: "list" })} />
-          <PrimaryButton label={strings.shopBuy} onPress={() => setPhase({ name: "confirm", item: phase.item })} />
+          <PrimaryButton
+            label={strings.shopBuy}
+            disabled={tour.active}
+            onPress={() => setPhase({ name: "confirm", item: phase.item })}
+          />
         </>
       );
     }
@@ -94,7 +99,7 @@ export default function ShopScreen({ navigation }: Props) {
       return (
         <>
           <TextButton label={strings.shopPostpone} onPress={() => setPhase({ name: "list" })} />
-          <PrimaryButton label={strings.shopBuy} onPress={() => buy(phase.item)} />
+          <PrimaryButton label={strings.shopBuy} disabled={tour.active} onPress={() => buy(phase.item)} />
         </>
       );
     }
@@ -117,7 +122,7 @@ export default function ShopScreen({ navigation }: Props) {
   })();
 
   return (
-    <Screen footer={footer}>
+    <Screen header={<StatusStrip />} footer={footer}>
       {tour.active ? null : <BackButton />}
       <Text style={styles.title}>{strings.navShop}</Text>
       {phase.name === "list" ? (
@@ -127,13 +132,19 @@ export default function ShopScreen({ navigation }: Props) {
               label={strings.shopMandatoryTab}
               pictogram={strings.navPlanPictogram}
               selected={tab === "mandatory"}
-              onPress={() => setTab("mandatory")}
+              onPress={() => {
+                if (tour.active) return;
+                setTab("mandatory");
+              }}
             />
             <Chip
               label={strings.shopOptionalTab}
               pictogram={strings.navShopPictogram}
               selected={tab === "optional"}
-              onPress={() => setTab("optional")}
+              onPress={() => {
+                if (tour.active) return;
+                setTab("optional");
+              }}
             />
           </View>
           {items.map((item) => {
@@ -141,7 +152,10 @@ export default function ShopScreen({ navigation }: Props) {
               <Pressable
                 role="button"
                 aria-label={item.name}
-                onPress={() => setPhase({ name: "item", item })}
+                onPress={() => {
+                  if (tour.active) return;
+                  setPhase({ name: "item", item });
+                }}
                 style={styles.itemHit}
               >
                 <Card>

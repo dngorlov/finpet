@@ -13,6 +13,7 @@ import { Chip } from "../components/Chip";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
+import { StatusStrip } from "../components/StatusStrip";
 import { TextButton } from "../components/TextButton";
 import { TourAnchor } from "../howToPlay/TourAnchor";
 import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
@@ -56,7 +57,7 @@ export default function SavingsScreen(_props: Props) {
 
   if (!savings) {
     return (
-      <Screen>
+      <Screen header={<StatusStrip />}>
         <BackButton />
         <Text style={styles.body}>{strings.appName}</Text>
       </Screen>
@@ -171,7 +172,7 @@ export default function SavingsScreen(_props: Props) {
           <TourAnchor id="savings-deposit">
             <PrimaryButton
               label={strings.savingsDeposit}
-              disabled={balance <= 0}
+              disabled={balance <= 0 || tour.active}
               onPress={() => setPhase({ name: "deposit", amount: 0 })}
             />
           </TourAnchor>
@@ -198,7 +199,7 @@ export default function SavingsScreen(_props: Props) {
   })();
 
   return (
-    <Screen footer={footer}>
+    <Screen header={<StatusStrip />} footer={footer}>
       {tour.active ? null : <BackButton />}
       <Text style={styles.title}>{strings.navSavings}</Text>
       <Text style={styles.pot}>{strings.savingsPot(savings.pot)}</Text>

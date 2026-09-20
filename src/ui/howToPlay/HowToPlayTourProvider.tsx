@@ -4,15 +4,21 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import type { NavigationContainerRefWithCurrent } from "@react-navigation/native";
+import { View } from "react-native";
 import { META_KEYS } from "../../data/metaKeys";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { preferredHubTask } from "../tasks/model";
 import { TASK_BEAT_ID, TOUR_BEATS, type TourAnchorRect, type TourBeatId } from "./beats";
+
+export type TourScrollApi = {
+  scrollChildToCenter: (child: View, onDone: (ok: boolean) => void) => void;
+};
 
 export type HowToPlayTourApi = {
   active: boolean;
@@ -24,6 +30,8 @@ export type HowToPlayTourApi = {
   back: () => void;
   skip: () => void;
   setAnchor: (id: string, rect: TourAnchorRect) => void;
+  registerScroll: (api: TourScrollApi) => () => void;
+  scrollChildToCenter: (child: View | null, onDone: (ok: boolean) => void) => void;
 };
 
 const HowToPlayTourContext = createContext<HowToPlayTourApi | null>(null);
@@ -40,6 +48,7 @@ export function HowToPlayTourProvider({
   const { content, game, meta } = useSession();
   const [running, setRunning] = useState<Running | null>(null);
   const [anchors, setAnchors] = useState<Partial<Record<string, TourAnchorRect>>>({});
+  const scrollApi = useRef<TourScrollApi | null>(null);
 
   const beatId = running ? (running.beats[running.index] ?? null) : null;
   const body = beatId ? (content.hints.find((hint) => hint.id === beatId)?.body ?? "") : "";
@@ -95,6 +104,7 @@ export function HowToPlayTourProvider({
       finish();
       return;
     }
+    setAnchors({});
     setRunning({ ...running, index: running.index + 1 });
   }, [finish, running]);
 
@@ -104,6 +114,7 @@ export function HowToPlayTourProvider({
       finish();
       return;
     }
+    setAnchors({});
     setRunning({ ...running, index: running.index - 1 });
   }, [finish, running]);
 
@@ -123,6 +134,22 @@ export function HowToPlayTourProvider({
     });
   }, []);
 
+  const registerScroll = useCallback((api: TourScrollApi) => {
+    scrollApi.current = api;
+    return () => {
+      if (scrollApi.current === api) scrollApi.current = null;
+    };
+  }, []);
+
+  const scrollChildToCenter = useCallback((child: View | null, onDone: (ok: boolean) => void) => {
+    const api = scrollApi.current;
+    if (!api || !child) {
+      onDone(false);
+      return;
+    }
+    api.scrollChildToCenter(child, onDone);
+  }, []);
+
   const value = useMemo<HowToPlayTourApi>(
     () => ({
       active,
@@ -134,8 +161,10 @@ export function HowToPlayTourProvider({
       back,
       skip: finish,
       setAnchor,
+      registerScroll,
+      scrollChildToCenter,
     }),
-    [active, anchors, back, beatId, body, finish, next, setAnchor, start],
+    [active, anchors, back, beatId, body, finish, next, registerScroll, scrollChildToCenter, setAnchor, start],
   );
 
   return <HowToPlayTourContext.Provider value={value}>{children}</HowToPlayTourContext.Provider>;

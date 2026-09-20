@@ -95,3 +95,5 @@ The kit is: Screen, Card, PrimaryButton, TextButton, Chip, SpeechBubble, Badge, 
 - Current shared UI is only a flat primary button, text Back, MeterBar, PetView, and a full HowToPlay screen. Chip, card, tile, bubble, and text-action styles are inlined and must move into the kit.
 - This is a visual consistency pass on top of the pet-first Первый запуск already shipped.
 - Device follow-up: 360 dp portrait, enlarged text, raised-button press, pinned first-run CTA, airplane mode still plays Appendix A 1–4.
+
+Superseded 2026-09-20 by `.scratch/play-status-strip/spec.md`: Main no longer uses a scrolling Этап/Баланс/Копилка Badge row, and Настройки is a ⚙ in the pinned play-screen strip (accessible name «Настройки») rather than a labelled mid-page word.

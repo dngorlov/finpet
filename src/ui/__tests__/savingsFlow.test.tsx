@@ -28,10 +28,15 @@ describe("Копилка", () => {
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     expect(screen.queryByText(stringsDash())).not.toBeOnTheScreen();
     expect(screen.getByText(/примерно 89/)).toBeOnTheScreen();
+    expect(screen.getByText("В копилке 1")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 109")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    expect(screen.getByText("Копилка 1")).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Копилка" })).toBeOnTheScreen();
+    expect(screen.getByText("1")).toBeOnTheScreen();
     expect(screen.getByText("1 / 90")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 109")).toBeOnTheScreen();
+    expect(screen.queryByLabelText("Баланс 1")).not.toBeOnTheScreen();
   });
 
   it("withdraws through a preview and a second confirm", async () => {

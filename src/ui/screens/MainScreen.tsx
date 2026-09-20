@@ -2,18 +2,16 @@ import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { STAGE_NAMES } from "../../core/stages";
 import { ECONOMY } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
-import { Badge } from "../components/Badge";
 import { Card } from "../components/Card";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { MeterBar } from "../components/MeterBar";
 import { NavTile } from "../components/NavTile";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
-import { TextButton } from "../components/TextButton";
+import { StatusStrip } from "../components/StatusStrip";
 import { TourAnchor } from "../howToPlay/TourAnchor";
 import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
 import { hubTapRoute } from "../howToPlay/beats";
@@ -94,14 +92,14 @@ export default function MainScreen({ navigation }: Props) {
 
   if (!hub) {
     return (
-      <Screen>
+      <Screen header={<StatusStrip />}>
         <Text style={styles.body}>{strings.appName}</Text>
       </Screen>
     );
   }
 
   const waiting = !hub.day.open;
-  const go = (route: "Plan" | "Shop" | "Savings" | "TaskList" | "Progress" | "AdultGate" | "Settings") => {
+  const go = (route: "Plan" | "Shop" | "Savings" | "TaskList" | "Progress" | "AdultGate") => {
     if (tour.active) {
       if (tour.beatId && hubTapRoute(tour.beatId) === route) {
         navigation.navigate(route);
@@ -115,16 +113,7 @@ export default function MainScreen({ navigation }: Props) {
     waiting && !(tour.active && tour.beatId === beatId);
 
   return (
-    <Screen>
-      <View style={styles.badgeStrip}>
-        <Badge
-          icon={strings.stageIcon}
-          word={strings.stageWord}
-          value={STAGE_NAMES[hub.profile.stage]}
-        />
-        <Badge icon={strings.balanceIcon} word={strings.balanceWord} value={hub.profile.balance} />
-        <Badge icon={strings.savingsIcon} word={strings.savingsWord} value={hub.savings.pot} />
-      </View>
+    <Screen header={<StatusStrip />}>
       {waiting ? <Text style={styles.body}>{strings.waitingBanner}</Text> : null}
       <View style={styles.pet}>
         <PetView
@@ -137,7 +126,6 @@ export default function MainScreen({ navigation }: Props) {
           size={HUB_PET_SIZE}
         />
       </View>
-      <TextButton label={strings.settings} onPress={() => go("Settings")} />
       <MeterBar icon={strings.careIcon} label={strings.care} value={hub.profile.care} />
       <MeterBar icon={strings.moodIcon} label={strings.mood} value={hub.profile.mood} />
       {hub.profile.isDemo ? <Text style={styles.body}>{strings.demoBanner}</Text> : null}
@@ -153,6 +141,7 @@ export default function MainScreen({ navigation }: Props) {
             <Text style={styles.cardTitle}>{hub.taskTitle}</Text>
             <PrimaryButton
               label={strings.playTask}
+              disabled={tour.active}
               onPress={() => {
                 if (tour.active || !hub.taskId) return;
                 navigation.navigate("TaskRun", { taskId: hub.taskId });
@@ -193,6 +182,7 @@ export default function MainScreen({ navigation }: Props) {
           <NavTile
             pictogram={strings.navSavingsPictogram}
             word={strings.navSavings}
+            detail={String(hub.savings.pot)}
             hint={tileLocked("main-savings") ? strings.waitingEconomyHint : undefined}
             disabled={tileLocked("main-savings")}
             onPress={() => go("Savings")}
@@ -238,11 +228,6 @@ export default function MainScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  badgeStrip: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.s,
-  },
   pet: {
     alignItems: "center",
   },

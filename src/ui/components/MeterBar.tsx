@@ -2,15 +2,39 @@ import { StyleSheet, Text, View } from "react-native";
 import { strings } from "../strings";
 import { colors, radius, spacing, type } from "../theme";
 
-export function MeterBar({ icon, label, value }: { icon: string; label: string; value: number }) {
+export function MeterBar({
+  icon,
+  label,
+  value,
+  compact,
+}: {
+  icon: string;
+  label: string;
+  value: number;
+  compact?: boolean;
+}) {
+  const width = `${Math.max(0, Math.min(100, value))}%` as const;
+  const name = strings.meterLine(label, value);
+  if (compact) {
+    return (
+      <View accessible aria-label={name} style={styles.compact}>
+        <Text aria-hidden style={styles.icon}>
+          {icon}
+        </Text>
+        <View style={styles.compactTrack} accessibilityElementsHidden>
+          <View style={[styles.compactFill, { width }]} />
+        </View>
+      </View>
+    );
+  }
   return (
     <View style={styles.wrap}>
       <View style={styles.line}>
         <Text style={styles.icon}>{icon}</Text>
-        <Text style={styles.label}>{strings.meterLine(label, value)}</Text>
+        <Text style={styles.label}>{name}</Text>
       </View>
       <View style={styles.track} accessibilityElementsHidden>
-        <View style={[styles.fill, { width: `${Math.max(0, Math.min(100, value))}%` }]} />
+        <View style={[styles.fill, { width }]} />
       </View>
     </View>
   );
@@ -43,5 +67,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.fill,
     borderRadius: radius.card,
     height: spacing.l,
+  },
+  compact: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+  },
+  compactTrack: {
+    backgroundColor: colors.track,
+    borderRadius: radius.card,
+    height: 8,
+    overflow: "hidden",
+    width: 36,
+  },
+  compactFill: {
+    backgroundColor: colors.fill,
+    height: 8,
   },
 });

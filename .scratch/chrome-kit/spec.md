@@ -96,3 +96,5 @@ The child still plays ФинПет: cream/orange, Russian sentence case, Пит�
 - Питомец-phase Вид / Окрас / Аксессуар pickers are bead sliders (`.scratch/first-run-bead-sliders/spec.md`), not kit Chip. Chip’s visible check plus `aria-selected` still applies to every Chip that remains (Demo, Магазин, Копилка, Прогресс, План-needed NavTile, and similar).
 - Pictograms are decoration. If a tile has both an emoji and a word, queries must keep using the word.
 - Device follow-up (same Android SDK gap as earlier milestones): 360 dp portrait, enlarged text, raised buttons look pressable, pinned CTA visible on first run, airplane mode still irrelevant to chrome but hub must remain offline.
+
+Superseded 2026-09-20 by `.scratch/play-status-strip/spec.md`: Main no longer uses a scrolling Этап/Баланс/Копилка Badge row, and Настройки is a ⚙ in the pinned play-screen strip (accessible name «Настройки») rather than a labelled mid-page word.

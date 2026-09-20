@@ -44,3 +44,5 @@ Chrome assertions added:
 
 `npx jest src/ui/__tests__/firstRunFlow.test.tsx` and `npm run typecheck` both passed.
 
+Superseded 2026-09-20 by `.scratch/play-status-strip/spec.md`: first-run chrome queries now use strip labels (`Баланс N`, `Этап Новичок`), visible current Этап name, Копилка tile + pot digits, and ⚙ named «Настройки».
+
