@@ -13,6 +13,7 @@ Do not touch uncommitted MeterBar / StatusStrip WIP on other worktrees.
 ## Decisions-so-far
 
 - Grill locked in the spec Further Notes. CONTEXT.md already has **План** as a promise.
+- Ticket 01: promise/leftover strings, Словарик **План** after Пособие (11 terms), `plan-buckets` tooltip body. `.scratch/plan-rework/issues/01-copy-content.md`
 
 ## Fog
 

@@ -6,7 +6,7 @@
 
 **Type:** task
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -25,3 +25,9 @@
 ## Done when
 
 `npm test -- src/data/__tests__/content.test.ts` and `npm run typecheck` pass. Screens still compile against the new strings.
+
+## Answer
+
+Locked promise copy lives in `src/ui/strings.ts` (`planPromise`, `planSavingsExtra`, `confirmPlanBody` without «пойдёт», leftover/yesterday helpers). Словарик is 11 terms: **План** (`id: plan`) sits after Пособие; `content.ts` schema is `length(11)`; `contentVersion` stays 1. `plan-buckets` body is «Раздели монеты на три кучки. Это обещание, не покупка.» `main-plan` and CONTEXT.md **План** are unchanged. No screen or control edits.
+
+`npm test -- src/data/__tests__/content.test.ts`: 5 passed, 5 total. `npm run typecheck`: pass.
