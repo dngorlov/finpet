@@ -6,7 +6,7 @@
 
 **Type:** task
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -24,3 +24,11 @@
 ## Done when
 
 `npm test -- src/ui/__tests__/planFlow.test.tsx` and `npm run typecheck` pass.
+
+## Answer
+
+Draft План now shows the promise line under available and the Копилка extra only under that row. The three draft steppers use `showTrack` with `max={day.available}`. Yesterday (`вчера N` from `lastClosedDay.actual`) is draft-only when a closed day exists, including «вчера 0»; today’s buckets are never prefilled from it. After confirm the locked view is still план · потрачено, with no yesterday or track. Tour still skips persist and lock. Confirm body is `strings.confirmPlanBody`.
+
+`planFlow` asserts promise copy, confirm body, ±, over-budget, no «вчера» for a returning child with no closed day, and Баланс 110 after confirm.
+
+`npm test -- src/ui/__tests__/planFlow.test.tsx`: 2 passed, 2 total. `npm run typecheck`: pass.
