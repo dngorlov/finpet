@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { METERS } from "../../core/config";
 import { applyGoalProgress, estimateDaysToGoal } from "../../core/savings";
 import { META_KEYS } from "../../data/metaKeys";
-import type { GoalOption, SavingsView } from "../../data/repositories/gameRepository";
+import type { DayState, GoalOption, SavingsView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
 import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
@@ -35,6 +35,7 @@ export default function SavingsScreen(_props: Props) {
   const tour = useHowToPlayTour();
   const [savings, setSavings] = useState<SavingsView | null>(null);
   const [goals, setGoals] = useState<GoalOption[]>([]);
+  const [day, setDay] = useState<DayState | null>(null);
   const [balance, setBalance] = useState(0);
   const [phase, setPhase] = useState<Phase>({ name: "home" });
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
@@ -45,6 +46,7 @@ export default function SavingsScreen(_props: Props) {
     if (!profileId) return;
     setSavings(game.savingsState(profileId));
     setGoals(game.listGoals(profileId));
+    setDay(game.dayState(profileId));
     setBalance(game.getProfile(profileId).balance);
   }, [game, meta]);
 
@@ -76,6 +78,10 @@ export default function SavingsScreen(_props: Props) {
   const goalName = (key: string) => content.goals.find((g) => g.id === key)?.name ?? key;
   const activeName = savings.activeGoal ? goalName(savings.activeGoal.key) : null;
   const accumulated = savings.activeGoal ? savings.activeGoal.cost - savings.activeGoal.remaining : 0;
+  const savingsLeftover =
+    day?.plan.status === "confirmed" ? day.plan.buckets.savings - day.actual.savings : null;
+  const leftoverAfterDeposit =
+    savingsLeftover != null && phase.name === "deposit" ? savingsLeftover - phase.amount : null;
 
   const putIn = (amount: number) => {
     if (tour.active) return;
@@ -203,6 +209,17 @@ export default function SavingsScreen(_props: Props) {
       {tour.active ? null : <BackButton />}
       <Text style={styles.title}>{strings.navSavings}</Text>
       <Text style={styles.pot}>{strings.savingsPot(savings.pot)}</Text>
+      {savingsLeftover != null && phase.name === "home" ? (
+        <Text
+          accessible
+          aria-label={strings.planLeftoverA11y(strings.bucketSavings, savingsLeftover)}
+          style={styles.body}
+        >
+          {savingsLeftover >= 0
+            ? strings.planLeftover(savingsLeftover)
+            : strings.planOvershoot(Math.abs(savingsLeftover))}
+        </Text>
+      ) : null}
       <Card>
         {savings.activeGoal && activeName ? (
           <>
@@ -250,6 +267,12 @@ export default function SavingsScreen(_props: Props) {
             onChange={(amount) => setPhase({ name: "deposit", amount })}
           />
           <Text style={styles.body}>{strings.savingsConfirmDeposit(phase.amount)}</Text>
+          {leftoverAfterDeposit != null ? (
+            <>
+              <Text style={styles.body}>{strings.planAfterTap(leftoverAfterDeposit)}</Text>
+              {leftoverAfterDeposit < 0 ? <Text style={styles.body}>{strings.planOverWarn}</Text> : null}
+            </>
+          ) : null}
         </Card>
       ) : null}
       {phase.name === "withdraw" ? (

@@ -2,6 +2,7 @@ import { render, screen, userEvent } from "@testing-library/react-native";
 import { loadContent } from "../../data/content";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
+import { confirmTinyPlan } from "../testSupport/flowHelpers";
 
 const content = loadContent();
 const cinema = content.catalog.find((item) => item.id === "cinema")!;
@@ -83,4 +84,60 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
   },
   15000,
 );
+
+  it(
+    "shows leftover on Магазин and Копилка after confirm, and still buys Обед past the bucket",
+    async () => {
+      const ports = createFakePorts();
+      seedReturningChild(ports);
+      const { user } = await renderApp(ports);
+
+      await user.press(screen.getByRole("button", { name: "Магазин" }));
+      expect(screen.queryByText("Осталось 1")).not.toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Назад" }));
+
+      await confirmTinyPlan(user);
+      expect(screen.getByLabelText("Баланс 110")).toBeOnTheScreen();
+
+      await user.press(screen.getByRole("button", { name: "Магазин" }));
+      expect(screen.getByText("Осталось 1")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Обязательные: осталось 1")).toBeOnTheScreen();
+      expect(screen.getAllByText("Осталось 1")).toHaveLength(1);
+
+      await user.press(screen.getByRole("button", { name: "Желаемое" }));
+      expect(screen.getByLabelText("Желаемые: осталось 1")).toBeOnTheScreen();
+      expect(screen.queryByLabelText("Обязательные: осталось 1")).not.toBeOnTheScreen();
+
+      await user.press(screen.getByRole("button", { name: "Обязательное" }));
+      await user.press(screen.getByRole("button", { name: "Обед" }));
+      await user.press(screen.getByRole("button", { name: "Купить" }));
+      expect(screen.getByText("в плане останется -11")).toBeOnTheScreen();
+      expect(screen.getByText("Это сверх плана.")).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Купить" })).toBeEnabled();
+      await user.press(screen.getByRole("button", { name: "Купить" }));
+      expect(screen.getByText("Баланс -12")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Понятно" }));
+      expect(screen.getByText("сверх плана 11")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Обязательные: сверх плана 11")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Назад" }));
+
+      await user.press(screen.getByRole("button", { name: "Копилка" }));
+      expect(screen.getByText("Осталось 1")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Копилка: осталось 1")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Положить" }));
+      await user.press(screen.getByRole("button", { name: "Сумма, больше" }));
+      expect(screen.getByText("в плане останется 0")).toBeOnTheScreen();
+      expect(screen.queryByText("Это сверх плана.")).not.toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Положить" }));
+      expect(screen.getByText("Копилка +1")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Понятно" }));
+
+      await user.press(screen.getByRole("button", { name: "Забрать" }));
+      await user.press(screen.getByRole("button", { name: "Сумма, больше" }));
+      await user.press(screen.getByRole("button", { name: "Забрать" }));
+      expect(screen.queryByText(/в плане останется/)).not.toBeOnTheScreen();
+      expect(screen.queryByText("Это сверх плана.")).not.toBeOnTheScreen();
+    },
+    15000,
+  );
 });
