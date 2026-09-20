@@ -131,4 +131,6 @@ type DayState = {
 - Vocabulary: План, Баланс, Монеты, Пособие, Обязательные расходы, Желаемые расходы, Копилка, Цель, Забота, Настроение, Журнал, Игровой день, FeedbackCard as the sheet (UI name can stay descriptive in code; user-facing button is «Понятно»). Avoid: кошелёк, депозит, вклад, мечта as the entity name (allowed in kid copy «мечта отодвинется» / «Мечта сбылась!» per ROADMAP), здоровье, счастье.
 - Device Appendix A remains the same class of follow-up as M0/M2 when Android SDK is missing; do not skip the automated navigation-root tests.
 
+Superseded in part 2026-09-20 by `.scratch/plan-rework/spec.md`: План draft rows are no longer +1-only steppers with no promise copy. The track, promise sentences, yesterday hint, and leftover follow-through on Магазин / Копилка replace that UI; confirm still does not move Монеты. Словарик is 11 terms including План.
+
 ## Comments

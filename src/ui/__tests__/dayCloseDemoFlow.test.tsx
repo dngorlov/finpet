@@ -84,11 +84,18 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       }
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
-      for (let n = 0; n < 5; n += 1) {
+      await closeDemoDayAndAdvance(user, ports);
+      const demoId = ports.meta.get(META_KEYS.activeProfileId)!;
+      const closedActuals = ports.game.lastClosedDay(demoId)?.actual;
+      expect(closedActuals).toEqual({ mandatory: 0, optional: 0, savings: 0 });
+      await user.press(screen.getByRole("button", { name: "План" }));
+      expect(screen.getAllByText("вчера 0")).toHaveLength(3);
+      await user.press(screen.getByRole("button", { name: "Назад" }));
+
+      for (let n = 1; n < 5; n += 1) {
         await closeDemoDayAndAdvance(user, ports);
       }
 
-      const demoId = ports.meta.get(META_KEYS.activeProfileId)!;
       expect(ports.game.lastClosedDay(demoId)?.n).toBe(5);
       expect(ports.game.dayState(demoId).n).toBe(6);
 

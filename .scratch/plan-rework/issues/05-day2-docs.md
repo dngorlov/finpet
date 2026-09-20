@@ -6,7 +6,7 @@
 
 **Type:** task
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -24,3 +24,9 @@
 ## Done when
 
 `npm test` and `npm run typecheck` pass. Living docs match the spec.
+
+## Answer
+
+`firstRunFlow` keeps the buckets tooltip from `content.hints`; the old «Обязательное, желаемое и Копилка.» sentence is gone; first-day План has no «вчера»; Словарик walks 11 terms including План. `dayCloseDemoFlow` opens План after «Следующий день» and shows «вчера 0» from that closed day’s actuals (no spend). REQUIREMENTS §5 describes the track, promise, and leftover follow-through; §11 is 11 terms including План. ROADMAP §2.5, §4.2 Plan / Магазин / Копилка leftover, Progress Словарик, and §5.2 match. M3 issue 01 and the M3 spec are superseded for +1-only План steppers with no promise copy; chrome-kit stories did not require that UI. CONTEXT.md **План** is unchanged. Sister-flow queries did not break.
+
+`npm test`: 25 suites, 114 tests passed. `npm run typecheck`: pass.
