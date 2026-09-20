@@ -1,0 +1,24 @@
+# Plan rework — map
+
+## Notes
+
+Spec: `.scratch/plan-rework/spec.md`
+
+One PR branch: `feat/plan-rework`. Ticket branches: `feat/plan-NN-*` in worktrees under `/Users/dimagorlov/finpet-worktrees/` when run in parallel.
+
+Seams (approved): navigation-root RNTL via fake `SessionPorts`; content loader node test for 11 terms + `plan-buckets` body. Do not add a new plan-rework test file.
+
+Do not touch uncommitted MeterBar / StatusStrip WIP on other worktrees.
+
+## Decisions-so-far
+
+- Grill locked in the spec Further Notes. CONTEXT.md already has **План** as a promise.
+- Ticket 01: promise/leftover strings, Словарик **План** after Пособие (11 terms), `plan-buckets` tooltip body. `.scratch/plan-rework/issues/01-copy-content.md`
+- Ticket 02: AmountStepper optional `showTrack` + hold-repeat ±1; Копилка callers stay tap-only until PlanScreen is wired. `.scratch/plan-rework/issues/02-amount-track.md`
+- Ticket 03: draft План promise line + Копилка extra, tracks at max = today’s available, yesterday from `lastClosedDay` (not prefilled; hidden after confirm). `.scratch/plan-rework/issues/03-plan-draft.md`
+- Ticket 04: leftover on Магазин (open tab) and Копилка home after confirm; buy/Положить after-tap + soft warn; Купить stays enabled. `.scratch/plan-rework/issues/04-follow-through.md`
+- Ticket 05: first-run План has no yesterday; Словарик is 11 terms including План; after demo «Следующий день» the draft shows «вчера» from closed actuals; REQUIREMENTS/ROADMAP and M3 +1-only stepper stories updated. `.scratch/plan-rework/issues/05-day2-docs.md`
+
+## Fog
+
+None for this pass. Device visual of the track is not in the automated seam.

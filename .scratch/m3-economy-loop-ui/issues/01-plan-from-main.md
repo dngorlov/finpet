@@ -31,3 +31,7 @@ A returning child can confirm a valid План from Main, cannot edit it afterwa
 ## Answer
 
 SessionGame now includes dayState, plan save/confirm, purchase, savings, goals, and journal reads. Fakes implement the full slice. Plan screen drafts with ± steppers, blocks over-budget confirm, locks after a confirmation sheet, and shows plan-vs-actual. Main navigates to Plan, switches to «План готов», and explains that Итоги дня are later. `npm test` 73, typecheck and lint clean.
+
+## Supersession
+
+2026-09-20: `.scratch/plan-rework/spec.md` supersedes this ticket's +1-only План steppers and confirm sheet with no promise copy. Draft rows now keep −/+ and add a drag track, promise copy, and yesterday hints; leftover follow-through lives on Магазин / Копилка. Confirm still does not move Монеты.

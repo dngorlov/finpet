@@ -34,12 +34,13 @@ describe("loadContent", () => {
     ]);
   });
 
-  it("ships the ten Словарик terms and seven Как играть steps", () => {
+  it("ships the eleven Словарик terms including План and seven Как играть steps", () => {
     expect(content.terms.map((t) => t.term)).toEqual([
       "Баланс",
       "Копилка",
       "Цель",
       "Пособие",
+      "План",
       "Обязательные расходы",
       "Желаемые расходы",
       "Забота",
@@ -47,6 +48,13 @@ describe("loadContent", () => {
       "Этап",
       "Игровой день",
     ]);
+    expect(content.terms).toHaveLength(11);
+    expect(content.terms.find((t) => t.id === "plan")).toEqual({
+      id: "plan",
+      term: "План",
+      definition:
+        "Обещание, как разделить сегодняшние монеты: обязательное, желаемое и копилка. Подтвердить план монеты не тратит.",
+    });
     expect(content.hints.map((hint) => hint.id)).toEqual([
       "main-plan",
       "plan-buckets",
@@ -56,6 +64,9 @@ describe("loadContent", () => {
       "savings-deposit",
       "main-task",
     ]);
+    expect(content.hints.find((hint) => hint.id === "plan-buckets")?.body).toBe(
+      "Раздели монеты на три кучки. Это обещание, не покупка.",
+    );
   });
 
   it("ships six playable task scripts plus the backpack correction, every option explained", () => {

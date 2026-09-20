@@ -46,7 +46,7 @@ const termSchema = z.object({
 
 const termsFileSchema = z.object({
   contentVersion: z.literal(CONTENT_VERSION),
-  terms: z.array(termSchema).length(10),
+  terms: z.array(termSchema).length(11),
 });
 
 const hintCardSchema = z.object({

@@ -208,7 +208,9 @@ describe("first-run flow (Appendix A 1–4)", () => {
 
     await user.press(screen.getByRole("button", { name: "План" }));
     expectDestinationBeat(tourById["plan-buckets"]!);
+    expect(screen.queryByText("Обязательное, желаемое и Копилка.")).not.toBeOnTheScreen();
     expect(screen.getByText("План")).toBeOnTheScreen();
+    expect(screen.queryByText(/вчера \d+/)).not.toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Дальше" }));
     expectHubBeat(tourById["main-shop"]!);
@@ -254,6 +256,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     await user.press(screen.getByRole("button", { name: "План" }));
     expect(screen.getByLabelText("Баланс 110")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Назад" })).toBeOnTheScreen();
+    expect(screen.queryByText(/вчера \d+/)).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
     await user.press(screen.getByRole("button", { name: "Закончить день" }));
@@ -277,6 +280,8 @@ describe("first-run flow (Appendix A 1–4)", () => {
     await user.press(screen.getByRole("button", { name: "Прогресс" }));
     expect(screen.getByLabelText("Баланс 110")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Словарик" }));
+    expect(content.terms).toHaveLength(11);
+    expect(content.terms.map((term) => term.term)).toContain("План");
     for (const term of content.terms) {
       expect(screen.getByText(term.term)).toBeOnTheScreen();
     }

@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
 import type { CatalogItemContent } from "../../data/content";
+import type { DayState } from "../../data/repositories/gameRepository";
 import { Badge } from "../components/Badge";
 import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
@@ -19,6 +20,7 @@ import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, minTarget, spacing, type } from "../theme";
+import { confirmedLeftover, leftoverAfterTap } from "./planLeftover";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Shop">;
 type Tab = "mandatory" | "optional";
@@ -36,6 +38,7 @@ export default function ShopScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
   const tour = useHowToPlayTour();
   const [tab, setTab] = useState<Tab>("mandatory");
+  const [day, setDay] = useState<DayState | null>(null);
   const [balance, setBalance] = useState(0);
   const [bought, setBought] = useState<string[]>([]);
   const [phase, setPhase] = useState<Phase>({ name: "list" });
@@ -45,9 +48,10 @@ export default function ShopScreen({ navigation }: Props) {
   const load = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
-    const day = game.dayState(profileId);
-    setBalance(day.available);
-    setBought(game.purchasedItemIds(profileId, day.dayId));
+    const next = game.dayState(profileId);
+    setDay(next);
+    setBalance(next.available);
+    setBought(game.purchasedItemIds(profileId, next.dayId));
   }, [game, meta]);
 
   useFocusEffect(
@@ -57,6 +61,12 @@ export default function ShopScreen({ navigation }: Props) {
   );
 
   const items = content.catalog.filter((item) => item.kind === tab);
+  const tabLeftover = confirmedLeftover(day, tab);
+  const tabBucketLabel = tab === "mandatory" ? strings.bucketMandatory : strings.bucketOptional;
+  const leftoverAfterBuy =
+    phase.name === "confirm"
+      ? leftoverAfterTap(confirmedLeftover(day, phase.item.kind), phase.item.price)
+      : null;
 
   const buy = (item: CatalogItemContent) => {
     if (tour.active) return;
@@ -147,6 +157,15 @@ export default function ShopScreen({ navigation }: Props) {
               }}
             />
           </View>
+          {tabLeftover != null ? (
+            <Text
+              accessible
+              aria-label={strings.planLeftoverA11y(tabBucketLabel, tabLeftover)}
+              style={styles.body}
+            >
+              {tabLeftover >= 0 ? strings.planLeftover(tabLeftover) : strings.planOvershoot(Math.abs(tabLeftover))}
+            </Text>
+          ) : null}
           {items.map((item) => {
             const row = (
               <Pressable
@@ -205,6 +224,12 @@ export default function ShopScreen({ navigation }: Props) {
       {phase.name === "confirm" ? (
         <Card>
           <Text style={styles.section}>{strings.shopConfirmBuy(phase.item.name, phase.item.price)}</Text>
+          {leftoverAfterBuy != null ? (
+            <>
+              <Text style={styles.body}>{strings.planAfterTap(leftoverAfterBuy)}</Text>
+              {leftoverAfterBuy < 0 ? <Text style={styles.body}>{strings.planOverWarn}</Text> : null}
+            </>
+          ) : null}
         </Card>
       ) : null}
       {phase.name === "blocked" ? (

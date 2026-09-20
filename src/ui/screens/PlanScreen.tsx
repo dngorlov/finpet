@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { validatePlan, type PlanBuckets } from "../../core/economy";
 import { META_KEYS } from "../../data/metaKeys";
-import type { DayState } from "../../data/repositories/gameRepository";
+import type { DayState, DaySummaryView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
 import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
@@ -28,6 +28,7 @@ export default function PlanScreen(_props: Props) {
   const tour = useHowToPlayTour();
   const [day, setDay] = useState<DayState | null>(null);
   const [buckets, setBuckets] = useState<PlanBuckets>(EMPTY);
+  const [lastClosed, setLastClosed] = useState<DaySummaryView | null>(null);
   const [askingConfirm, setAskingConfirm] = useState(false);
 
   const load = useCallback(() => {
@@ -36,6 +37,7 @@ export default function PlanScreen(_props: Props) {
     const next = game.dayState(profileId);
     setDay(next);
     setBuckets(next.plan.buckets);
+    setLastClosed(game.lastClosedDay(profileId));
     setAskingConfirm(false);
   }, [game, meta]);
 
@@ -104,6 +106,7 @@ export default function PlanScreen(_props: Props) {
       {tour.active ? null : <BackButton />}
       <Text style={styles.title}>{strings.navPlan}</Text>
       <Text style={styles.body}>{strings.planAvailable(day.available)}</Text>
+      {confirmed ? null : <Text style={styles.body}>{strings.planPromise}</Text>}
       {confirmed ? (
         <TourAnchor id="plan-buckets">
           <Card>
@@ -115,22 +118,29 @@ export default function PlanScreen(_props: Props) {
       ) : (
         <TourAnchor id="plan-buckets">
           <Card>
-            <AmountStepper
+            <DraftBucket
               label={strings.bucketMandatory}
               pictogram={strings.navPlanPictogram}
               value={buckets.mandatory}
+              max={day.available}
+              yesterday={lastClosed?.actual.mandatory}
               onChange={(mandatory) => persist({ ...buckets, mandatory })}
             />
-            <AmountStepper
+            <DraftBucket
               label={strings.bucketOptional}
               pictogram={strings.navShopPictogram}
               value={buckets.optional}
+              max={day.available}
+              yesterday={lastClosed?.actual.optional}
               onChange={(optional) => persist({ ...buckets, optional })}
             />
-            <AmountStepper
+            <DraftBucket
               label={strings.bucketSavings}
               pictogram={strings.navSavingsPictogram}
               value={buckets.savings}
+              max={day.available}
+              yesterday={lastClosed?.actual.savings}
+              extra={strings.planSavingsExtra}
               onChange={(savings) => persist({ ...buckets, savings })}
             />
           </Card>
@@ -145,6 +155,39 @@ export default function PlanScreen(_props: Props) {
         </Card>
       ) : null}
     </Screen>
+  );
+}
+
+function DraftBucket({
+  label,
+  pictogram,
+  value,
+  max,
+  yesterday,
+  extra,
+  onChange,
+}: {
+  label: string;
+  pictogram: string;
+  value: number;
+  max: number;
+  yesterday?: number;
+  extra?: string;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <View>
+      <AmountStepper
+        label={label}
+        pictogram={pictogram}
+        value={value}
+        max={max}
+        showTrack
+        onChange={onChange}
+      />
+      {yesterday == null ? null : <Text style={styles.body}>{strings.planYesterday(yesterday)}</Text>}
+      {extra ? <Text style={styles.body}>{extra}</Text> : null}
+    </View>
   );
 }
 

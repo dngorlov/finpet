@@ -48,6 +48,10 @@ _Avoid_: приветственный подарок
 The recurring income credited once per Game Day just for showing up.
 _Avoid_: ежедневный доход, логин-бонус
 
+**План (Plan)**:
+The day's promised split of available coins into Обязательные, Желаемые, and Копилка — a promise, not a coin movement.
+_Avoid_: бюджет, бронь, список покупок
+
 **Итоги дня (Day summary)**:
 The end-of-day screen: plan vs. actual, the day's score, and meter/Этап changes with explanations.
 _Avoid_: отчёт, дневник

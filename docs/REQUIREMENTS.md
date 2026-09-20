@@ -34,7 +34,7 @@
 - Before each game period: distribute available amount across **≥3 areas** — mandatory expenses, optional expenses, savings
 - Enforce: distributed total ≤ available budget; display remaining balance
 - Plan editable until confirmation; after confirmation, show **plan vs. actual expenses** comparison
-- **Resolved:** a "game period" = **Игровой день** — one economy cycle; a new one unlocks on the next local calendar day in normal play, back-to-back in Демо-режиме (ADR-0002). Area labels: **Обязательные / Желаемые / Копилка**. Plan screen uses steppers per bucket with a live total and a remainder line; confirmed plan is locked for the day; plan-vs-actual columns shown on the same screen during the day and in Итоги дня. (ROADMAP §2.1, §4.2; ADR-0002)
+- **Resolved:** a "game period" = **Игровой день** — one economy cycle; a new one unlocks on the next local calendar day in normal play, back-to-back in Демо-режиме (ADR-0002). Area labels: **Обязательные / Желаемые / Копилка**. Draft План is a promise, not a transfer: each row is the integer plus a horizontal track (0…today's available) plus −/+ (tap ±1, hold repeats), with copy that coins stay in Баланс and that Копилка is Положить later; later days show draft-only «вчера N» from last closed actuals (including «вчера 0»). After confirm, Магазин (open tab) and Копилка home show leftover («Осталось N» or «сверх плана N»); buy / Положить confirm shows leftover after the tap and warns «Это сверх плана.» without blocking. Confirmed plan is locked for the day; plan-vs-actual columns stay on План during the day and in Итоги дня. (ROADMAP §2.1, §4.2; ADR-0002)
 
 ## 6. Purchases & Expenses
 - Catalog of priced items/actions of two types: mandatory and optional — minimum **8 items**
@@ -76,7 +76,7 @@
 ## 11. History & Learning Progress
 - Visible: completed tasks, progress toward current goal, results of the last game period
 - Short help section explaining key terms
-- **Resolved:** Прогресс screen with 3 tabs — Итоги (last day's score + plan-vs-actual + overall), Журнал (chronological transactions with source labels), Словарик. Key terms (10): Баланс, Копилка, Цель, Пособие, Обязательные расходы, Желаемые расходы, Забота, Настроение, Этап, Игровой день — one-to-one with `CONTEXT.md`, kid-worded definitions. (ROADMAP §2.5, §4.2)
+- **Resolved:** Прогресс screen with 3 tabs — Итоги (last day's score + plan-vs-actual + overall), Журнал (chronological transactions with source labels), Словарик. Key terms (11): Баланс, Копилка, Цель, Пособие, План, Обязательные расходы, Желаемые расходы, Забота, Настроение, Этап, Игровой день — one-to-one with `CONTEXT.md`, kid-worded definitions. (ROADMAP §2.5, §4.2)
 
 ## 12. Adult Section
 - Entry barrier: simple adult gate (doc's examples: hold a button, solve an arithmetic problem)

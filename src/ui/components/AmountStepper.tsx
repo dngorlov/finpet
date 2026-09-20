@@ -1,6 +1,26 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  PanResponder,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type GestureResponderEvent,
+  type LayoutChangeEvent,
+} from "react-native";
 import { strings } from "../strings";
-import { colors, minTarget, spacing, type } from "../theme";
+import { colors, minTarget, radius, spacing, type } from "../theme";
+
+const HOLD_DELAY_MS = 400;
+const HOLD_INTERVAL_MS = 120;
+
+type AmountStepperProps = {
+  label: string;
+  pictogram: string;
+  value: number;
+  onChange: (next: number) => void;
+  disabled?: boolean;
+} & ({ showTrack?: false; max?: number } | { showTrack: true; max: number });
 
 export function AmountStepper({
   label,
@@ -9,51 +29,222 @@ export function AmountStepper({
   onChange,
   disabled,
   max,
-}: {
-  label: string;
-  pictogram: string;
-  value: number;
-  onChange: (next: number) => void;
-  disabled?: boolean;
-  max?: number;
-}) {
+  showTrack,
+}: AmountStepperProps) {
   const plusDisabled = Boolean(disabled) || (max != null && value >= max);
-  return (
-    <View style={styles.row}>
+  const minusDisabled = Boolean(disabled) || value <= 0;
+  const trackOn = showTrack === true;
+  const fillWidth =
+    `${Math.max(0, Math.min(100, trackOn && max > 0 ? (value / max) * 100 : 0))}%` as const;
+
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const maxRef = useRef(max);
+  maxRef.current = max;
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
+
+  const repeatingRef = useRef(false);
+  const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearHold = useCallback(() => {
+    if (delayRef.current != null) {
+      clearTimeout(delayRef.current);
+      delayRef.current = null;
+    }
+    if (intervalRef.current != null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => clearHold(), [clearHold]);
+
+  const stepBy = useCallback((delta: number) => {
+    if (disabledRef.current) {
+      return false;
+    }
+    const next = valueRef.current + delta;
+    const cap = maxRef.current;
+    if (next < 0 || (cap != null && next > cap)) {
+      return false;
+    }
+    onChangeRef.current(next);
+    return true;
+  }, []);
+
+  const startHold = useCallback(
+    (delta: number) => {
+      if (showTrack !== true) {
+        return;
+      }
+      repeatingRef.current = false;
+      clearHold();
+      delayRef.current = setTimeout(() => {
+        repeatingRef.current = true;
+        if (!stepBy(delta)) {
+          return;
+        }
+        intervalRef.current = setInterval(() => {
+          if (!stepBy(delta)) {
+            clearHold();
+          }
+        }, HOLD_INTERVAL_MS);
+      }, HOLD_DELAY_MS);
+    },
+    [clearHold, showTrack, stepBy],
+  );
+
+  const trackWidthRef = useRef(0);
+  const trackPageXRef = useRef(0);
+  const trackRef = useRef<View>(null);
+
+  const setFromPageX = useCallback((pageX: number) => {
+    if (disabledRef.current) {
+      return;
+    }
+    const cap = maxRef.current;
+    if (cap == null) {
+      return;
+    }
+    const width = trackWidthRef.current;
+    if (width <= 0) {
+      return;
+    }
+    const x = Math.max(0, Math.min(width, pageX - trackPageXRef.current));
+    const next = cap === 0 ? 0 : Math.round((x / width) * cap);
+    onChangeRef.current(next);
+  }, []);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => !disabledRef.current,
+        onMoveShouldSetPanResponder: () => !disabledRef.current,
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderGrant: (event: GestureResponderEvent) => {
+          const pageX = event.nativeEvent.pageX;
+          trackRef.current?.measureInWindow((originX) => {
+            trackPageXRef.current = originX;
+            setFromPageX(pageX);
+          });
+        },
+        onPanResponderMove: (event: GestureResponderEvent) => {
+          setFromPageX(event.nativeEvent.pageX);
+        },
+      }),
+    [setFromPageX],
+  );
+
+  const onTrackLayout = (event: LayoutChangeEvent) => {
+    trackWidthRef.current = event.nativeEvent.layout.width;
+  };
+
+  const minus = (
+    <Pressable
+      role="button"
+      aria-label={strings.bucketMinus(label)}
+      aria-disabled={minusDisabled}
+      disabled={minusDisabled}
+      onPressIn={() => startHold(-1)}
+      onPressOut={clearHold}
+      onPress={() => {
+        if (repeatingRef.current) {
+          return;
+        }
+        onChange(value - 1);
+      }}
+      style={styles.step}
+    >
+      <Text style={styles.stepLabel}>−</Text>
+    </Pressable>
+  );
+
+  const plus = (
+    <Pressable
+      role="button"
+      aria-label={strings.bucketPlus(label)}
+      aria-disabled={plusDisabled}
+      disabled={plusDisabled}
+      onPressIn={() => startHold(1)}
+      onPressOut={clearHold}
+      onPress={() => {
+        if (repeatingRef.current) {
+          return;
+        }
+        onChange(value + 1);
+      }}
+      style={styles.step}
+    >
+      <Text style={styles.stepLabel}>+</Text>
+    </Pressable>
+  );
+
+  const valueText = <Text style={styles.value}>{strings.bucketValue(label, value)}</Text>;
+
+  const heading = (
+    <>
       <Text aria-hidden style={styles.pictogram}>
         {pictogram}
       </Text>
       <Text style={styles.label}>{label}</Text>
-      <Pressable
-        role="button"
-        aria-label={strings.bucketMinus(label)}
-        aria-disabled={disabled || value <= 0}
-        disabled={disabled || value <= 0}
-        onPress={() => onChange(value - 1)}
-        style={styles.step}
-      >
-        <Text style={styles.stepLabel}>−</Text>
-      </Pressable>
-      <Text style={styles.value}>{strings.bucketValue(label, value)}</Text>
-      <Pressable
-        role="button"
-        aria-label={strings.bucketPlus(label)}
-        aria-disabled={plusDisabled}
-        disabled={plusDisabled}
-        onPress={() => onChange(value + 1)}
-        style={styles.step}
-      >
-        <Text style={styles.stepLabel}>+</Text>
-      </Pressable>
+    </>
+  );
+
+  if (!trackOn) {
+    return (
+      <View style={styles.row}>
+        {heading}
+        {minus}
+        {valueText}
+        {plus}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.block}>
+      <View style={styles.row}>
+        {heading}
+        {valueText}
+      </View>
+      <View style={styles.trackRow}>
+        {minus}
+        <View
+          ref={trackRef}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          aria-hidden
+          onLayout={onTrackLayout}
+          style={styles.trackHit}
+          {...panResponder.panHandlers}
+        >
+          <View style={styles.track}>
+            <View style={[styles.fill, { width: fillWidth }]} />
+          </View>
+        </View>
+        {plus}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  block: {
+    gap: spacing.s,
+  },
   row: {
     alignItems: "center",
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: spacing.s,
+  },
+  trackRow: {
+    alignItems: "center",
+    flexDirection: "row",
     gap: spacing.s,
   },
   pictogram: {
@@ -81,5 +272,21 @@ const styles = StyleSheet.create({
     fontSize: type.body,
     minWidth: 48,
     textAlign: "center",
+  },
+  trackHit: {
+    flex: 1,
+    justifyContent: "center",
+    minHeight: minTarget,
+  },
+  track: {
+    backgroundColor: colors.track,
+    borderRadius: radius.card,
+    height: spacing.l,
+    overflow: "hidden",
+  },
+  fill: {
+    backgroundColor: colors.fill,
+    borderRadius: radius.card,
+    height: spacing.l,
   },
 });
