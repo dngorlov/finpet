@@ -6,7 +6,7 @@
 
 **Type:** task
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -25,3 +25,9 @@
 ## Done when
 
 `npm test -- src/ui/__tests__/economyFlow.test.tsx` and `npm run typecheck` pass.
+
+## Answer
+
+After a confirmed План, leftover is `plan − actual` for that bucket. Магазин shows one line under the tabs for the open tab (`«Осталось N»` / `«сверх плана N»`, a11y includes Обязательные / Желаемые). Buy confirm adds `«в плане останется N»` and `«Это сверх плана.»` when N < 0 without disabling Купить. Копилка home shows the savings leftover; Положить confirm uses the same after-tap lines; Забрать does not. Unconfirmed days omit leftover. Main and StatusStrip are unchanged. `economyFlow` after `confirmTinyPlan` sees leftover `«Осталось 1»`, still buys Обед with the warn, shows Копилка leftover, and keeps Баланс 110 until the shop.
+
+`npm test -- src/ui/__tests__/economyFlow.test.tsx`: 2 passed, 2 total. `npm run typecheck`: pass.

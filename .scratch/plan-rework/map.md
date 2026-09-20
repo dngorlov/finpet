@@ -15,6 +15,7 @@ Do not touch uncommitted MeterBar / StatusStrip WIP on other worktrees.
 - Grill locked in the spec Further Notes. CONTEXT.md already has **План** as a promise.
 - Ticket 01: promise/leftover strings, Словарик **План** after Пособие (11 terms), `plan-buckets` tooltip body. `.scratch/plan-rework/issues/01-copy-content.md`
 - Ticket 02: AmountStepper optional `showTrack` + hold-repeat ±1; Копилка callers stay tap-only until PlanScreen is wired. `.scratch/plan-rework/issues/02-amount-track.md`
+- Ticket 04: leftover on Магазин (open tab) and Копилка home after confirm; buy/Положить after-tap + soft warn; Купить stays enabled. `.scratch/plan-rework/issues/04-follow-through.md`
 
 ## Fog
 
