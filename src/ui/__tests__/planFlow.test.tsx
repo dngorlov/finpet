@@ -39,7 +39,7 @@ describe("plan from Main", () => {
     expect(screen.getByText("Подтвердить план дня?")).toBeOnTheScreen();
     expect(
       screen.getByText(
-        "Это обещание. Монеты останутся в Балансе, пока ты не купишь в Магазине или не положишь в копилку. Потом план не меняется.",
+        "Это обещание. Монеты останутся в Балансе, пока ты не купишь в Магазине или не положишь в Копилку. Потом план не меняется.",
       ),
     ).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Подтвердить план" }));

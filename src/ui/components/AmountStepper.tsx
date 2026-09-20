@@ -78,6 +78,9 @@ export function AmountStepper({
 
   const startHold = useCallback(
     (delta: number) => {
+      if (showTrack !== true) {
+        return;
+      }
       repeatingRef.current = false;
       clearHold();
       delayRef.current = setTimeout(() => {
@@ -92,7 +95,7 @@ export function AmountStepper({
         }, HOLD_INTERVAL_MS);
       }, HOLD_DELAY_MS);
     },
-    [clearHold, stepBy],
+    [clearHold, showTrack, stepBy],
   );
 
   const trackWidthRef = useRef(0);

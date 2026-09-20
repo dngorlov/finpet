@@ -20,6 +20,7 @@ import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, minTarget, spacing, type } from "../theme";
+import { confirmedLeftover, leftoverAfterTap } from "./planLeftover";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Shop">;
 type Tab = "mandatory" | "optional";
@@ -60,12 +61,11 @@ export default function ShopScreen({ navigation }: Props) {
   );
 
   const items = content.catalog.filter((item) => item.kind === tab);
-  const tabLeftover =
-    day?.plan.status === "confirmed" ? day.plan.buckets[tab] - day.actual[tab] : null;
+  const tabLeftover = confirmedLeftover(day, tab);
   const tabBucketLabel = tab === "mandatory" ? strings.bucketMandatory : strings.bucketOptional;
   const leftoverAfterBuy =
-    day?.plan.status === "confirmed" && phase.name === "confirm"
-      ? day.plan.buckets[phase.item.kind] - day.actual[phase.item.kind] - phase.item.price
+    phase.name === "confirm"
+      ? leftoverAfterTap(confirmedLeftover(day, phase.item.kind), phase.item.price)
       : null;
 
   const buy = (item: CatalogItemContent) => {

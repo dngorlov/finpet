@@ -21,6 +21,7 @@ import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, type } from "../theme";
+import { confirmedLeftover, leftoverAfterTap } from "./planLeftover";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Savings">;
 type Phase =
@@ -78,10 +79,9 @@ export default function SavingsScreen(_props: Props) {
   const goalName = (key: string) => content.goals.find((g) => g.id === key)?.name ?? key;
   const activeName = savings.activeGoal ? goalName(savings.activeGoal.key) : null;
   const accumulated = savings.activeGoal ? savings.activeGoal.cost - savings.activeGoal.remaining : 0;
-  const savingsLeftover =
-    day?.plan.status === "confirmed" ? day.plan.buckets.savings - day.actual.savings : null;
+  const savingsLeftover = confirmedLeftover(day, "savings");
   const leftoverAfterDeposit =
-    savingsLeftover != null && phase.name === "deposit" ? savingsLeftover - phase.amount : null;
+    phase.name === "deposit" ? leftoverAfterTap(savingsLeftover, phase.amount) : null;
 
   const putIn = (amount: number) => {
     if (tour.active) return;
