@@ -13,6 +13,7 @@ Do not touch uncommitted MeterBar / StatusStrip WIP on other worktrees.
 ## Decisions-so-far
 
 - Grill locked in the spec Further Notes. CONTEXT.md already has **План** as a promise.
+- AmountStepper has optional `showTrack` + hold-repeat ±1; Копилка callers stay tap-only until PlanScreen is wired. See [02-amount-track](issues/02-amount-track.md).
 
 ## Fog
 

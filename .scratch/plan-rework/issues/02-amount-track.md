@@ -6,7 +6,7 @@
 
 **Type:** task
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -24,3 +24,7 @@
 ## Done when
 
 `npm run typecheck` passes. Existing flow tests that press «…, больше / меньше» still compile; do not add a new test file.
+
+## Answer
+
+Optional `showTrack` on `AmountStepper` (when true, `max` is required). Track is a MeterBar-style `colors.track` / `colors.fill` bar, `aria-hidden`, with PanResponder mapping horizontal position to integer 0…max. −/+ stay named «…, меньше / больше» and still ±1 on `onPress`; `onPressIn`/`onPressOut` start hold-repeat after 400 ms so a quick `user.press` is still a single step. Default (no `showTrack`) keeps the old row layout; Savings callers unchanged. PlanScreen not wired. `npm run typecheck` passes; `planFlow` and `savingsFlow` still pass.
