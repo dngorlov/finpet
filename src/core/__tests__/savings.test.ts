@@ -14,9 +14,9 @@ describe("savings pot", () => {
 });
 
 describe("goal progress", () => {
-  it("marks the goal achieved and reduces the pot by the cost once deposits reach it", () => {
-    expect(applyGoalProgress(90, 90)).toEqual({ achieved: true, potAfter: 0, remaining: 0 });
-    expect(applyGoalProgress(100, 90)).toEqual({ achieved: true, potAfter: 10, remaining: 0 });
+  it("marks the goal funded when the pot covers the cost and leaves the pot unchanged", () => {
+    expect(applyGoalProgress(90, 90)).toEqual({ achieved: true, potAfter: 90, remaining: 0 });
+    expect(applyGoalProgress(100, 90)).toEqual({ achieved: true, potAfter: 100, remaining: 0 });
     expect(applyGoalProgress(40, 90)).toEqual({ achieved: false, potAfter: 40, remaining: 50 });
   });
 });

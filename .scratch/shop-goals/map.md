@@ -13,7 +13,7 @@ Do not touch uncommitted MeterBar / StatusStrip WIP.
 ## Decisions-so-far
 
 - Grill locked 2026-09-20 in the spec. CONTEXT.md already has **Цель** as one Магазин Желаемое, **Копилка** leaving by withdrawal or buying that Цель, **Настроение** from Желаемые only.
-- Ticket 01: catalog `once` + three shelf dreams, terms, `applyGoalProgress` no longer subtracts the pot. `.scratch/shop-goals/issues/01-content-core.md`
+- Ticket 01 resolved: 11-item catalog with `once` dreams, derived `goals` from optional rows, funded `applyGoalProgress` leaves the pot, Словарик matches CONTEXT.md. `.scratch/shop-goals/issues/01-content-core.md`
 - Ticket 02: repository engine (funded deposit, buy-from-Копилка, clear Цель, actuals). `.scratch/shop-goals/issues/02-repository.md`
 - Ticket 03: SessionGame + fake ports. `.scratch/shop-goals/issues/03-session-fakes.md`
 - Ticket 04: Копилка UI. `.scratch/shop-goals/issues/04-savings-ui.md`

@@ -6,7 +6,7 @@
 
 **Type:** task
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -24,5 +24,11 @@
 - Do not revert CONTEXT.md. Do not change repository auto-debit, screens, or `goalAchievedMoodBonus` call sites yet.
 
 ## Done when
+
+`npm test -- src/data/__tests__/content.test.ts src/core/__tests__/savings.test.ts` and `npm run typecheck` pass.
+
+## Answer
+
+Catalog is 11 items at `contentVersion` 1. Скейтборд (90, mood +12), Телескоп (160, +15), and Велосипед (240, +18) are optional rows with `once: true`; other items default `once: false`. `loadContent()` no longer parses `goals.json`; it derives `goals` from optional catalog rows (`id`, `name`, `cost` = price, `description`) so FirstRun/demo still compile. `applyGoalProgress` sets `achieved` when pot ≥ cost, `remaining` 0 then, and leaves `potAfter` as the same pot (90/90 → 90, 100/90 → 100). Словарик Настроение grows from Желаемые only; Цель / Копилка / Желаемые match CONTEXT.md. Content tests no longer assert three preset goals from a file.
 
 `npm test -- src/data/__tests__/content.test.ts src/core/__tests__/savings.test.ts` and `npm run typecheck` pass.
