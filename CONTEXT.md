@@ -61,20 +61,24 @@ Purchases the pet needs every Game Day (food, school supplies, transport); skipp
 _Avoid_: нужное, необходимое
 
 **Желаемые расходы (Optional expenses)**:
-Non-essential purchases (candy, stickers, cinema, toys) that lift Настроение.
+Non-essential purchases that lift Настроение. Some (today: Скейтборд, Телескоп, Велосипед) can only be bought once and then leave Магазин.
 _Avoid_: приятное, хотелки
 
 **Три решения (The three decision types)**:
 What the game teaches to weigh before any purchase: spend on mandatory, spend on optional, or postpone.
 _Avoid_: выбор ответа
 
+**Магазин (Shop)**:
+The catalog of Обязательные and Желаемые the child can buy this Игровой день.
+_Avoid_: витрина, инвентарь
+
 **Копилка (Savings)**:
-The pot coins are transferred into and can only leave from with a separate confirmation that shows the impact on the Goal.
+The pot of coins set aside from Баланс toward the Цель. Coins leave it only by confirmed withdrawal or by buying that Цель.
 _Avoid_: накопления, депозит, вклад
 
 **Цель (Goal)**:
-A named purchase target with a fixed cost that Копилка accumulates toward.
-_Avoid_: ачивка, мечта
+The one Желаемое from Магазин that Копилка is accumulating toward. There is at most one at a time; Обязательные cannot be a Цель.
+_Avoid_: ачивка, мечта, произвольная цель
 
 ### Pet
 
@@ -99,7 +103,7 @@ The pet meter fed by buying Обязательные расходы on time.
 _Avoid_: здоровье, сытость
 
 **Настроение (Mood)**:
-The pet meter fed by Желаемые расходы and progress toward the Цель.
+The pet meter fed by Желаемые расходы.
 _Avoid_: счастье, радость
 
 **Этап (Stage)**:
