@@ -116,4 +116,14 @@ CREATE TABLE IF NOT EXISTS taskProgress (
 );
 `,
   },
+  {
+    version: 3,
+    up: `
+ALTER TABLE purchases ADD COLUMN paidFrom TEXT NOT NULL DEFAULT 'balance';
+ALTER TABLE purchases ADD COLUMN boughtAsActiveGoal INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE goals ADD COLUMN fundedCelebrated INTEGER NOT NULL DEFAULT 0;
+DELETE FROM goals WHERE isActive = 0;
+UPDATE goals SET status = 'active', achievedAt = NULL;
+`,
+  },
 ];

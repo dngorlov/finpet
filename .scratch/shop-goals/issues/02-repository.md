@@ -6,7 +6,7 @@
 
 **Type:** task
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -28,3 +28,11 @@
 ## Done when
 
 `npm test -- src/data/__tests__/gameRepository.node.test.ts` and `npm run typecheck` pass.
+
+## Answer
+
+Repository public seam matches the spec. `createProfile` still takes `goals` + `activeGoalKey` but persists only the active catalog id (FirstRun/demo call sites can keep seeding `skateboard` in ticket 03). `setActiveGoal` accepts a `CatalogItem` (or a leftover string key), rejects Обязательные and owned `once`, and starts a new funded-celebration stint. `clearActiveGoal` sets null without moving coins.
+
+`transferToSavings` still writes `savings_in` and debit Баланс. When pot ≥ price it returns `achieved: true` once per stint, leaves the pot, does not write `savings_out` of the cost, does not apply `METERS.goalAchievedMoodBonus`, and does not clear the Цель. `purchaseFromSavings` spends the pot only, writes a purchase journal line (not «Из копилки»), applies the item meter, stamps bought-as-active-Цель, and leaves Баланс still. Баланс `purchase` of the active Цель does the same stamp/clear and leaves the pot. `once` ownership is any purchase row. `boughtAsActiveGoalCount` is the public «Целей: N» read. `actual.optional` / `withinPlan` / day-close overspend ignore `paidFrom: savings`. Migration v3 drops inactive preset rows, does not treat old `status: achieved` as ownership, and does not refund auto-debits.
+
+`npm test -- src/data/__tests__/gameRepository.node.test.ts` (24 tests) and `npm run typecheck` pass.
