@@ -6,7 +6,7 @@
 
 **Type:** task
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -24,3 +24,7 @@
 ## Done when
 
 Docs grep for “three presets” / “Настроение +10” on reach no longer describe current product as required. No test changes required beyond what 01 already did.
+
+## Answer
+
+REQUIREMENTS §6 is 11 catalog items with `once` on Скейтборд / Телескоп / Велосипед; BlockedSheet «Сделать целью» for a Желаемое. §7 Цель is one Магазин Желаемое; Копилка deposits without spending; Celebration «Купить из копилки» / «Позже»; no Настроение on reach. ROADMAP §2.1 catalog + Цель, §2.2 mood, §4.2 Магазин/Копилка, §5.1 `once`, and §5.2 retire the parallel presets file. Deleted unused `assets/content/goals.json` (ticket 01 already stopped loading it). M1 spec story 13 / +10 comment and M3 Копилка stories (issue 04, spec goal-achievement) have supersession notes; Status unchanged. CONTEXT.md not reverted; no ADR; «Как играть» bodies unchanged.
