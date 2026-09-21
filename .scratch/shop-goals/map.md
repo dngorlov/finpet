@@ -19,7 +19,7 @@ Do not touch uncommitted MeterBar / StatusStrip WIP.
 - Ticket 04: Копилка UI. `.scratch/shop-goals/issues/04-savings-ui.md`
 - Ticket 05: Магазин UI + shared picker. `.scratch/shop-goals/issues/05-shop-picker.md`
 - Ticket 06: flow + sister tests. `.scratch/shop-goals/issues/06-flow-tests.md`
-- Ticket 07: REQUIREMENTS / ROADMAP. `.scratch/shop-goals/issues/07-docs.md`
+- Ticket 07 resolved: REQUIREMENTS / ROADMAP catalog 11 with `once` dreams; Копилка funds without spending and buys the Цель from the pot; no reach mood; `goals.json` deleted. `.scratch/shop-goals/issues/07-docs.md`
 
 ## Fog
 

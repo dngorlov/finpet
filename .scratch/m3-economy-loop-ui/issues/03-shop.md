@@ -28,3 +28,5 @@ Appendix A step 7 is playable in the UI test (minus needing a prior plan). `npm 
 ## Answer
 
 Магазин has Обязательное / Желаемое tabs, item sheet, confirm, FeedbackCard, «Куплено», and BlockedSheet with wait / задание / postpone. Main opens Shop. Hub meters and Баланс update after a buy.
+
+Superseded in part 2026-09-21 by `.scratch/shop-goals/spec.md`: catalog is 11 items (`once` dreams on the Желаемое tab); BlockedSheet «Отложить» on a Желаемое is «Сделать целью».
