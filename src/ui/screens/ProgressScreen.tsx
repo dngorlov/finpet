@@ -6,7 +6,6 @@ import { STAGE_NAMES } from "../../core/stages";
 import { META_KEYS } from "../../data/metaKeys";
 import type {
   DaySummaryView,
-  GoalOption,
   JournalEntry,
   TaskProgressView,
 } from "../../data/repositories/gameRepository";
@@ -59,7 +58,7 @@ export default function ProgressScreen(_props: Props) {
   const [rows, setRows] = useState<JournalEntry[]>([]);
   const [lastClosed, setLastClosed] = useState<DaySummaryView | null>(null);
   const [tasks, setTasks] = useState<TaskProgressView[]>([]);
-  const [goals, setGoals] = useState<GoalOption[]>([]);
+  const [goalCount, setGoalCount] = useState(0);
   const [openId, setOpenId] = useState<string | null>(null);
 
   useFocusEffect(
@@ -69,7 +68,7 @@ export default function ProgressScreen(_props: Props) {
       setRows(game.listJournal(profileId));
       setLastClosed(game.lastClosedDay(profileId));
       setTasks(game.listTaskProgress(profileId));
-      setGoals(game.listGoals(profileId));
+      setGoalCount(game.boughtAsActiveGoalCount(profileId));
     }, [game, meta]),
   );
 
@@ -84,13 +83,19 @@ export default function ProgressScreen(_props: Props) {
   }, [rows]);
 
   const itemName = (id: string | null) => content.catalog.find((item) => item.id === id)?.name ?? id ?? "";
+  const journalAmount = (entry: JournalEntry) => {
+    if (entry.kind === "purchase" && entry.amount === 0 && entry.itemId) {
+      return -(content.catalog.find((item) => item.id === entry.itemId)?.price ?? 0);
+    }
+    return entry.amount;
+  };
   const taskTitle = (id: string) => content.tasks.find((task) => task.id === id)?.title;
   const topicTasks = content.tasks.filter((task) => !task.correction);
   const completedTopics = tasks.filter((row) => {
     if (row.status !== "completed") return false;
     return topicTasks.some((task) => task.id === row.taskKey);
   }).length;
-  const achievedGoals = goals.filter((goal) => goal.status === "achieved").length;
+  const achievedGoals = goalCount;
 
   return (
     <Screen header={<StatusStrip />}>
@@ -157,7 +162,7 @@ export default function ProgressScreen(_props: Props) {
               <Text style={styles.section}>{dayN === 0 ? strings.journalStart : strings.journalDay(dayN)}</Text>
               {entries.map((entry) => (
                 <Text key={entry.id} style={styles.body}>
-                  {journalLabel(entry, itemName, taskTitle)} {strings.journalAmount(entry.amount)}
+                  {journalLabel(entry, itemName, taskTitle)} {strings.journalAmount(journalAmount(entry))}
                 </Text>
               ))}
             </Card>

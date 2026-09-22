@@ -16,7 +16,8 @@ describe("Копилка", () => {
 
     await user.press(screen.getByRole("button", { name: "Копилка" }));
     expect(screen.getByText("В копилке 0")).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "Скейтборд" })).toBeOnTheScreen();
+    expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
+    expect(screen.getByText("90 монет")).toBeOnTheScreen();
     expect(screen.getByText(stringsDash())).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Положить" }));
@@ -25,6 +26,7 @@ describe("Копилка", () => {
 
     expect(screen.getByText("Баланс -1")).toBeOnTheScreen();
     expect(screen.getByText("Копилка +1")).toBeOnTheScreen();
+    expect(screen.queryByText(/Настроение/)).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     expect(screen.queryByText(stringsDash())).not.toBeOnTheScreen();
     expect(screen.getByText(/примерно 89/)).toBeOnTheScreen();
@@ -60,7 +62,7 @@ describe("Копилка", () => {
     expect(screen.getByText("В копилке 14")).toBeOnTheScreen();
   });
 
-  it("celebrates when a deposit reaches the Цель", async () => {
+  it("celebrates funding without mood and lets Купить из копилки or Позже", async () => {
     const ports = createFakePorts();
     const profileId = seedReturningChild(ports);
     const day = ports.game.dayState(profileId);
@@ -73,13 +75,30 @@ describe("Копилка", () => {
     await user.press(screen.getByRole("button", { name: "Положить" }));
 
     expect(screen.getByText(/Мечта сбылась/)).toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Понятно" }));
-    expect(screen.getByText("Настроение +10")).toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Понятно" }));
-    expect(screen.getByText("Выбери новую цель")).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Купить из копилки" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Позже" })).toBeOnTheScreen();
+    expect(screen.queryByText("Настроение +10")).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Выбрать новую цель" })).not.toBeOnTheScreen();
 
+    await user.press(screen.getByRole("button", { name: "Позже" }));
+    expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
+    expect(screen.getByText("осталось 0")).toBeOnTheScreen();
+    expect(screen.getByText("В копилке 90")).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Купить из копилки" })).toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Купить из копилки" }));
+    expect(screen.getByText("Настроение +12")).toBeOnTheScreen();
+    expect(screen.getByText("Копилка -90")).toBeOnTheScreen();
+    expect(screen.queryByText(/Баланс/)).not.toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Понятно" }));
+
+    expect(screen.getByRole("button", { name: "Выбрать новую цель" })).toBeOnTheScreen();
+    expect(screen.getByText("В копилке 0")).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Выбрать новую цель" }));
+    expect(screen.getByRole("button", { name: "Телескоп" })).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Телескоп" }));
-    expect(screen.getByRole("button", { name: "Телескоп" })).toBeSelected();
+    expect(screen.getByText("Телескоп")).toBeOnTheScreen();
+    expect(screen.getByText("160 монет")).toBeOnTheScreen();
   });
 });
 

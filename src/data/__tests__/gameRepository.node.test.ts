@@ -1,7 +1,13 @@
 import { ManualClock, nextDayUnlocked } from "../../core/clock";
 import type { Clock } from "../../core/clock";
 import type { CatalogItem } from "../../core/economy";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 import { META_KEYS } from "../metaKeys";
+import { MIGRATIONS } from "../migrations";
+import { createGameRepository } from "../repositories/gameRepository";
+import { runMigrations } from "../runMigrations";
+import * as schema from "../schema";
 import { openMemoryGame } from "../testSupport/memoryDb";
 
 const GOALS = [
@@ -27,6 +33,13 @@ const candy: CatalogItem = {
   kind: "optional",
   price: 5,
   effect: { meter: "mood", delta: 5 },
+};
+const skateboard: CatalogItem = {
+  id: "skateboard",
+  kind: "optional",
+  price: 90,
+  effect: { meter: "mood", delta: 12 },
+  once: true,
 };
 
 const tinyCatalog: CatalogItem[] = [lunch, toy, candy];
@@ -245,7 +258,7 @@ describe("debit", () => {
 });
 
 describe("savings", () => {
-  it("deposits and withdrawals keep the pot ≥ 0, complete a goal at cost, and show «—» before the first transfer", () => {
+  it("deposits and withdrawals keep the pot ≥ 0, fund a Цель without spending it or moving mood, and show «—» before the first transfer", () => {
     const { game, sqlite, profileId } = seed();
     const opened = game.openDay(profileId);
     if (opened.status !== "opened") throw new Error("expected opened");
@@ -257,7 +270,7 @@ describe("savings", () => {
     expect(game.savingsState(profileId)).toMatchObject({
       pot: 15,
       estimateDays: 5,
-      activeGoal: { key: "skateboard", remaining: 75 },
+      activeGoal: { key: "skateboard", remaining: 75, achieved: false },
     });
 
     expect(game.withdrawFromSavings(profileId, dayId, 5)).toEqual({ ok: true, potAfter: 10 });
@@ -272,17 +285,26 @@ describe("savings", () => {
 
     expect(game.transferToSavings(profileId, dayId, 80)).toMatchObject({ status: "ok", achieved: true });
     const state = game.savingsState(profileId);
-    expect(state.pot).toBe(0);
-    expect(state.activeGoal).toBeNull();
-    expect(game.getProfile(profileId).mood).toBe(60);
+    expect(state.pot).toBe(90);
+    expect(state.activeGoal).toMatchObject({
+      key: "skateboard",
+      cost: 90,
+      remaining: 0,
+      achieved: true,
+    });
+    expect(game.getProfile(profileId).mood).toBe(50);
+    const journalKinds = game.listJournal(profileId).filter((row) => row.kind === "savings_out");
+    expect(journalKinds).toHaveLength(1);
+    expect(journalKinds[0]).toMatchObject({ amount: 5, kind: "savings_out" });
+    expect(sums(sqlite, profileId).balance).toBe(sums(sqlite, profileId).txSum);
 
-    game.setActiveGoal(profileId, "telescope");
-    expect(game.savingsState(profileId).activeGoal).toMatchObject({ key: "telescope", remaining: 160 });
-
-    const goal = sqlite
-      .prepare("SELECT status, isActive FROM goals WHERE profileId = ? AND key = 'skateboard'")
-      .get(profileId) as { status: string; isActive: number };
-    expect(goal).toEqual({ status: "achieved", isActive: 0 });
+    expect(game.withdrawFromSavings(profileId, dayId, 1)).toEqual({ ok: true, potAfter: 89 });
+    expect(game.transferToSavings(profileId, dayId, 1)).toMatchObject({ status: "ok", achieved: false });
+    expect(game.savingsState(profileId)).toMatchObject({
+      pot: 90,
+      activeGoal: { key: "skateboard", remaining: 0, achieved: true },
+    });
+    expect(game.getProfile(profileId).mood).toBe(50);
   });
 });
 
@@ -508,12 +530,9 @@ describe("day and journal reads", () => {
       actual: { mandatory: 12, optional: 0, savings: 15 },
     });
     expect(game.purchasedItemIds(profileId, opened.dayId)).toEqual(["lunch"]);
-    expect(game.listGoals(profileId)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ key: "skateboard", isActive: true, status: "active" }),
-        expect.objectContaining({ key: "telescope", isActive: false }),
-      ]),
-    );
+    expect(game.listGoals(profileId)).toEqual([
+      { key: "skateboard", cost: 90, status: "active", isActive: true },
+    ]);
 
     const journal = game.listJournal(profileId);
     expect(journal).toHaveLength(4);
@@ -583,5 +602,170 @@ describe("day and journal reads", () => {
         { taskKey: "budget_first_plan", status: "completed", rewardPaid: true },
       ]),
     );
+  });
+});
+
+describe("shop-item Цели", () => {
+  function openDay(game: ReturnType<typeof seed>["game"], profileId: string) {
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+    return opened.dayId;
+  }
+
+  it("rejects Обязательные and owned once items as a Цель, and clearActiveGoal leaves the pot", () => {
+    const { game, sqlite, profileId } = seed();
+    const dayId = openDay(game, profileId);
+
+    expect(() => game.setActiveGoal(profileId, lunch)).toThrow(/Обязательн/);
+
+    expect(game.transferToSavings(profileId, dayId, 15)).toEqual({ status: "ok", achieved: false });
+    game.clearActiveGoal(profileId);
+    expect(game.savingsState(profileId)).toMatchObject({ pot: 15, activeGoal: null });
+    expect(sums(sqlite, profileId).pot).toBe(15);
+    expect(sums(sqlite, profileId).balance).toBe(sums(sqlite, profileId).txSum);
+
+    game.setActiveGoal(profileId, candy);
+    expect(game.savingsState(profileId).activeGoal).toMatchObject({
+      key: "candy",
+      cost: 5,
+      remaining: 0,
+      achieved: true,
+    });
+
+    expect(game.purchase(profileId, dayId, skateboard)).toEqual({ status: "ok" });
+    expect(() => game.setActiveGoal(profileId, skateboard)).toThrow(/куплен/);
+    game.setActiveGoal(profileId, candy);
+    expect(game.savingsState(profileId).activeGoal).toMatchObject({ key: "candy" });
+  });
+
+  it("buys the Цель from Копилка without moving Баланс or writing Из копилки", () => {
+    const { game, sqlite, profileId } = seed();
+    const dayId = openDay(game, profileId);
+    const moodBefore = game.getProfile(profileId).mood;
+    const balanceBefore = game.getProfile(profileId).balance;
+
+    expect(game.transferToSavings(profileId, dayId, 50)).toEqual({ status: "ok", achieved: false });
+    expect(game.purchaseFromSavings(profileId, dayId, skateboard)).toEqual({
+      status: "blocked",
+      missing: 40,
+    });
+    expect(() => game.purchaseFromSavings(profileId, dayId, candy)).toThrow(/цел/i);
+    expect(game.transferToSavings(profileId, dayId, 50)).toMatchObject({ status: "ok", achieved: true });
+    expect(game.purchaseFromSavings(profileId, dayId, skateboard)).toEqual({ status: "ok" });
+
+    expect(game.getProfile(profileId)).toMatchObject({
+      balance: balanceBefore - 100,
+      mood: moodBefore + 12,
+    });
+    expect(game.savingsState(profileId)).toMatchObject({ pot: 10, activeGoal: null });
+    expect(sums(sqlite, profileId).balance).toBe(sums(sqlite, profileId).txSum);
+    expect(sums(sqlite, profileId).pot).toBe(10);
+
+    const journal = game.listJournal(profileId);
+    expect(journal.filter((row) => row.kind === "savings_out")).toHaveLength(0);
+    expect(journal.find((row) => row.labelKey === "purchase:skateboard")).toMatchObject({
+      kind: "purchase",
+      itemId: "skateboard",
+    });
+    expect(game.boughtAsActiveGoalCount(profileId)).toBe(1);
+    expect(() => game.setActiveGoal(profileId, skateboard)).toThrow(/куплен/);
+    expect(game.purchase(profileId, dayId, skateboard)).toEqual({ status: "blocked", missing: 0 });
+  });
+
+  it("clears the Цель when buying it from Баланс and leaves Копилка", () => {
+    const { game, sqlite, profileId } = seed();
+    const dayId = openDay(game, profileId);
+
+    expect(game.transferToSavings(profileId, dayId, 20)).toEqual({ status: "ok", achieved: false });
+    expect(game.purchase(profileId, dayId, skateboard)).toEqual({ status: "ok" });
+
+    expect(game.savingsState(profileId)).toMatchObject({ pot: 20, activeGoal: null });
+    expect(game.getProfile(profileId).mood).toBe(62);
+    expect(sums(sqlite, profileId).balance).toBe(sums(sqlite, profileId).txSum);
+    expect(game.boughtAsActiveGoalCount(profileId)).toBe(1);
+    expect(game.purchase(profileId, dayId, skateboard)).toEqual({ status: "blocked", missing: 0 });
+  });
+
+  it("does not count an impulse one-shot toward Целей: N, and candy as Цель still counts", () => {
+    const { game, profileId } = seed();
+    const dayId = openDay(game, profileId);
+
+    game.clearActiveGoal(profileId);
+    expect(game.purchase(profileId, dayId, skateboard)).toEqual({ status: "ok" });
+    expect(game.boughtAsActiveGoalCount(profileId)).toBe(0);
+
+    game.setActiveGoal(profileId, candy);
+    expect(game.purchase(profileId, dayId, candy)).toEqual({ status: "ok" });
+    expect(game.boughtAsActiveGoalCount(profileId)).toBe(1);
+    game.setActiveGoal(profileId, candy);
+    expect(game.savingsState(profileId).activeGoal).toMatchObject({ key: "candy", cost: 5 });
+  });
+
+  it("ignores Копилка-paid optionals in actual.optional, withinPlan, and overspend", () => {
+    const { game, profileId } = seed();
+    const dayId = openDay(game, profileId);
+
+    game.saveDraftPlan(profileId, dayId, { mandatory: 12, optional: 5, savings: 90 });
+    expect(game.confirmPlan(profileId, dayId)).toEqual({ ok: true });
+    expect(game.purchase(profileId, dayId, lunch)).toEqual({ status: "ok" });
+    expect(game.purchase(profileId, dayId, candy)).toEqual({ status: "ok" });
+    expect(game.transferToSavings(profileId, dayId, 90)).toMatchObject({ status: "ok", achieved: true });
+    expect(game.purchaseFromSavings(profileId, dayId, skateboard)).toEqual({ status: "ok" });
+
+    expect(game.dayState(profileId).actual).toEqual({ mandatory: 12, optional: 5, savings: 90 });
+
+    const closed = game.closeDay(profileId, tinyCatalog.concat(skateboard));
+    expect(closed).toMatchObject({
+      facts: { mandatoryCovered: true, withinPlan: true, deposited: true },
+      actual: { mandatory: 12, optional: 5, savings: 90 },
+      meterDeltas: { care: 0, mood: 0 },
+      score: 4,
+    });
+  });
+
+  it("does not treat old status=achieved as ownership and does not refund auto-debits", () => {
+    const sqlite = new Database(":memory:");
+    sqlite.pragma("foreign_keys = ON");
+    const driver = {
+      execSync: (sql: string) => {
+        sqlite.exec(sql);
+      },
+      getFirstSync: <T>(sql: string) => (sqlite.prepare(sql).get() as T | undefined) ?? null,
+    };
+    runMigrations(
+      driver,
+      MIGRATIONS.filter((migration) => migration.version <= 2),
+    );
+    sqlite.exec(`
+      INSERT INTO profiles (id, name, species, color, accessory, petName, balance, isDemo, contentVersion, createdAt)
+      VALUES ('p1', 'Миша', 'sp1', 'c1', 'a1', 'Пух', 10, 0, 1, 1);
+      INSERT INTO petState (profileId, care, mood, stage) VALUES ('p1', 50, 50, 0);
+      INSERT INTO days (id, profileId, n, openedAt, closedAt) VALUES ('p1#1', 'p1', 1, 1, NULL);
+      INSERT INTO transactions (id, profileId, dayId, kind, amount, itemId, goalId, labelKey, createdAt)
+      VALUES ('tx1', 'p1', NULL, 'starting_grant', 100, NULL, NULL, 'starting_grant', 1),
+             ('tx2', 'p1', 'p1#1', 'savings_in', -90, NULL, 'skateboard', 'savings_in', 2);
+      INSERT INTO savingsTransfers (id, profileId, dayId, amount, kind, createdAt)
+      VALUES ('s1', 'p1', 'p1#1', 90, 'in', 2),
+             ('s2', 'p1', 'p1#1', 90, 'out', 3);
+      INSERT INTO goals (id, profileId, key, cost, status, isActive, achievedAt)
+      VALUES ('g1', 'p1', 'skateboard', 90, 'achieved', 0, 3),
+             ('g2', 'p1', 'telescope', 160, 'active', 1, NULL),
+             ('g3', 'p1', 'bike', 240, 'active', 0, NULL);
+    `);
+
+    runMigrations(driver, MIGRATIONS);
+    const game = createGameRepository(drizzle(sqlite, { schema }), new ManualClock(new Date(2026, 8, 19, 12, 0, 0)));
+
+    expect(game.savingsState("p1")).toMatchObject({
+      pot: 0,
+      activeGoal: { key: "telescope", cost: 160, remaining: 160, achieved: false },
+    });
+    expect(game.listGoals("p1")).toEqual([
+      { key: "telescope", cost: 160, status: "active", isActive: true },
+    ]);
+    expect(game.boughtAsActiveGoalCount("p1")).toBe(0);
+    game.setActiveGoal("p1", skateboard);
+    expect(game.savingsState("p1").activeGoal).toMatchObject({ key: "skateboard", cost: 90 });
+    expect(sums(sqlite, "p1")).toEqual({ balance: 10, txSum: 10, pot: 0 });
   });
 });

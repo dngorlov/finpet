@@ -29,3 +29,5 @@ Appendix A step 8 is playable in the UI test. `npm test` and `npm run typecheck`
 ## Answer
 
 Копилка shows the pot, active Цель, and three presets. Deposits and double-confirmed withdrawals use FeedbackCard. Reaching the cost shows «Мечта сбылась!» and Настроение +10.
+
+Superseded 2026-09-21 by `.scratch/shop-goals/spec.md`: three preset chips, auto-debit, and Настроение +10 on reach are not current product. Deposit funds without spending; buy the Цель from the pot; no reach mood bonus.

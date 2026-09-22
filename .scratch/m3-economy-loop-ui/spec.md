@@ -133,4 +133,6 @@ type DayState = {
 
 Superseded in part 2026-09-20 by `.scratch/plan-rework/spec.md`: План draft rows are no longer +1-only steppers with no promise copy. The track, promise sentences, yesterday hint, and leftover follow-through on Магазин / Копилка replace that UI; confirm still does not move Монеты. Словарик is 11 terms including План.
 
+Superseded in part 2026-09-21 by `.scratch/shop-goals/spec.md`: Копилка no longer uses three preset chips, auto-debit on reach, or Настроение +10 when the pot hits the price. A Цель is one Магазин Желаемое; deposit funds without spending; Celebration offers «Купить из копилки» / «Позже». Catalog is 11 items with `once` on Скейтборд / Телескоп / Велосипед. BlockedSheet «Отложить» on a Желаемое is now «Сделать целью».
+
 ## Comments

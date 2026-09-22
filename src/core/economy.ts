@@ -44,6 +44,8 @@ export interface CatalogItem {
   kind: "mandatory" | "optional";
   price: number;
   effect: { meter: MeterKind; delta: number };
+  /** One-shot Желаемые leave Магазин after any purchase. */
+  once?: boolean;
 }
 
 /** On-line purchase effect: purchase raises the meter by the item's effect (§2.2). */

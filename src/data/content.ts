@@ -1,6 +1,5 @@
 import { z } from "zod";
 import catalogJson from "../../assets/content/catalog.json";
-import goalsJson from "../../assets/content/goals.json";
 import hintJson from "../../assets/content/hint.json";
 import tasksJson from "../../assets/content/tasks.json";
 import termsJson from "../../assets/content/terms.json";
@@ -19,11 +18,12 @@ const catalogItemSchema = z.object({
   price: z.number().int().nonnegative(),
   effect: meterEffectSchema,
   description: z.string().min(1),
+  once: z.boolean().optional().default(false),
 });
 
 const catalogFileSchema = z.object({
   contentVersion: z.literal(CONTENT_VERSION),
-  items: z.array(catalogItemSchema).min(8),
+  items: z.array(catalogItemSchema).length(11),
 });
 
 const goalSchema = z.object({
@@ -31,11 +31,6 @@ const goalSchema = z.object({
   name: z.string().min(1),
   cost: z.number().int().positive(),
   description: z.string().min(1),
-});
-
-const goalsFileSchema = z.object({
-  contentVersion: z.literal(CONTENT_VERSION),
-  goals: z.array(goalSchema).min(3),
 });
 
 const termSchema = z.object({
@@ -112,10 +107,9 @@ export interface GameContent {
   tasks: TaskFileContent[];
 }
 
-/** Loads and validates the five content files. A version mismatch or bad shape throws. */
+/** Loads and validates catalog, terms, hints, and tasks. Цели are derived from optional catalog rows. */
 export function loadContent(): GameContent {
   const catalog = catalogFileSchema.parse(catalogJson);
-  const goals = goalsFileSchema.parse(goalsJson);
   const terms = termsFileSchema.parse(termsJson);
   const hints = hintFileSchema.parse(hintJson);
   const tasks = tasksFileSchema.parse(tasksJson);
@@ -123,7 +117,14 @@ export function loadContent(): GameContent {
   return {
     contentVersion: CONTENT_VERSION,
     catalog: catalog.items,
-    goals: goals.goals,
+    goals: catalog.items
+      .filter((item) => item.kind === "optional")
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        cost: item.price,
+        description: item.description,
+      })),
     terms: terms.terms,
     hints: hints.cards,
     tasks: tasks.tasks,

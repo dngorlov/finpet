@@ -71,3 +71,5 @@ Notes for later milestones:
 - Starting Забота/Настроение are 50 (not settled in ROADMAP; midpoint in `src/core/config.ts`). Goal-achievement Настроение bonus is +10 for the same reason.
 - `payments_two_prices` N1 good path goes to N2 so the second node is reachable (script text said `exit`).
 - `applyTaskStep` + `claimTaskReward(..., correct)` are the persistence seam M4's runner UI should call; no screens shipped.
+
+Superseded in part 2026-09-21 by `.scratch/shop-goals/spec.md`: story 13 (pot − cost + `status: achieved` on reach) and the comment that goal-achievement Настроение is +10 are no longer current product. Deposit leaves the pot; Настроение moves only when a Желаемое is actually bought. Catalog is 11 items; Цели come from those rows, not a parallel presets file.

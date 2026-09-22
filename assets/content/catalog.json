@@ -64,6 +64,33 @@
       "price": 25,
       "effect": { "meter": "mood", "delta": 10 },
       "description": "Большая игрушка — стоит дорого"
+    },
+    {
+      "id": "skateboard",
+      "name": "Скейтборд",
+      "kind": "optional",
+      "price": 90,
+      "effect": { "meter": "mood", "delta": 12 },
+      "description": "Кататься во дворе после школы",
+      "once": true
+    },
+    {
+      "id": "telescope",
+      "name": "Телескоп",
+      "kind": "optional",
+      "price": 160,
+      "effect": { "meter": "mood", "delta": 15 },
+      "description": "Смотреть на звёзды вечером",
+      "once": true
+    },
+    {
+      "id": "bike",
+      "name": "Велосипед",
+      "kind": "optional",
+      "price": 240,
+      "effect": { "meter": "mood", "delta": 18 },
+      "description": "Длинные поездки в парк",
+      "once": true
     }
   ]
 }

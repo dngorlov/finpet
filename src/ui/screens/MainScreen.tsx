@@ -57,7 +57,9 @@ export default function MainScreen({ navigation }: Props) {
       const dayN = opened.status === "opened" ? opened.n : day.n;
       const task = preferredHubTask(content.tasks, dayN, profile.isDemo, game.listTaskProgress(profileId));
       const activeGoal = savings.activeGoal;
-      const goal = content.goals.find((g) => g.id === activeGoal?.key);
+      const goalItem = activeGoal
+        ? content.catalog.find((item) => item.id === activeGoal.key && item.kind === "optional")
+        : undefined;
       const cost = activeGoal?.cost ?? 0;
       const remaining = activeGoal?.remaining ?? 0;
       setHub({
@@ -67,7 +69,7 @@ export default function MainScreen({ navigation }: Props) {
         allowanceCredited: opened.status === "opened" && opened.allowanceCredited,
         taskTitle: task?.title ?? null,
         taskId: task?.id ?? null,
-        goalName: goal?.name ?? "",
+        goalName: goalItem?.name ?? "",
         accumulated: cost - remaining,
         cost,
         remaining,
@@ -131,9 +133,15 @@ export default function MainScreen({ navigation }: Props) {
       {hub.profile.isDemo ? <Text style={styles.body}>{strings.demoBanner}</Text> : null}
       {hub.allowanceCredited ? <Text style={styles.body}>{strings.allowanceRibbon}</Text> : null}
       <Card>
-        <Text style={styles.cardTitle}>{hub.goalName}</Text>
-        <Text style={styles.body}>{strings.goalRatio(hub.accumulated, hub.cost)}</Text>
-        <Text style={styles.body}>{strings.goalRemaining(hub.remaining)}</Text>
+        {hub.goalName ? (
+          <>
+            <Text style={styles.cardTitle}>{hub.goalName}</Text>
+            <Text style={styles.body}>{strings.goalRatio(hub.accumulated, hub.cost)}</Text>
+            <Text style={styles.body}>{strings.goalRemaining(hub.remaining)}</Text>
+          </>
+        ) : (
+          <Text style={styles.cardTitle}>{strings.goalEmptyPrompt}</Text>
+        )}
       </Card>
       {hub.taskTitle ? (
         <TourAnchor id="main-task">
