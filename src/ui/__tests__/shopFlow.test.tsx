@@ -111,4 +111,50 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Выполнить задание" }));
     expect(screen.getByText("Бюджет")).toBeOnTheScreen();
   });
+
+  it("buys the funded Цель from the Магазин sheet and counts only dream buys", async () => {
+    const ports = createFakePorts();
+    const profileId = seedReturningChild(ports);
+    const day = ports.game.dayState(profileId);
+    ports.game.transferToSavings(profileId, day.dayId, 90);
+    const { user } = await renderApp(ports);
+
+    await user.press(screen.getByRole("button", { name: "Магазин" }));
+    await user.press(screen.getByRole("button", { name: "Желаемое" }));
+    await user.press(screen.getByRole("button", { name: "Скейтборд" }));
+    await user.press(screen.getByRole("button", { name: "Купить из копилки" }));
+    expect(screen.getByText("Настроение +12")).toBeOnTheScreen();
+    expect(screen.getByText("Копилка -90")).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Понятно" }));
+    expect(screen.getByRole("button", { name: "Выбрать новую цель" })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Скейтборд" })).not.toBeOnTheScreen();
+
+    ports.game.closeDay(profileId, content.catalog);
+    await user.press(screen.getByRole("button", { name: "Назад" }));
+    await user.press(screen.getByRole("button", { name: "Прогресс" }));
+    await user.press(screen.getByRole("button", { name: "Итоги" }));
+    expect(screen.getByText("Целей: 1")).toBeOnTheScreen();
+  });
+
+  it("does not count an impulse one-shot that was not the Цель", async () => {
+    const ports = createFakePorts();
+    const profileId = seedReturningChild(ports);
+    ports.game.clearActiveGoal(profileId);
+    const { user } = await renderApp(ports);
+
+    await user.press(screen.getByRole("button", { name: "Магазин" }));
+    await user.press(screen.getByRole("button", { name: "Желаемое" }));
+    await user.press(screen.getByRole("button", { name: "Скейтборд" }));
+    await user.press(screen.getByRole("button", { name: "Купить" }));
+    await user.press(screen.getByRole("button", { name: "Купить" }));
+    expect(screen.getByText("Настроение +12")).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Понятно" }));
+    expect(screen.queryByRole("button", { name: "Скейтборд" })).not.toBeOnTheScreen();
+
+    ports.game.closeDay(profileId, content.catalog);
+    await user.press(screen.getByRole("button", { name: "Назад" }));
+    await user.press(screen.getByRole("button", { name: "Прогресс" }));
+    await user.press(screen.getByRole("button", { name: "Итоги" }));
+    expect(screen.getByText("Целей: 0")).toBeOnTheScreen();
+  });
 });

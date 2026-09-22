@@ -6,7 +6,7 @@
 
 **Type:** task
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -24,3 +24,7 @@
 ## Done when
 
 `npm test` and `npm run typecheck` pass.
+
+## Answer
+
+Sister flows leave a short Игрушка block through «Сделать целью» and «Закрыть» without replacing Скейтборд. Прогресс «Целей: N» reads `boughtAsActiveGoalCount`. Shop flow buys a funded Скейтборд from the sheet (Настроение +12, shelf hides it, N = 1) and an impulse Скейтборд with no Цель (N = 0).

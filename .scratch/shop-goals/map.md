@@ -18,7 +18,7 @@ Do not touch uncommitted MeterBar / StatusStrip WIP.
 - Ticket 03 resolved: SessionGame and fakes fund without spending or +10; `purchaseFromSavings` / `clearActiveGoal` / `boughtAsActiveGoalCount`; seeds use catalog id `skateboard`. `.scratch/shop-goals/issues/03-session-fakes.md`
 - Ticket 04 resolved: Копилка shows catalog Цель card; Celebration Купить/Позже with no reach mood; buy-from-pot then «Выбрать новую цель». `.scratch/shop-goals/issues/04-savings-ui.md`
 - Ticket 05 resolved: one `GoalPicker`; Магазин sheet «Сделать целью» / «Купить из копилки» / Баланс warn; BlockedSheet optional «Сделать целью»; once labelled and omitted when owned; Main Цель from catalog. `.scratch/shop-goals/issues/05-shop-picker.md`
-- Ticket 06: flow + sister tests. `.scratch/shop-goals/issues/06-flow-tests.md`
+- Ticket 06 resolved: sister flows dismiss a Желаемое block via «Сделать целью»; Прогресс «Целей: N» counts bought-as-active-Цель; shop flow covers pot buy and impulse one-shot. `.scratch/shop-goals/issues/06-flow-tests.md`
 - Ticket 07 resolved: REQUIREMENTS / ROADMAP catalog 11 with `once` dreams; Копилка funds without spending and buys the Цель from the pot; no reach mood; `goals.json` deleted. `.scratch/shop-goals/issues/07-docs.md`
 
 ## Fog

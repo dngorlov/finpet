@@ -6,7 +6,6 @@ import { STAGE_NAMES } from "../../core/stages";
 import { META_KEYS } from "../../data/metaKeys";
 import type {
   DaySummaryView,
-  GoalOption,
   JournalEntry,
   TaskProgressView,
 } from "../../data/repositories/gameRepository";
@@ -59,7 +58,7 @@ export default function ProgressScreen(_props: Props) {
   const [rows, setRows] = useState<JournalEntry[]>([]);
   const [lastClosed, setLastClosed] = useState<DaySummaryView | null>(null);
   const [tasks, setTasks] = useState<TaskProgressView[]>([]);
-  const [goals, setGoals] = useState<GoalOption[]>([]);
+  const [goalCount, setGoalCount] = useState(0);
   const [openId, setOpenId] = useState<string | null>(null);
 
   useFocusEffect(
@@ -69,7 +68,7 @@ export default function ProgressScreen(_props: Props) {
       setRows(game.listJournal(profileId));
       setLastClosed(game.lastClosedDay(profileId));
       setTasks(game.listTaskProgress(profileId));
-      setGoals(game.listGoals(profileId));
+      setGoalCount(game.boughtAsActiveGoalCount(profileId));
     }, [game, meta]),
   );
 
@@ -90,7 +89,7 @@ export default function ProgressScreen(_props: Props) {
     if (row.status !== "completed") return false;
     return topicTasks.some((task) => task.id === row.taskKey);
   }).length;
-  const achievedGoals = goals.filter((goal) => goal.status === "achieved").length;
+  const achievedGoals = goalCount;
 
   return (
     <Screen header={<StatusStrip />}>
