@@ -17,16 +17,16 @@ export function checkWithdrawal(pot: number, amount: number): { ok: boolean; pot
 
 export interface GoalProgress {
   achieved: boolean;
-  /** Pot after the cost is subtracted on achievement. */
+  /** The pot is unchanged: reaching the cost does not spend it. */
   potAfter: number;
   remaining: number;
 }
 
-/** On reaching the cost the goal is achieved and the pot is reduced by it (§2.1). */
+/** When pot ≥ cost the goal is funded (`achieved`); remaining is 0; the pot stays. */
 export function applyGoalProgress(pot: number, cost: number): GoalProgress {
   const remaining = Math.max(0, cost - pot);
   const achieved = pot >= cost;
-  return { achieved, potAfter: achieved ? pot - cost : pot, remaining };
+  return { achieved, potAfter: pot, remaining };
 }
 
 /** Pot is always Σ('in') − Σ('out'); recompute for the invariant check. */

@@ -41,7 +41,7 @@
 - Pre-purchase display: price, category, estimated impact on the pet
 - Purchase requires confirmation → deducts balance → recorded in current-period history
 - Block negative balance & insufficient-funds purchases; instead explain what's missing and what options exist
-- **Resolved:** 8 items — mandatory: Обед 12 (Забота +10), Школьные принадлежности 10 (Забота +5), Проезд 8 (Забота +5), Лекарство 15 (Забота +20); optional: Конфета 5 (Настроение +5), Стикеры 7 (Настроение +6), Кино 20 (Настроение +12), Игрушка 25 (Настроение +10). Mandatory items are not all due every day: each Игровой день has **Счета** — the mandatory items due that day, from the `bills` cycle in `catalog.json` (Обед + Проезд daily, Школьные every other day, Лекарство only on the «простыл» day). Blocked purchase shows a sheet: how much is missing + options (wait for Пособие / do a Задание / postpone). (ROADMAP §2.1, §4.2)
+- **Resolved:** 11 items — mandatory: Обед 12 (Забота +10), Школьные принадлежности 10 (Забота +5), Проезд 8 (Забота +5), Лекарство 15 (Забота +20); optional (rebuyable): Конфета 5 (Настроение +5), Стикеры 7 (Настроение +6), Кино 20 (Настроение +12), Игрушка 25 (Настроение +10); optional (`once`): Скейтборд 90 (Настроение +12), Телескоп 160 (Настроение +15), Велосипед 240 (Настроение +18). Mandatory items are not all due every day: each Игровой день has **Счета** — the mandatory items due that day, from the `bills` cycle in `catalog.json` (Обед + Проезд daily, Школьные every other day, Лекарство only on the «простыл» day). Blocked purchase shows a sheet: how much is missing + options (wait for Пособие / do a Задание / «Сделать целью» for a Желаемое, «Отложить» for an Обязательное). (ROADMAP §2.1, §4.2)
 
 ## 7. Savings & Goals
 - Goals with a clear cost, or goal creation from preset parameters — minimum **3 goals**
@@ -49,7 +49,7 @@
 - Regular transfers of in-game currency into savings
 - If a completion date is shown: calculated transparently from the average of regular deposits
 - Withdrawal from savings requires separate confirmation; beforehand show how savings will decrease and how the completion date shifts
-- **Resolved:** 3 preset goals — Скейтборд **90**, Телескоп **160**, Велосипед **240**; one active goal; Копилка is a single pot attributed to it. Completion date = remaining ÷ average deposit, shown only after ≥1 transfer, else «—». Withdrawal = amount → preview screen (pot after, date shift) → separate confirm. (ROADMAP §2.1, §4.2)
+- **Resolved:** a Цель is one Магазин Желаемое (candy-tier or a `once` dream), at most one at a time; Обязательные cannot be a Цель. First-run seeds Скейтборд. Копилка is a single pot: «Положить» deposits without spending; reaching the price opens Celebration («Купить из копилки» / «Позже») with no Настроение change; buying the Цель from the pot deducts the price and records the purchase. Completion date = remaining ÷ average deposit, shown only after ≥1 transfer, else «—». Withdrawal = amount → preview screen (pot after, date shift) → separate confirm. (ROADMAP §2.1, §4.2)
 
 ## 8. Financial Literacy Tasks
 - Minimum **6 tasks** covering **3 topics:** budget planning; savings; payments & purchases

@@ -314,9 +314,42 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       .all();
     return {
       mandatory: bought.filter((row) => row.kind === "mandatory").reduce((sum, row) => sum + row.price, 0),
-      optional: bought.filter((row) => row.kind === "optional").reduce((sum, row) => sum + row.price, 0),
+      optional: bought
+        .filter((row) => row.kind === "optional" && row.paidFrom !== "savings")
+        .reduce((sum, row) => sum + row.price, 0),
       savings: deposits.reduce((sum, row) => sum + row.amount, 0),
     };
+  }
+
+  function itemPurchased(conn: GameDb, profileId: string, itemId: string): boolean {
+    return (
+      conn
+        .select()
+        .from(tables.purchases)
+        .where(and(eq(tables.purchases.profileId, profileId), eq(tables.purchases.itemId, itemId)))
+        .get() != null
+    );
+  }
+
+  function clearGoals(conn: GameDb, profileId: string) {
+    conn.delete(tables.goals).where(eq(tables.goals.profileId, profileId)).run();
+  }
+
+  function writeActiveGoal(conn: GameDb, profileId: string, key: string, cost: number) {
+    clearGoals(conn, profileId);
+    conn
+      .insert(tables.goals)
+      .values({
+        id: newId("goal"),
+        profileId,
+        key,
+        cost,
+        status: "active",
+        isActive: 1,
+        achievedAt: null,
+        fundedCelebrated: 0,
+      })
+      .run();
   }
 
   function dayStateFrom(
@@ -406,19 +439,9 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         stage: STAGE_CODES.novice,
       })
       .run();
-    for (const goal of input.goals) {
-      conn
-        .insert(tables.goals)
-        .values({
-          id: newId("goal"),
-          profileId: id,
-          key: goal.key,
-          cost: goal.cost,
-          status: "active",
-          isActive: goal.key === input.activeGoalKey ? 1 : 0,
-          achievedAt: null,
-        })
-        .run();
+    const seeded = input.goals.find((goal) => goal.key === input.activeGoalKey);
+    if (seeded) {
+      writeActiveGoal(conn, id, seeded.key, seeded.cost);
     }
     credit(conn, id, null, ECONOMY.startingBudget, "starting_grant", "starting_grant");
   }
@@ -594,10 +617,14 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     purchase(profileId: string, dayId: string, item: CatalogItem): PurchaseResult {
       return db.transaction((tx) => {
         requireOpenDay(tx, profileId, dayId);
+        if (item.once && itemPurchased(tx, profileId, item.id)) {
+          return { status: "blocked" as const, missing: 0 };
+        }
         const result = debit(tx, profileId, dayId, item.price, "purchase", `purchase:${item.id}`, {
           itemId: item.id,
         });
         if (result.status === "blocked") return result;
+        const asActive = activeGoal(tx, profileId)?.key === item.id;
         tx.insert(tables.purchases)
           .values({
             id: newId("buy"),
@@ -606,10 +633,13 @@ export function createGameRepository(db: GameDb, clock: Clock) {
             itemId: item.id,
             price: item.price,
             kind: item.kind,
+            paidFrom: "balance",
+            boughtAsActiveGoal: asActive ? 1 : 0,
             createdAt: nowMs(),
           })
           .run();
         applyMeter(tx, profileId, dayId, item.effect.meter, item.effect.delta, `purchase:${item.id}`);
+        if (asActive) clearGoals(tx, profileId);
         return { status: "ok" as const };
       });
     },
@@ -642,23 +672,12 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         let achieved = false;
         if (active) {
           const progress = applyGoalProgress(pot, active.cost);
-          if (progress.achieved) {
+          if (progress.achieved && active.fundedCelebrated !== 1) {
             achieved = true;
-            tx.insert(tables.savingsTransfers)
-              .values({
-                id: newId("sav"),
-                profileId,
-                dayId,
-                amount: active.cost,
-                kind: "out",
-                createdAt: nowMs(),
-              })
-              .run();
             tx.update(tables.goals)
-              .set({ status: "achieved", isActive: 0, achievedAt: nowMs() })
+              .set({ fundedCelebrated: 1 })
               .where(eq(tables.goals.id, active.id))
               .run();
-            applyMeter(tx, profileId, dayId, "mood", METERS.goalAchievedMoodBonus, `goal:${active.key}`);
           }
         }
         return { status: "ok" as const, achieved };
@@ -691,23 +710,89 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       });
     },
 
-    setActiveGoal(profileId: string, goalKey: string): void {
+    setActiveGoal(profileId: string, item: CatalogItem | string): void {
       db.transaction((tx) => {
-        const goal = tx
+        profile(tx, profileId);
+        const catalogItem = typeof item === "string" ? null : item;
+        const key = typeof item === "string" ? item : item.id;
+        if (catalogItem?.kind === "mandatory") {
+          throw new Error("Обязательное не может быть Целью");
+        }
+        if (catalogItem?.once && itemPurchased(tx, profileId, catalogItem.id)) {
+          throw new Error("Этот товар уже куплен");
+        }
+        const existing = tx
           .select()
           .from(tables.goals)
-          .where(and(eq(tables.goals.profileId, profileId), eq(tables.goals.key, goalKey)))
+          .where(and(eq(tables.goals.profileId, profileId), eq(tables.goals.key, key)))
           .get();
-        if (!goal) throw new Error(`Цель ${goalKey} не найдена`);
-        if (goal.status === "achieved") throw new Error("Эта Цель уже достигнута");
-        tx.update(tables.goals)
-          .set({ isActive: 0 })
-          .where(eq(tables.goals.profileId, profileId))
+        const cost = catalogItem?.price ?? existing?.cost;
+        if (cost == null) throw new Error(`Цель ${key} не найдена`);
+        writeActiveGoal(tx, profileId, key, cost);
+      });
+    },
+
+    clearActiveGoal(profileId: string): void {
+      db.transaction((tx) => {
+        profile(tx, profileId);
+        clearGoals(tx, profileId);
+      });
+    },
+
+    purchaseFromSavings(profileId: string, dayId: string, item: CatalogItem): PurchaseResult {
+      return db.transaction((tx) => {
+        requireOpenDay(tx, profileId, dayId);
+        const active = activeGoal(tx, profileId);
+        if (!active || active.key !== item.id) {
+          throw new Error("Купить из копилки можно только текущую Цель");
+        }
+        if (item.once && itemPurchased(tx, profileId, item.id)) {
+          return { status: "blocked" as const, missing: 0 };
+        }
+        const transfers = tx
+          .select()
+          .from(tables.savingsTransfers)
+          .where(eq(tables.savingsTransfers.profileId, profileId))
+          .all();
+        const pot = potFromTransfers(transfers);
+        if (pot < item.price) {
+          return { status: "blocked" as const, missing: item.price - pot };
+        }
+        tx.insert(tables.savingsTransfers)
+          .values({
+            id: newId("sav"),
+            profileId,
+            dayId,
+            amount: item.price,
+            kind: "out",
+            createdAt: nowMs(),
+          })
           .run();
-        tx.update(tables.goals)
-          .set({ isActive: 1 })
-          .where(eq(tables.goals.id, goal.id))
+        writeTx(tx, {
+          profileId,
+          dayId,
+          kind: "purchase",
+          amount: 0,
+          labelKey: `purchase:${item.id}`,
+          itemId: item.id,
+          goalId: item.id,
+        });
+        tx.insert(tables.purchases)
+          .values({
+            id: newId("buy"),
+            profileId,
+            dayId,
+            itemId: item.id,
+            price: item.price,
+            kind: item.kind,
+            paidFrom: "savings",
+            boughtAsActiveGoal: 1,
+            createdAt: nowMs(),
+          })
           .run();
+        applyMeter(tx, profileId, dayId, item.effect.meter, item.effect.delta, `purchase:${item.id}`);
+        clearGoals(tx, profileId);
+        return { status: "ok" as const };
       });
     },
 
@@ -783,6 +868,15 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       return [...new Set(bought.map((row) => row.itemId))];
     },
 
+    boughtAsActiveGoalCount(profileId: string): number {
+      profile(db, profileId);
+      return db
+        .select()
+        .from(tables.purchases)
+        .where(and(eq(tables.purchases.profileId, profileId), eq(tables.purchases.boughtAsActiveGoal, 1)))
+        .all().length;
+    },
+
     savingsState(profileId: string): SavingsView {
       const transfers = db
         .select()
@@ -844,7 +938,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         const deposited = deposits.length > 0;
         const score = dayScore({ mandatoryCovered, withinPlan, deposited });
         const optionalSpend = bought
-          .filter((row) => row.kind === "optional")
+          .filter((row) => row.kind === "optional" && row.paidFrom !== "savings")
           .reduce((sum, row) => sum + row.price, 0);
         const deltas = dayCloseMeterDeltas({
           missedMandatory: !mandatoryCovered,

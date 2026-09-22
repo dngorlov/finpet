@@ -7,10 +7,10 @@ describe("loadContent", () => {
     expect(content.contentVersion).toBe(1);
   });
 
-  it("ships the eight catalog items with the settled prices and pet effects", () => {
+  it("ships eleven catalog items including three one-shot Желаемые", () => {
     const byId = Object.fromEntries(content.catalog.map((item) => [item.id, item]));
 
-    expect(content.catalog).toHaveLength(8);
+    expect(content.catalog).toHaveLength(11);
     expect(byId.lunch).toMatchObject({
       name: "Обед",
       kind: "mandatory",
@@ -20,10 +20,36 @@ describe("loadContent", () => {
     expect(byId.school).toMatchObject({ kind: "mandatory", price: 10, effect: { meter: "care", delta: 5 } });
     expect(byId.transport).toMatchObject({ kind: "mandatory", price: 8, effect: { meter: "care", delta: 5 } });
     expect(byId.medicine).toMatchObject({ kind: "mandatory", price: 15, effect: { meter: "care", delta: 20 } });
-    expect(byId.candy).toMatchObject({ kind: "optional", price: 5, effect: { meter: "mood", delta: 5 } });
-    expect(byId.stickers).toMatchObject({ kind: "optional", price: 7, effect: { meter: "mood", delta: 6 } });
-    expect(byId.cinema).toMatchObject({ kind: "optional", price: 20, effect: { meter: "mood", delta: 12 } });
-    expect(byId.toy).toMatchObject({ kind: "optional", price: 25, effect: { meter: "mood", delta: 10 } });
+    expect(byId.candy).toMatchObject({
+      kind: "optional",
+      price: 5,
+      effect: { meter: "mood", delta: 5 },
+      once: false,
+    });
+    expect(byId.stickers).toMatchObject({ kind: "optional", price: 7, effect: { meter: "mood", delta: 6 }, once: false });
+    expect(byId.cinema).toMatchObject({ kind: "optional", price: 20, effect: { meter: "mood", delta: 12 }, once: false });
+    expect(byId.toy).toMatchObject({ kind: "optional", price: 25, effect: { meter: "mood", delta: 10 }, once: false });
+    expect(byId.skateboard).toMatchObject({
+      name: "Скейтборд",
+      kind: "optional",
+      price: 90,
+      effect: { meter: "mood", delta: 12 },
+      once: true,
+    });
+    expect(byId.telescope).toMatchObject({
+      name: "Телескоп",
+      kind: "optional",
+      price: 160,
+      effect: { meter: "mood", delta: 15 },
+      once: true,
+    });
+    expect(byId.bike).toMatchObject({
+      name: "Велосипед",
+      kind: "optional",
+      price: 240,
+      effect: { meter: "mood", delta: 18 },
+      once: true,
+    });
   });
 
   it("ships a Счета cycle of mandatory items with a medicine day", () => {
@@ -34,14 +60,6 @@ describe("loadContent", () => {
     }
     expect(content.bills[0].items).toEqual(["lunch", "transport"]);
     expect(content.bills.some((day) => day.items.includes("medicine") && day.note)).toBe(true);
-  });
-
-  it("ships the three preset goals", () => {
-    expect(content.goals.map((g) => [g.name, g.cost])).toEqual([
-      ["Скейтборд", 90],
-      ["Телескоп", 160],
-      ["Велосипед", 240],
-    ]);
   });
 
   it("ships the eleven Словарик terms including План and seven Как играть steps", () => {
@@ -64,6 +82,29 @@ describe("loadContent", () => {
       term: "План",
       definition:
         "Обещание, как разделить сегодняшние монеты: обязательное, желаемое и копилка. Подтвердить план монеты не тратит.",
+    });
+    expect(content.terms.find((t) => t.id === "savings")).toEqual({
+      id: "savings",
+      term: "Копилка",
+      definition:
+        "Горшочек монет на Цель. Они уходят оттуда «Забрать» или когда покупаешь эту Цель.",
+    });
+    expect(content.terms.find((t) => t.id === "goal")).toEqual({
+      id: "goal",
+      term: "Цель",
+      definition:
+        "Одно желаемое из магазина, на которое копилка копит. Одновременно бывает только одна. Обязательные не могут быть целью.",
+    });
+    expect(content.terms.find((t) => t.id === "optional")).toEqual({
+      id: "optional",
+      term: "Желаемые расходы",
+      definition:
+        "Покупки не из обязательных: они поднимают настроение. Некоторые можно купить только один раз.",
+    });
+    expect(content.terms.find((t) => t.id === "mood")).toEqual({
+      id: "mood",
+      term: "Настроение",
+      definition: "Как радуется питомец. Растёт от желаемых покупок.",
     });
     expect(content.hints.map((hint) => hint.id)).toEqual([
       "main-plan",

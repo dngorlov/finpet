@@ -25,11 +25,6 @@ export const METERS = {
   missedMandatoryCarePenalty: 15,
   /** Настроение penalty when actual optional spend exceeds the plan bucket (§2.2). */
   overspendMoodPenalty: 5,
-  /**
-   * Настроение on goal achievement (§2.2 says +N, no magnitude settled).
-   * Chosen to match the Задание reward scale; tune here, not in callers.
-   */
-  goalAchievedMoodBonus: 10,
 } as const;
 
 export const STAGES = {

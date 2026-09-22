@@ -64,6 +64,8 @@ export const purchases = sqliteTable("purchases", {
   itemId: text("itemId").notNull(),
   price: integer("price").notNull(),
   kind: text("kind", { enum: ["mandatory", "optional"] }).notNull(),
+  paidFrom: text("paidFrom", { enum: ["balance", "savings"] }).notNull(),
+  boughtAsActiveGoal: integer("boughtAsActiveGoal").notNull(),
   createdAt: integer("createdAt").notNull(),
 });
 
@@ -90,6 +92,7 @@ export const goals = sqliteTable("goals", {
   status: text("status", { enum: ["active", "achieved"] }).notNull(),
   isActive: integer("isActive").notNull(),
   achievedAt: integer("achievedAt"),
+  fundedCelebrated: integer("fundedCelebrated").notNull(),
 });
 
 export const petState = sqliteTable("petState", {

@@ -2,15 +2,15 @@ import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { METERS } from "../../core/config";
+import type { CatalogItemContent } from "../../data/content";
 import { applyGoalProgress, estimateDaysToGoal } from "../../core/savings";
 import { META_KEYS } from "../../data/metaKeys";
-import type { DayState, GoalOption, SavingsView } from "../../data/repositories/gameRepository";
+import type { DayState, SavingsView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
 import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
-import { Chip } from "../components/Chip";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
+import { GoalPicker } from "../components/GoalPicker";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { StatusStrip } from "../components/StatusStrip";
@@ -31,22 +31,25 @@ type Phase =
   | { name: "withdrawPreview"; amount: number; potAfter: number; days: number | null }
   | { name: "celebration" };
 
+function engineItem(item: CatalogItemContent) {
+  return { id: item.id, kind: item.kind, price: item.price, effect: item.effect, once: item.once };
+}
+
 export default function SavingsScreen(_props: Props) {
   const { game, meta, content } = useSession();
   const tour = useHowToPlayTour();
   const [savings, setSavings] = useState<SavingsView | null>(null);
-  const [goals, setGoals] = useState<GoalOption[]>([]);
   const [day, setDay] = useState<DayState | null>(null);
   const [balance, setBalance] = useState(0);
   const [phase, setPhase] = useState<Phase>({ name: "home" });
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
-  const [pendingFeedback, setPendingFeedback] = useState<FeedbackModel | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [offerPickGoal, setOfferPickGoal] = useState(false);
 
   const load = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
     setSavings(game.savingsState(profileId));
-    setGoals(game.listGoals(profileId));
     setDay(game.dayState(profileId));
     setBalance(game.getProfile(profileId).balance);
   }, [game, meta]);
@@ -55,6 +58,8 @@ export default function SavingsScreen(_props: Props) {
     useCallback(() => {
       load();
       setPhase({ name: "home" });
+      setPickerOpen(false);
+      setOfferPickGoal(false);
     }, [load]),
   );
 
@@ -76,9 +81,12 @@ export default function SavingsScreen(_props: Props) {
       .map((row) => Math.abs(row.amount));
   };
 
-  const goalName = (key: string) => content.goals.find((g) => g.id === key)?.name ?? key;
-  const activeName = savings.activeGoal ? goalName(savings.activeGoal.key) : null;
+  const activeItem = savings.activeGoal
+    ? content.catalog.find((item) => item.id === savings.activeGoal!.key) ?? null
+    : null;
+  const activeName = activeItem?.name ?? null;
   const accumulated = savings.activeGoal ? savings.activeGoal.cost - savings.activeGoal.remaining : 0;
+  const funded = Boolean(savings.activeGoal?.achieved);
   const savingsLeftover = confirmedLeftover(day, "savings");
   const leftoverAfterDeposit =
     phase.name === "deposit" ? leftoverAfterTap(savingsLeftover, phase.amount) : null;
@@ -87,18 +95,12 @@ export default function SavingsScreen(_props: Props) {
     if (tour.active) return;
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId || amount <= 0) return;
-    const day = game.dayState(profileId);
-    const result = game.transferToSavings(profileId, day.dayId, amount);
+    const dayState = game.dayState(profileId);
+    const result = game.transferToSavings(profileId, dayState.dayId, amount);
     if (result.status === "blocked") return;
     load();
     if (result.achieved) {
-      const potAfter = game.savingsState(profileId).pot;
       setPhase({ name: "celebration" });
-      setPendingFeedback({
-        deltas: { balance: -amount, savings: potAfter - savings.pot, mood: METERS.goalAchievedMoodBonus },
-        cause: strings.feedbackCauseGoal,
-        nextStep: strings.feedbackNextGoal,
-      });
       return;
     }
     setPhase({ name: "home" });
@@ -113,8 +115,8 @@ export default function SavingsScreen(_props: Props) {
     if (tour.active) return;
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId || amount <= 0) return;
-    const day = game.dayState(profileId);
-    const result = game.withdrawFromSavings(profileId, day.dayId, amount);
+    const dayState = game.dayState(profileId);
+    const result = game.withdrawFromSavings(profileId, dayState.dayId, amount);
     if (!result.ok) return;
     load();
     setPhase({ name: "home" });
@@ -122,6 +124,27 @@ export default function SavingsScreen(_props: Props) {
       deltas: { balance: amount, savings: -amount },
       cause: strings.feedbackCauseSavingsOut,
       nextStep: strings.feedbackNextSavingsOut,
+    });
+  };
+
+  const buyFromSavings = () => {
+    if (tour.active || !activeItem) return;
+    const profileId = meta.get(META_KEYS.activeProfileId);
+    if (!profileId) return;
+    const dayState = game.dayState(profileId);
+    const result = game.purchaseFromSavings(profileId, dayState.dayId, engineItem(activeItem));
+    if (result.status === "blocked") return;
+    load();
+    setPhase({ name: "home" });
+    setOfferPickGoal(true);
+    setFeedback({
+      deltas: {
+        savings: -activeItem.price,
+        care: activeItem.effect.meter === "care" ? activeItem.effect.delta : undefined,
+        mood: activeItem.effect.meter === "mood" ? activeItem.effect.delta : undefined,
+      },
+      cause: strings.feedbackCausePurchase,
+      nextStep: strings.feedbackNextGoal,
     });
   };
 
@@ -136,6 +159,20 @@ export default function SavingsScreen(_props: Props) {
     const after = estimateDaysToGoal(remainingAfter, list);
     const days = before != null && after != null ? Math.max(0, after - before) : null;
     setPhase({ name: "withdrawPreview", amount, potAfter, days });
+  };
+
+  const openPicker = () => {
+    if (tour.active) return;
+    setPickerOpen(true);
+  };
+
+  const dropGoal = () => {
+    const profileId = meta.get(META_KEYS.activeProfileId);
+    if (!profileId) return;
+    game.clearActiveGoal(profileId);
+    load();
+    setPickerOpen(false);
+    setOfferPickGoal(false);
   };
 
   const footer = (() => {
@@ -172,9 +209,30 @@ export default function SavingsScreen(_props: Props) {
         </>
       );
     }
+    if (phase.name === "celebration") {
+      return (
+        <>
+          <TextButton
+            label={strings.savingsLater}
+            onPress={() => setPhase({ name: "home" })}
+          />
+          <PrimaryButton label={strings.savingsBuyFromSavings} onPress={buyFromSavings} />
+        </>
+      );
+    }
     if (phase.name === "home") {
       return (
         <>
+          {offerPickGoal ? (
+            <PrimaryButton label={strings.savingsChooseNewGoal} disabled={tour.active} onPress={openPicker} />
+          ) : null}
+          {funded && !offerPickGoal ? (
+            <PrimaryButton
+              label={strings.savingsBuyFromSavings}
+              disabled={tour.active}
+              onPress={buyFromSavings}
+            />
+          ) : null}
           <TourAnchor id="savings-deposit">
             <PrimaryButton
               label={strings.savingsDeposit}
@@ -190,18 +248,7 @@ export default function SavingsScreen(_props: Props) {
         </>
       );
     }
-    return (
-      <PrimaryButton
-        label={strings.gotIt}
-        onPress={() => {
-          setPhase({ name: "home" });
-          if (pendingFeedback) {
-            setFeedback(pendingFeedback);
-            setPendingFeedback(null);
-          }
-        }}
-      />
-    );
+    return null;
   })();
 
   return (
@@ -224,6 +271,7 @@ export default function SavingsScreen(_props: Props) {
         {savings.activeGoal && activeName ? (
           <>
             <Text style={styles.section}>{activeName}</Text>
+            <Text style={styles.body}>{strings.shopPrice(savings.activeGoal.cost)}</Text>
             <Text style={styles.body}>{strings.goalRatio(accumulated, savings.activeGoal.cost)}</Text>
             <Text style={styles.body}>{strings.savingsRemaining(savings.activeGoal.remaining)}</Text>
             <Text style={styles.body}>
@@ -236,27 +284,18 @@ export default function SavingsScreen(_props: Props) {
           <Text style={styles.body}>{strings.savingsPickGoal}</Text>
         )}
       </Card>
-      <View>
-        {goals.map((goal) => {
-          const name = goalName(goal.key);
-          const achieved = goal.status === "achieved";
-          return (
-            <Chip
-              key={goal.key}
-              label={achieved ? `${name} (${strings.savingsAchievedBadge})` : name}
-              selected={goal.isActive}
-              disabled={achieved}
-              onPress={() => {
-                if (tour.active) return;
-                const profileId = meta.get(META_KEYS.activeProfileId);
-                if (!profileId) return;
-                game.setActiveGoal(profileId, goal.key);
-                load();
-              }}
-            />
-          );
-        })}
-      </View>
+      {phase.name === "home" && !offerPickGoal ? (
+        <View>
+          <TextButton
+            label={savings.activeGoal ? strings.savingsChooseGoal : strings.savingsPickGoal}
+            disabled={tour.active}
+            onPress={openPicker}
+          />
+          {savings.activeGoal ? (
+            <TextButton label={strings.savingsDropGoal} disabled={tour.active} onPress={dropGoal} />
+          ) : null}
+        </View>
+      ) : null}
       {phase.name === "deposit" ? (
         <Card>
           <AmountStepper
@@ -304,6 +343,14 @@ export default function SavingsScreen(_props: Props) {
         </Card>
       ) : null}
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}
+      <GoalPicker
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onChanged={() => {
+          load();
+          setOfferPickGoal(false);
+        }}
+      />
     </Screen>
   );
 }

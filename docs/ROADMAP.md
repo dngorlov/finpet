@@ -18,7 +18,7 @@ Team-owned deliverables (presentation PPTX, demo video, RuStore card) are **out 
 - **No real money, no ads, no purchases, no social, no external links** (see `HP` in REQUIREMENTS.md).
 - **Balance never changes silently.** Every coin movement goes through the feedback card (source + amount).
 - **Safe errors.** A wrong decision lowers Забота/Настроение and spawns a timed correction Задание — never progress reset, never pet death/illness (no exceptional events in v1).
-- **Content decoupled.** Catalog, goals, tasks, glossary = versioned JSON in `assets/content/`, zod-validated at load, never hardcoded in components. Bump `contentVersion`; new tasks ship without touching app logic.
+- **Content decoupled.** Catalog, tasks, glossary, «Как играть» hints = versioned JSON in `assets/content/`, zod-validated at load, never hardcoded in components. Цели are catalog Желаемые, not a parallel content file. Bump `contentVersion`; new tasks ship without touching app logic.
 - **Injectable clock.** All "today" reads go through a `Clock` port; Демо-режим swaps in a manual clock (ADR-0002).
 - **Accessibility.** Touch targets ≥48×48 dp; body text ≥16 sp; verdicts/status shown as icon+text, never color alone; animations toggleable in settings; destructive actions double-confirmed.
 - **Perf budget.** Launch → main screen ≤5 s (Hermes, no startup I/O beyond DB open); every action gives visual response ≤1 s (optimistic UI, effects applied synchronously).
@@ -38,7 +38,7 @@ These were decided in the planning interview; do not re-derive them. If a number
 | Task reward | +10, first correct completion of each Задание only; replays give 0 |
 | Plan areas (≥3) | Обязательные / Желаемые / Копилка |
 
-**Catalog — 8 items** (price / pet impact shown pre-purchase):
+**Catalog — 11 items** (price / pet impact shown pre-purchase; optional flag `once` defaults false):
 
 | # | Item | Kind | Price | Pet effect |
 |---|---|---|---|---|
@@ -50,8 +50,11 @@ These were decided in the planning interview; do not re-derive them. If a number
 | 6 | Стикеры (stickers) | optional | 7 | Настроение +6 |
 | 7 | Кино (cinema visit) | optional | 20 | Настроение +12 |
 | 8 | Игрушка (toy) | optional | 25 | Настроение +10 (priced high so an insufficient-funds attempt is easy to stage) |
+| 9 | Скейтборд | optional, `once` | 90 | Настроение +12 |
+| 10 | Телескоп | optional, `once` | 160 | Настроение +15 |
+| 11 | Велосипед | optional, `once` | 240 | Настроение +18 |
 
-**Goals — 3 presets:** Скейтборд 90 · Телескоп 160 · Велосипед 240. One **active goal** at a time; Копилка is a single pot attributed to the active goal; on reaching the cost the goal is achieved (celebration screen, pot reduced by cost). Completion-date estimate = remaining ÷ average deposit (rolling over recent transfers), shown only after ≥1 transfer, else «—».
+**Цель:** one Желаемое from that catalog (at most one; not an Обязательное). First-run / demo seed Скейтборд. Копилка is a single pot attributed to the active Цель. «Положить» debits Баланс and grows the pot; reaching the price does not spend the pot and does not move Настроение. Celebration («Мечта сбылась!») offers «Купить из копилки» or «Позже»; buying from the pot deducts the price, records the purchase (item meter then), and clears the Цель. Completion-date estimate = remaining ÷ average deposit (rolling over recent transfers), shown only after ≥1 transfer, else «—».
 
 **Day rules:** Игровой день opens when the player starts it (unlocked at local midnight in normal play; back-to-back in Демо-режим). Day close sequence: compute day score → update meters' decay/messages → recompute Этап → show Итоги дня (plan-vs-actual, stage change explanation) → offer next day.
 
@@ -61,7 +64,7 @@ These were decided in the planning interview; do not re-derive them. If a number
 - Species/color/accessory keys: `sp1|sp2|sp3`, `c1|c2|c3`, `a1|a2|a3`. Display names come from the team with the asset drop; placeholders until then.
 - **Meters (the "key status indicators"):** Забота and Настроение, 0–100, rendered as icon + bar (never color alone).
   - Забота: +N on mandatory purchases (values above); −15 when a day ends with an unpurchased mandatory item.
-  - Настроение: +N on optional purchases and on goal achievement; −5 when actual optional spending exceeds the plan bucket.
+  - Настроение: +N on optional purchases (including a Цель bought from Копилка or Баланс); −5 when actual optional spending exceeds the plan bucket. Reaching the Цель price does not move Настроение.
 - **Этапы (stages):** Новичок → Друг → Мастер. Per-day score: **+2** all of today's Счета bought · **+1** «по плану» — Желаемые spend ≤ plan **and** Копилка deposits ≥ plan **and** purchases ≤ Обязательные + Желаемые · **+1** savings deposit made. Stage = rolling sum over the last 3 closed days: **<3 Новичок, 3–8 Друг, ≥9 Мастер**. Recomputed at every day close; any change shows a kid-worded explanation. Visuals faked programmatically (scale/glow tint) — see the asset contract in §5.4.
 - **Reactions/recovery (R9 slot):** no illness/death events in v1. Negative meters only cause sad pose + explanation + timed correction task. The doc's "unforeseen medical expense" exists solely as the Лекарство catalog item (event variant is stretch, §2.6).
 
@@ -109,7 +112,7 @@ src/
     components/    # PetView, MeterBar, CoinBadge, FeedbackCard, ConfirmSheet…
     theme.ts strings.ts   # RU strings; spacing/type scale ≥16 sp
 assets/
-  content/         # catalog.json goals.json tasks.json terms.json hint.json
+  content/         # catalog.json tasks.json terms.json hint.json
   pets/            # designer drop — contract in §5.4
 docs/
 ```
@@ -144,7 +147,7 @@ Invariants (unit-tested): `profiles.balance == Σ transactions.amount` for every
 
 ### 3.3 Flow of a purchase (reference for all coin movements)
 
-Catalog tap → item sheet (price, category, pet impact estimate) → confirm → `core/economy` validates balance (else blocked screen: what's missing + options: wait for Пособие, do a Задание, postpone) → debit → transaction + purchase rows → meter event → FeedbackCard: «Баланс −12 · Забота +10 · причина и следующий шаг».
+Catalog tap → item sheet (price, category, pet impact estimate) → confirm → `core/economy` validates balance (else blocked screen: what's missing + options: wait for Пособие, do a Задание, «Сделать целью» for a Желаемое / «Отложить» for an Обязательное) → debit → transaction + purchase rows → meter event → FeedbackCard: «Баланс −12 · Забота +10 · причина и следующий шаг». Buying the active Цель from Копилка is a separate intent: pot − price, purchase + item meter, Баланс unchanged.
 
 ## 4. Design flow — screens
 
@@ -164,7 +167,7 @@ Main (hub) ── day loop lives here
  ├─ Магазин ─────→ Catalog ─→ ItemSheet ─→ Confirm ─→ FeedbackCard
  │                             └─ insufficient ─→ BlockedSheet
  ├─ Копилка ─────→ Savings ─→ TransferIn / WithdrawPreview ─→ Confirm ─→ FeedbackCard
- │                             └─ goal reached ─→ Celebration
+ │                             └─ pot ≥ price ─→ Celebration (Купить из копилки / Позже)
  ├─ Задания ─────→ TaskList ─→ TaskRun (nodes) ─→ TaskResult
  ├─ Прогресс ────→ Progress [Итоги | Журнал | Словарик]
  │      Словарик tab ─→ «Как играть» (tooltip overlay replay)
@@ -185,9 +188,9 @@ Main (hub) ── day loop lives here
 
 **5. Plan (План).** *Purpose:* promise today's split across 3 areas without moving coins (R5). *Zones:* «Сегодня пришло: +N» (today's income: Пособие, Задания; day 1 includes Стартовый бюджет); available amount header (balance incl. today's Пособие); promise line «Это обещание на сегодня. Монеты пока в Балансе.»; card «Счета на сегодня» (optional note, e.g. «Питомец простыл…», and «Обед 12 · Проезд 8 = 20»; if Баланс < Счета, «На все счета не хватает N…»); three bucket rows in decision order — Обязательные, Копилка, Желаемые — each with the integer, a horizontal track 0…available, −/+ (tap ±1, hold repeats), and a pictogram; Обязательные start at today's Счета on a fresh draft and cannot go below them («Обязательных не меньше N — это счета.»; floor clamped to Баланс); Копилка extra «Положишь их отдельно — в Копилке.» plus a live Цель forecast («Скейтборд: накопишь через N дней, если откладывать столько каждый день.» / «Если ничего не отложить, Скейтборд не станет ближе.»); Желаемые hint «Хватит на: …» (cheapest-first items that fit); on later days a draft-only «вчера N» per row from last closed actuals (purchases / `savings_in`), including «вчера 0»; remainder line «Останется свободных: N»; validation line when total > available (blocks confirm); Обязательные below Счета also blocks confirm; «Подтвердить план». After confirm, leftover follow-through is on Магазин (open tab) and Копилка home, not on this screen, Main, or the status strip. *States:* draft (editable; yesterday hint when a closed day exists) → confirmed (locked; confirmation sheet repeats that this is a promise: coins stay in Баланс until Магазин / Копилка, then the plan cannot change; no yesterday; no track) → during-day view adds plan-vs-actual columns (план / потрачено per bucket) → day closed (read-only). *Leaves:* Main.
 
-**6. Catalog (Магазин).** *Purpose:* purchases with informed consent (R6). *Zones:* tabs «Обязательное» / «Желаемое» (pictogram + label); with a confirmed План, one leftover line under the tabs for the open tab («Осталось N» or «сверх плана N»); item cards: name, price, category icon, pet-impact preview (meter icon + «+10»), «после покупки: N монет»; tap → ItemSheet (full description + «Купить» / «Отложить»). *States:* purchased today → card badge «Куплено»; buy confirm with a confirmed План always shows «в плане останется N» for that item's bucket after this price and, if that after-value is < 0, «Это сверх плана.» without disabling Купить; insufficient funds → BlockedSheet: «Не хватает N монет» + options list (дождаться Пособия · выполнить Задание · отложить покупку) — no purchase happens, and leftover math is not a second block. Unconfirmed / no plan: omit leftover. *Leaves:* confirm → FeedbackCard (§3.3).
+**6. Catalog (Магазин).** *Purpose:* purchases with informed consent (R6). *Zones:* tabs «Обязательное» / «Желаемое» (pictogram + label); with a confirmed План, one leftover line under the tabs for the open tab («Осталось N» or «сверх плана N»); item cards: name, price, category icon, pet-impact preview (meter icon + «+10»), «после покупки: N монет»; `once` Желаемые (Скейтборд, Телескоп, Велосипед) also show «Можно купить один раз» and leave the tab after any purchase; tap → ItemSheet (full description + «Сделать целью» when settable + «Купить» from Баланс; if this is the Цель and pot ≥ price, also «Купить из копилки»; Баланс «Купить» of the current Цель warns that the Цель clears and the pot stays). *States:* purchased today → card badge «Куплено» (rebuyable rows); owned `once` rows are omitted, not greyed; buy confirm with a confirmed План always shows «в плане останется N» for that item's bucket after this price and, if that after-value is < 0, «Это сверх плана.» without disabling Купить (Копилка-paid buys skip that leftover); insufficient funds → BlockedSheet: «Не хватает N монет» + options (дождаться Пособия · выполнить Задание · for a Желаемое «Сделать целью», or dismiss-and-point-at-Копилка if it already is the Цель · for an Обязательное «Отложить») — no purchase happens, and leftover math is not a second block. Unconfirmed / no plan: omit leftover. *Leaves:* confirm → FeedbackCard (§3.3).
 
-**7. Savings (Копилка).** *Purpose:* savings & goals (R7). *Zones:* pot total large; with a confirmed План, one leftover line for the Копилка bucket («Осталось N» or «сверх плана N»); active-goal card (cost, accumulated, remaining, date estimate «—» until first transfer); goal picker (3 presets, switch active); «Положить» → TransferIn sheet (stepper ≤ balance, confirm; with a confirmed План also «в плане останется N» after this deposit and, if < 0, non-blocking «Это сверх плана.»); «Забрать» → WithdrawPreview (pot after, «мечта отодвинется на N дней», separate confirm; no plan leftover). *States:* accumulated ≥ cost → Celebration screen («Мечта сбылась!», pot −cost, Настроение +, confetti icon). Unconfirmed / no plan: omit leftover. *Leaves:* FeedbackCard; goal switch anytime.
+**7. Savings (Копилка).** *Purpose:* savings & goals (R7). *Zones:* pot total large; with a confirmed План, one leftover line for the Копилка bucket («Осталось N» or «сверх плана N»); active-Цель card (catalog name, cost, accumulated, remaining, date estimate «—» until first transfer) plus «Выбери цель» (one picker of settable Желаемые, drop to none; pot unchanged on drop or switch); «Положить» → TransferIn sheet (stepper ≤ balance, confirm; with a confirmed План also «в плане останется N» after this deposit and, if < 0, non-blocking «Это сверх плана.»); «Забрать» → WithdrawPreview (pot after, «мечта отодвинется на N дней», separate confirm; no plan leftover; allowed with no Цель). *States:* pot ≥ price → Celebration («Мечта сбылась!», «Купить из копилки» / «Позже»; coins stay, Настроение unchanged); after Позже the Цель stays funded; «Купить из копилки» (here or on the Магазин sheet) deducts the price from the pot, records the purchase, clears the Цель, then FeedbackCard (item meter, Копилка delta) and a button «Выбрать новую цель»; do not force the picker after Позже or drop. Unconfirmed / no plan: omit leftover. *Leaves:* FeedbackCard on deposit, withdrawal, and buy; picker anytime.
 
 **8. TaskList (Задания).** *Purpose:* learning content entry (R8). *Zones:* three topic groups (Бюджет, Копилки, Платежи) × 2 cards each: title, topic icon, reward badge «+10» if unclaimed, completed badge. *States:* locked → «Откроется: завтра» (normal play) / all open (Демо-режим); completed → replayable, no reward. *Leaves:* TaskRun.
 
@@ -195,7 +198,7 @@ Main (hub) ── day loop lives here
 
 **10. TaskResult.** *Zones:* outcome summary, «+10 монет» if first correct completion, «В список заданий». *Leaves:* TaskList.
 
-**11. Progress (Прогресс) — 3 tabs.** *Purpose:* history & learning progress (R11). *Итоги:* last day card (day score breakdown as +2/+1/+1 icons, plan-vs-actual, meter changes with reasons) + overall (days played, tasks done x/6, goals achieved). *Журнал:* chronological transactions grouped by day with source labels (Пособие, Покупка: Обед, Перевод в копилку, …). *Словарик:* the 11 terms (including План) as accordion + «Как играть» replay button.
+**11. Progress (Прогресс) — 3 tabs.** *Purpose:* history & learning progress (R11). *Итоги:* last day card (day score breakdown as +2/+1/+1 icons, plan-vs-actual, meter changes with reasons) + overall (days played, tasks done x/6, «Целей: N» = purchases stamped bought-as-active-Цель). *Журнал:* chronological transactions grouped by day with source labels (Пособие, Покупка: Обед, Перевод в копилку, …). *Словарик:* the 11 terms (including План) as accordion + «Как играть» replay button.
 
 **12. AdultGate.** *Purpose:* adult gate (R12). *Zones:* «Сколько будет 14 × 7?» (random two-digit × one-digit), numeric input, «Войти». *States:* wrong → new question (after 2 attempts), no hints. *Leaves:* Adult.
 
@@ -205,13 +208,13 @@ Main (hub) ── day loop lives here
 
 **15. Settings (⚙).** *Zones:* animations toggle (UX constraint), about: app name, version 0.1.0, build 1. Opened from the play-screen strip ⚙ (accessible name «Настройки»). *Leaves:* Main.
 
-**16. FeedbackCard (component, centered sheet).** *Zones:* delta rows with icons (Баланс ±N · Копилка ±N · Забота ±N · Настроение ±N); a full-screen tap-catch so the hub behind is inert. Пособие uses chip «Начало игрового дня» (never «награда») instead of a «потому что» sentence. Tutorial Пособие (unset walkthrough marker) dims the hub and confirms with «Дальше»; daily Пособие and other cards stay undimmed with «Понятно». Purchase / savings / task cards keep cause + next-step lines. Every row is also appended to Журнал. Used after: grant, Пособие, purchase, blocked purchase (variation), transfer, withdrawal, task reward, goal achievement, parent bonus (stretch).
+**16. FeedbackCard (component, centered sheet).** *Zones:* delta rows with icons (Баланс ±N · Копилка ±N · Забота ±N · Настроение ±N); a full-screen tap-catch so the hub behind is inert. Пособие uses chip «Начало игрового дня» (never «награда») instead of a «потому что» sentence. Tutorial Пособие (unset walkthrough marker) dims the hub and confirms with «Дальше»; daily Пособие and other cards stay undimmed with «Понятно». Purchase / savings / task cards keep cause + next-step lines. Every row is also appended to Журнал. Used after: grant, Пособие, purchase (Баланс or from Копилка), blocked purchase (variation), transfer, withdrawal, task reward, parent bonus (stretch). Reaching the Цель price is Celebration only — no FeedbackCard and no Настроение row until the item is bought.
 
 ### 4.3 Key flows
 
 - **First launch (Appendix A 1–4):** Launch → FirstRun Питомец → Имя (profile created) → StartingBudget → Main → tutorial Пособие «Дальше» → tooltip «Как играть» finished or skipped → hub. Force-quit before profile creation discards the draft and restarts at Питомец. Force-quit after Имя still offers the walkthrough on the next Main.
 - **Day loop (normal & demo):** day opens on entering Main after unlock → Пособие +20 via FeedbackCard → Plan confirmed → free play (Магазин / Задания / Копилка; plan-vs-actual live on Plan) → «Закончить день» → DaySummary → next day unlocks (demo: immediately; normal: tomorrow). After day close in normal play the economy is frozen until the next day; Задания replays and Словарик remain available.
-- **Insufficient funds (Appendix A 7):** Магазин → buy Игрушка (25) at balance < 25 → BlockedSheet (needs N more; options) → a way out exists in-app (Задание now, Пособие tomorrow, or postpone).
+- **Insufficient funds (Appendix A 7):** Магазин → buy Игрушка (25) at balance < 25 → BlockedSheet (needs N more; options) → a way out exists in-app (Задание now, Пособие tomorrow, or «Сделать целью»).
 - **Savings withdrawal (R7):** Копилка → «Забрать» → amount → WithdrawPreview (pot after, date shift) → separate confirm → FeedbackCard.
 - **Correction path / safe error (R9):** bad verdict or skipped mandatory item → meter drop + sad pose + explanation + `spawnTask` correction Задание or next-day plan-adjust hint; progress is never reset.
 - **Demo walkthrough (Appendix A 12):** Main → Взрослый раздел → AdultGate → demo toggle → demo Main (fresh test profile, all tasks open, «Следующий день» free) → ≥5 back-to-back days → «Сбросить демо» restores initial state → exit returns to the normal profile.
@@ -225,12 +228,17 @@ Main (hub) ── day loop lives here
 { "contentVersion": 1, "items": [
   { "id": "lunch", "name": "Обед", "kind": "mandatory", "price": 12,
     "effect": { "meter": "care", "delta": 10 },
-    "description": "Питомцу нужно есть каждый день" } ] }
+    "description": "Питомцу нужно есть каждый день" },
+  { "id": "skateboard", "name": "Скейтборд", "kind": "optional", "price": 90,
+    "effect": { "meter": "mood", "delta": 12 },
+    "description": "Кататься во дворе после школы", "once": true } ] }
 ```
 
-### 5.2 `goals.json` / `terms.json` / `hint.json`
+Eleven items. Optional boolean `once` defaults false; true only on Скейтборд, Телескоп, Велосипед. Candy-tier stays rebuyable. A Цель is a catalog Желаемое id, not a separate content list.
 
-Goals: `{ id, name, cost, description }` (3 presets, §2.1). Terms: the 11 glossary entries including План. Hint: seven «Как играть» tooltip sentences (План, buckets, Магазин, Обед, Копилка, Положить, Задание); buckets body is «Раздели монеты на три кучки. Это обещание, не покупка.» Existing `title` and `body` fields remain for content compatibility; the overlay renders `body` and does not render `title`.
+### 5.2 `terms.json` / `hint.json`
+
+Catalog optional rows are the only Цель source (`id`, `name`, `cost` = price, `description`; `once` as above). Do not restore a parallel `goals.json` presets file. Terms: the 11 glossary entries including План. Hint: seven «Как играть» tooltip sentences (План, buckets, Магазин, Обед, Копилка, Положить, Задание); buckets body is «Раздели монеты на три кучки. Это обещание, не покупка.» Existing `title` and `body` fields remain for content compatibility; the overlay renders `body` and does not render `title`.
 
 ### 5.3 `tasks.json` — task node schema
 
@@ -259,6 +267,8 @@ pets/overlays/a{1|2|3}.png            # accessory, transparent PNG, centered
 ```
 
 PetView layers base pose + accessory overlay; stage fake = reanimated scale/glow per Этап; pose switches tweened. Until assets arrive, ship gray placeholder PNGs with the same names so all screens work.
+
+Current drop (2026-09-22): Andrei's sheets live in `design/pets/sp{N}-c{N}-<colour>.png` (32 px grid, 15 × 8 cells: rows are animations). `node scripts/slice-pet-sheets.mjs` cuts one frame per pose (idle r0c0, happy r1c11, sad r4c8) into the tree above, scaled ×8 nearest-neighbour to 256 px so PetView downsizes crisp pixels. Delivered: sp1 (cat) and sp2 (hood) × c1 grey / c2 orange / c3 green. **Missing:** sp3 art (still gray placeholders) and accessory overlays — `overlays/a*.png` are transparent 256 px until the hats arrive; they must be drawn on the same 32 px cell so they line up with the body.
 
 ## 6. The six Задания — full scripts (RU copy)
 
@@ -324,7 +334,7 @@ Each milestone ends with a demoable increment. Do not start a stretch item (§2.
   *AC:* `npm test` green; no UI yet.
 - **M2 — Первый запуск, pet, hub (Days 2–4).** Screens per §4.2 #1–4: FirstRun state machine (3×3×3 pet customization → «Имя» for the Питомец only → atomic profile creation); Стартовый бюджет grant screen (+100, explained); Main hub with meters/badges/active cards; tooltip «Как играть» after tutorial Пособие; Словарик + overlay replay.
   *AC:* Appendix A steps 1–4 passable end-to-end on device.
-- **M3 — Economy loop UI (Days 4–6).** Screens per §4.2 #5–7, 11, 16: План (3 buckets, total ≤ available, remainder shown, editable until confirmed, plan-vs-actual); Магазин (8 items, pre-purchase sheet, confirm, insufficient-funds block with options); Копилка (3 goals, active goal, transfers in, withdrawal with double confirm + before/after + date shift); Журнал; FeedbackCard on every coin/meter movement.
+- **M3 — Economy loop UI (Days 4–6).** Screens per §4.2 #5–7, 11, 16: План (3 buckets, total ≤ available, remainder shown, editable until confirmed, plan-vs-actual); Магазин (catalog, pre-purchase sheet, confirm, insufficient-funds block with options); Копилка (one catalog Цель, deposits that fund without spending, buy from pot, withdrawal with double confirm + before/after + date shift); Журнал; FeedbackCard on every coin/meter movement.
   *AC:* steps 5–9 passable; a wrong-path purchase demonstrates the safe-error rule (no dead ends).
 - **M4 — Задания + Демо-режим (Days 6–7).** Generic task runner (nodes/verdicts/explanations/retry/spawnTask); 6 tasks from §6 as JSON; unlock 1/day topic-ordered, all open in demo; demo profile + ManualClock + «Сбросить демо» + exit; day-close sequence with stage recompute and explanations (§4.2 #14).
   *AC:* step 10; **5 consecutive demo days** playable back-to-back; reset restores initial demo state; normal profile still real-day-gated.
@@ -338,7 +348,7 @@ Each milestone ends with a demoable increment. Do not start a stretch item (§2.
 
 ## 8. Test plan
 
-**Automated (jest, `src/core` + repositories):** plan validation (sum ≤ available; draft editable; confirm locks); debit (over-balance rejected, never negative, transaction+history written); savings (in/out, withdrawal gated by confirm, goal completion, date estimate monotone under new deposits); stages (+2/+1/+1 day score, rolling-3 window, thresholds 3/9, explanation emitted on change); days (next-calendar-day unlock via fake Clock; ManualClock back-to-back); persistence (schema roundtrip; balance invariant).
+**Automated (jest, `src/core` + repositories):** plan validation (sum ≤ available; draft editable; confirm locks); debit (over-balance rejected, never negative, transaction+history written); savings (in/out, withdrawal gated by confirm, deposit funds without spending the pot, buy-from-Копилка, date estimate monotone under new deposits); stages (+2/+1/+1 day score, rolling-3 window, thresholds 3/9, explanation emitted on change); days (next-calendar-day unlock via fake Clock; ManualClock back-to-back); persistence (schema roundtrip; balance invariant).
 
 **Manual scripted (documented in `docs/test-cases.md`):** Appendix A steps 1–12 as named cases (screen sequence per §4.3 flows); low-end Android 8.0 emulator + one mid-range physical device; airplane mode (offline invariant); font-size 1.3× legibility; demo reset; relaunch persistence; insufficient-funds staging (buy Игрушка at low balance → BlockedSheet shows options).
 
@@ -353,8 +363,8 @@ Each milestone ends with a demoable increment. Do not start a stretch item (§2.
 | R3 main screen contents | §2.2 · §3.1, §4 · M2 |
 | R4 currency/income | §2.1 · §3.3 · M1, M2 |
 | R5 budget planning | §2.1 day rules · §4.2 · M3 |
-| R6 purchases (8 items) | §2.1 catalog · §4.2 · M3 |
-| R7 savings & goals | §2.1 goals · §4.2 · M3 |
+| R6 purchases (11 items) | §2.1 catalog · §4.2 · M3 |
+| R7 savings & goals | §2.1 Цель · §4.2 · M3 |
 | R8 6 tasks / 3 topics | §2.3 · §6 · M4 |
 | R9 consequences/feedback | §2.2 meters · §5.3 safe-error · M3, M4 |
 | R10 3 stages + rules | §2.2 Этапы · M1, M4 |

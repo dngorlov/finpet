@@ -26,13 +26,21 @@ import type {
 import type { SessionPorts } from "../session/types";
 
 type TransferRow = { dayId: string; amount: number; kind: "in" | "out" };
-type PurchaseRow = { dayId: string; itemId: string; price: number; kind: "mandatory" | "optional" };
+type PurchaseRow = {
+  dayId: string;
+  itemId: string;
+  price: number;
+  kind: "mandatory" | "optional";
+  paidFrom: "balance" | "savings";
+  boughtAsActiveGoal: boolean;
+};
+type StoredGoal = GoalOption & { fundedCelebrated: boolean };
 
 type StoredProfile = ProfileView & {
   dayOpen: boolean;
   dayId: string;
   dayN: number;
-  goals: GoalOption[];
+  goals: StoredGoal[];
   planStatus: DayState["plan"]["status"];
   buckets: PlanBuckets;
   journal: JournalEntry[];
@@ -105,13 +113,18 @@ function emptyBuckets(): PlanBuckets {
 
 function actuals(row: StoredProfile): PlanBuckets {
   const today = row.purchases.filter((item) => item.dayId === row.dayId);
+  const balancePaid = today.filter((item) => item.paidFrom !== "savings");
   return {
-    mandatory: today.filter((item) => item.kind === "mandatory").reduce((sum, item) => sum + item.price, 0),
-    optional: today.filter((item) => item.kind === "optional").reduce((sum, item) => sum + item.price, 0),
+    mandatory: balancePaid.filter((item) => item.kind === "mandatory").reduce((sum, item) => sum + item.price, 0),
+    optional: balancePaid.filter((item) => item.kind === "optional").reduce((sum, item) => sum + item.price, 0),
     savings: row.transfers
       .filter((item) => item.dayId === row.dayId && item.kind === "in")
       .reduce((sum, item) => sum + item.amount, 0),
   };
+}
+
+function ownsItem(row: StoredProfile, itemId: string): boolean {
+  return row.purchases.some((item) => item.itemId === itemId);
 }
 
 function dayStateOf(row: StoredProfile): DayState {
@@ -148,12 +161,12 @@ export function createFakePorts(): SessionPorts {
       dayOpen: false,
       dayId: `${id}#1`,
       dayN: 1,
-      goals: input.goals.map((g) => ({
-        key: g.key,
-        cost: g.cost,
-        status: "active",
-        isActive: g.key === input.activeGoalKey,
-      })),
+      goals: (() => {
+        const seeded = input.goals.find((goal) => goal.key === input.activeGoalKey);
+        return seeded
+          ? [{ key: seeded.key, cost: seeded.cost, status: "active" as const, isActive: true, fundedCelebrated: false }]
+          : [];
+      })(),
       planStatus: "none",
       buckets: emptyBuckets(),
       journal: [],
@@ -281,10 +294,19 @@ export function createFakePorts(): SessionPorts {
       purchase(profileId, dayId, item: CatalogItem) {
         const row = requireRow(profiles, profileId);
         requireOpen(row, dayId);
+        if (item.once && ownsItem(row, item.id)) return { status: "blocked" as const, missing: 0 };
         const check = checkPurchase(row.balance, item.price);
         if (check.status === "blocked") return check;
+        const asActive = row.goals.some((goal) => goal.isActive && goal.key === item.id);
         row.balance -= item.price;
-        row.purchases.push({ dayId, itemId: item.id, price: item.price, kind: item.kind });
+        row.purchases.push({
+          dayId,
+          itemId: item.id,
+          price: item.price,
+          kind: item.kind,
+          paidFrom: "balance",
+          boughtAsActiveGoal: asActive,
+        });
         if (item.effect.meter === "care") {
           row.care = applyMeterDelta(row.care, item.effect.delta);
         } else {
@@ -296,6 +318,39 @@ export function createFakePorts(): SessionPorts {
           labelKey: `purchase:${item.id}`,
           itemId: item.id,
         });
+        if (asActive) row.goals = [];
+        return { status: "ok" as const };
+      },
+      purchaseFromSavings(profileId, dayId, item: CatalogItem) {
+        const row = requireRow(profiles, profileId);
+        requireOpen(row, dayId);
+        const active = row.goals.find((goal) => goal.isActive);
+        if (!active || active.key !== item.id) throw new Error("Купить из копилки можно только текущую Цель");
+        if (item.once && ownsItem(row, item.id)) return { status: "blocked" as const, missing: 0 };
+        const pot = potFromTransfers(row.transfers);
+        if (pot < item.price) return { status: "blocked" as const, missing: item.price - pot };
+        row.transfers.push({ dayId, amount: item.price, kind: "out" });
+        row.purchases.push({
+          dayId,
+          itemId: item.id,
+          price: item.price,
+          kind: item.kind,
+          paidFrom: "savings",
+          boughtAsActiveGoal: true,
+        });
+        if (item.effect.meter === "care") {
+          row.care = applyMeterDelta(row.care, item.effect.delta);
+        } else {
+          row.mood = applyMeterDelta(row.mood, item.effect.delta);
+        }
+        appendJournal(row, {
+          amount: 0,
+          kind: "purchase",
+          labelKey: `purchase:${item.id}`,
+          itemId: item.id,
+          goalId: item.id,
+        });
+        row.goals = [];
         return { status: "ok" as const };
       },
       transferToSavings(profileId, dayId, amount) {
@@ -317,12 +372,9 @@ export function createFakePorts(): SessionPorts {
         let achieved = false;
         if (active) {
           const progress = applyGoalProgress(pot, active.cost);
-          if (progress.achieved) {
+          if (progress.achieved && !active.fundedCelebrated) {
             achieved = true;
-            row.transfers.push({ dayId, amount: active.cost, kind: "out" });
-            active.status = "achieved";
-            active.isActive = false;
-            row.mood = applyMeterDelta(row.mood, METERS.goalAchievedMoodBonus);
+            active.fundedCelebrated = true;
           }
         }
         return { status: "ok" as const, achieved };
@@ -342,12 +394,20 @@ export function createFakePorts(): SessionPorts {
         });
         return { ok: true as const, potAfter: check.potAfter };
       },
-      setActiveGoal(profileId, goalKey) {
+      setActiveGoal(profileId, item: CatalogItem | string) {
         const row = requireRow(profiles, profileId);
-        const goal = row.goals.find((g) => g.key === goalKey);
-        if (!goal) throw new Error(`Цель ${goalKey} не найдена`);
-        if (goal.status === "achieved") throw new Error("Эта Цель уже достигнута");
-        for (const item of row.goals) item.isActive = item.key === goalKey;
+        const catalogItem = typeof item === "string" ? null : item;
+        const key = typeof item === "string" ? item : item.id;
+        if (catalogItem?.kind === "mandatory") throw new Error("Обязательное не может быть Целью");
+        if (catalogItem?.once && ownsItem(row, catalogItem.id)) throw new Error("Этот товар уже куплен");
+        const existing = row.goals.find((goal) => goal.key === key);
+        const cost = catalogItem?.price ?? existing?.cost;
+        if (cost == null) throw new Error(`Цель ${key} не найдена`);
+        row.goals = [{ key, cost, status: "active", isActive: true, fundedCelebrated: false }];
+      },
+      clearActiveGoal(profileId) {
+        const row = requireRow(profiles, profileId);
+        row.goals = [];
       },
       listGoals(profileId) {
         return requireRow(profiles, profileId).goals.map((g) => ({ ...g }));
@@ -359,6 +419,9 @@ export function createFakePorts(): SessionPorts {
         const row = requireRow(profiles, profileId);
         requireOpen(row, dayId);
         return [...new Set(row.purchases.filter((item) => item.dayId === dayId).map((item) => item.itemId))];
+      },
+      boughtAsActiveGoalCount(profileId) {
+        return requireRow(profiles, profileId).purchases.filter((item) => item.boughtAsActiveGoal).length;
       },
       lastClosedDay(profileId) {
         return requireRow(profiles, profileId).lastClosed;
@@ -427,7 +490,7 @@ export function createFakePorts(): SessionPorts {
         const deposited = row.transfers.some((item) => item.dayId === row.dayId && item.kind === "in");
         const score = dayScore({ mandatoryCovered, withinPlan, deposited });
         const optionalSpend = bought
-          .filter((item) => item.kind === "optional")
+          .filter((item) => item.kind === "optional" && item.paidFrom !== "savings")
           .reduce((sum, item) => sum + item.price, 0);
         const meterDeltas = dayCloseMeterDeltas({
           missedMandatory: !mandatoryCovered,
@@ -462,8 +525,8 @@ export function createFakePorts(): SessionPorts {
 
 export function seedReturningChild(ports: SessionPorts, input?: Partial<CreateProfileInput>): string {
   const content = ports.content;
-  const firstGoal = content.goals[0];
-  if (!firstGoal) throw new Error("Нет целей в контенте");
+  const skateboard = content.catalog.find((item) => item.id === "skateboard");
+  if (!skateboard) throw new Error("Нет целей в контенте");
   const id = ports.game.createProfile({
     name: "Миша",
     petName: "Пух",
@@ -471,8 +534,8 @@ export function seedReturningChild(ports: SessionPorts, input?: Partial<CreatePr
     color: "c1",
     accessory: "a1",
     contentVersion: content.contentVersion,
-    goals: content.goals.map((g) => ({ key: g.id, cost: g.cost })),
-    activeGoalKey: firstGoal.id,
+    goals: [{ key: skateboard.id, cost: skateboard.price }],
+    activeGoalKey: skateboard.id,
     ...input,
   });
   ports.game.openDay(id);
