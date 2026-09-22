@@ -17,7 +17,7 @@ Do not touch uncommitted MeterBar / StatusStrip WIP.
 - Ticket 02 resolved: deposit funds without spending the pot or mood; `purchaseFromSavings` / `clearActiveGoal` / `boughtAsActiveGoalCount`; `once` ownership is a purchase; Копилка-paid optionals ignored in План actuals. `.scratch/shop-goals/issues/02-repository.md`
 - Ticket 03 resolved: SessionGame and fakes fund without spending or +10; `purchaseFromSavings` / `clearActiveGoal` / `boughtAsActiveGoalCount`; seeds use catalog id `skateboard`. `.scratch/shop-goals/issues/03-session-fakes.md`
 - Ticket 04: Копилка UI. `.scratch/shop-goals/issues/04-savings-ui.md`
-- Ticket 05: Магазин UI + shared picker. `.scratch/shop-goals/issues/05-shop-picker.md`
+- Ticket 05 resolved: shared `GoalPicker`; Магазин sheet «Сделать целью» / «Купить из копилки» / Баланс warn; BlockedSheet optional «Сделать целью»; once labelled and omitted when owned; Main Цель from catalog. `.scratch/shop-goals/issues/05-shop-picker.md`
 - Ticket 06: flow + sister tests. `.scratch/shop-goals/issues/06-flow-tests.md`
 - Ticket 07 resolved: REQUIREMENTS / ROADMAP catalog 11 with `once` dreams; Копилка funds without spending and buys the Цель from the pot; no reach mood; `goals.json` deleted. `.scratch/shop-goals/issues/07-docs.md`
 
