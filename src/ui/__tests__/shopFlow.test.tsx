@@ -128,6 +128,9 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     expect(screen.getByRole("button", { name: "Выбрать новую цель" })).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Скейтборд" })).not.toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Назад" }));
+    await user.press(screen.getByRole("button", { name: "Прогресс" }));
+    expect(screen.getByText("Покупка: Скейтборд -90")).toBeOnTheScreen();
 
     ports.game.closeDay(profileId, content.catalog);
     await user.press(screen.getByRole("button", { name: "Назад" }));
@@ -156,5 +159,28 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Прогресс" }));
     await user.press(screen.getByRole("button", { name: "Итоги" }));
     expect(screen.getByText("Целей: 0")).toBeOnTheScreen();
+  });
+
+  it("counts Конфета when it was bought as the Цель", async () => {
+    const ports = createFakePorts();
+    const profileId = seedReturningChild(ports);
+    const { user } = await renderApp(ports);
+
+    await user.press(screen.getByRole("button", { name: "Магазин" }));
+    await user.press(screen.getByRole("button", { name: "Желаемое" }));
+    await user.press(screen.getByRole("button", { name: candy.name }));
+    await user.press(screen.getByRole("button", { name: "Сделать целью" }));
+    await user.press(screen.getByRole("button", { name: "Сделать целью" }));
+    await user.press(screen.getByRole("button", { name: candy.name }));
+    await user.press(screen.getByRole("button", { name: "Купить" }));
+    await user.press(screen.getByRole("button", { name: "Купить" }));
+    expect(screen.getByText("Настроение +5")).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Понятно" }));
+
+    ports.game.closeDay(profileId, content.catalog);
+    await user.press(screen.getByRole("button", { name: "Назад" }));
+    await user.press(screen.getByRole("button", { name: "Прогресс" }));
+    await user.press(screen.getByRole("button", { name: "Итоги" }));
+    expect(screen.getByText("Целей: 1")).toBeOnTheScreen();
   });
 });

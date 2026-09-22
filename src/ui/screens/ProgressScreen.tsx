@@ -83,6 +83,12 @@ export default function ProgressScreen(_props: Props) {
   }, [rows]);
 
   const itemName = (id: string | null) => content.catalog.find((item) => item.id === id)?.name ?? id ?? "";
+  const journalAmount = (entry: JournalEntry) => {
+    if (entry.kind === "purchase" && entry.amount === 0 && entry.itemId) {
+      return -(content.catalog.find((item) => item.id === entry.itemId)?.price ?? 0);
+    }
+    return entry.amount;
+  };
   const taskTitle = (id: string) => content.tasks.find((task) => task.id === id)?.title;
   const topicTasks = content.tasks.filter((task) => !task.correction);
   const completedTopics = tasks.filter((row) => {
@@ -156,7 +162,7 @@ export default function ProgressScreen(_props: Props) {
               <Text style={styles.section}>{dayN === 0 ? strings.journalStart : strings.journalDay(dayN)}</Text>
               {entries.map((entry) => (
                 <Text key={entry.id} style={styles.body}>
-                  {journalLabel(entry, itemName, taskTitle)} {strings.journalAmount(entry.amount)}
+                  {journalLabel(entry, itemName, taskTitle)} {strings.journalAmount(journalAmount(entry))}
                 </Text>
               ))}
             </Card>
