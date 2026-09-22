@@ -6,7 +6,7 @@
 
 **Type:** task
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -26,3 +26,7 @@
 ## Done when
 
 `npm test -- src/ui/__tests__/savingsFlow.test.tsx` and `npm run typecheck` pass.
+
+## Answer
+
+Копилка UI now shows the active catalog Цель (name/price/progress) with «Выбери цель» / «Убрать цель» (`clearActiveGoal`, pot unchanged). Shared `GoalPicker` lists optional items not owned-`once`, marks the current Цель, confirms replace with «Цель станет {name}. В копилке останется {pot}.», and exposes drop. Deposit FeedbackCard is Баланс/Копилка only; funding opens Celebration «Мечта сбылась!» with «Купить из копилки» / «Позже» (no mood, no forced picker). Позже keeps the funded Цель; Купить calls `purchaseFromSavings`, then FeedbackCard (item meter + Копилка delta), then «Выбрать новую цель» opens the picker. `savingsFlow.test.tsx` and `tsc --noEmit` pass.

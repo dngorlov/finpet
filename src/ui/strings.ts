@@ -133,7 +133,14 @@ export const strings = {
   savingsWithdrawPreviewNone: (potAfter: number) => `В копилке станет ${potAfter}.`,
   savingsAchieved: "Мечта сбылась!",
   savingsConfetti: "🎉",
-  savingsPickGoal: "Выбери новую цель",
+  savingsPickGoal: "Выбери цель",
+  savingsChooseGoal: "Выбери цель",
+  savingsChooseNewGoal: "Выбрать новую цель",
+  savingsBuyFromSavings: "Купить из копилки",
+  savingsLater: "Позже",
+  savingsDropGoal: "Убрать цель",
+  savingsConfirmReplace: (name: string, pot: number) =>
+    `Цель станет ${name}. В копилке останется ${pot}.`,
   savingsAchievedBadge: "сбылась",
   savingsRemaining: (n: number) => `осталось ${n}`,
 
