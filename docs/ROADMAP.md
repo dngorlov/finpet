@@ -259,6 +259,8 @@ pets/overlays/a{1|2|3}.png            # accessory, transparent PNG, centered
 
 PetView layers base pose + accessory overlay; stage fake = reanimated scale/glow per Этап; pose switches tweened. Until assets arrive, ship gray placeholder PNGs with the same names so all screens work.
 
+Current drop (2026-09-22): Andrei's sheets live in `design/pets/sp{N}-c{N}-<colour>.png` (32 px grid, 15 × 8 cells: rows are animations). `node scripts/slice-pet-sheets.mjs` cuts one frame per pose (idle r0c0, happy r1c11, sad r4c8) into the tree above, scaled ×8 nearest-neighbour to 256 px so PetView downsizes crisp pixels. Delivered: sp1 (cat) and sp2 (hood) × c1 grey / c2 orange / c3 green. **Missing:** sp3 art (still gray placeholders) and accessory overlays — `overlays/a*.png` are transparent 256 px until the hats arrive; they must be drawn on the same 32 px cell so they line up with the body.
+
 ## 6. The six Задания — full scripts (RU copy)
 
 Verdicts: `good` ✅ / `warn` 🤔 / `bad` ⚠️ — always with icon, text, and explanation.

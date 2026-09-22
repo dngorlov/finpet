@@ -12,19 +12,41 @@ export const spacing = {
   l: 24,
 } as const;
 
+/**
+ * Andrei's Material 3 light scheme (seed export from the team chat, 2026-09-20).
+ * Each token names its M3 source so a re-export maps one-to-one.
+ * Text-on-fill pairs are checked for WCAG AA: onRaised on raisedFace 4.6:1,
+ * accentText on background 6.1:1, text on background 16:1.
+ */
 export const colors = {
-  background: "#FFF8F0",
-  text: "#1B1B1F",
-  subtle: "#5F6368",
+  /** surface */
+  background: "#FFF8F4",
+  /** on-surface */
+  text: "#221A12",
+  /** on-surface-variant */
+  subtle: "#534434",
+  /** surface-container-lowest */
   card: "#FFFFFF",
-  accent: "#E07A3D",
-  raisedFace: "#E07A3D",
-  raisedEdge: "#C45F28",
-  disabledFace: "#C5C0B8",
-  badgeFill: "#FFE6C7",
-  track: "#E6E0D8",
-  fill: "#5B8C5A",
-  highlight: "#F4D9A6",
+  /** primary-container — fills, borders, selected beads (not text) */
+  accent: "#F7A115",
+  /** primary — link-style text on background */
+  accentText: "#855400",
+  /** primary-container — raised button face */
+  raisedFace: "#F7A115",
+  /** primary — raised button edge */
+  raisedEdge: "#855400",
+  /** on-primary-container — label on raisedFace */
+  onRaised: "#633D00",
+  /** outline-variant */
+  disabledFace: "#D8C3AD",
+  /** secondary-container */
+  badgeFill: "#FECB8F",
+  /** surface-container-high */
+  track: "#F5E6D7",
+  /** tertiary-container — meter and progress fill (numbers always sit beside it) */
+  fill: "#ACBD33",
+  /** primary-fixed */
+  highlight: "#FFDDB7",
 } as const;
 
 export const radius = {

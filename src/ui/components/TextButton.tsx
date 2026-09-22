@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.m,
   },
   label: {
-    color: colors.accent,
+    color: colors.accentText,
     fontSize: type.button,
     fontWeight: "700",
   },

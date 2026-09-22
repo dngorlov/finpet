@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.disabledFace,
   },
   label: {
-    color: colors.card,
+    color: colors.onRaised,
     fontSize: type.button,
     fontWeight: "700",
   },
