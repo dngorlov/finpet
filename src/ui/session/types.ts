@@ -32,12 +32,15 @@ export type SessionGame = {
   saveDraftPlan(profileId: string, dayId: string, buckets: PlanBuckets): void;
   confirmPlan(profileId: string, dayId: string): ConfirmPlanResult;
   purchase(profileId: string, dayId: string, item: CatalogItem): PurchaseResult;
+  purchaseFromSavings(profileId: string, dayId: string, item: CatalogItem): PurchaseResult;
   transferToSavings(profileId: string, dayId: string, amount: number): TransferResult;
   withdrawFromSavings(profileId: string, dayId: string, amount: number): WithdrawResult;
-  setActiveGoal(profileId: string, goalKey: string): void;
+  setActiveGoal(profileId: string, item: CatalogItem | string): void;
+  clearActiveGoal(profileId: string): void;
   listGoals(profileId: string): GoalOption[];
   listJournal(profileId: string): JournalEntry[];
   purchasedItemIds(profileId: string, dayId: string): string[];
+  boughtAsActiveGoalCount(profileId: string): number;
   applyTaskStep(profileId: string, dayId: string, result: TaskStepResult): void;
   claimTaskReward(profileId: string, dayId: string, taskId: string, correct: boolean): number;
   closeDay(profileId: string, catalog: readonly CatalogItem[]): DaySummaryView;

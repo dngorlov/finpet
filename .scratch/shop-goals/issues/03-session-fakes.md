@@ -6,7 +6,7 @@
 
 **Type:** task
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Pointers
 
@@ -24,3 +24,7 @@
 ## Done when
 
 `npm run typecheck` passes. `seedReturningChild` still opens Main with Цель Скейтборд.
+
+## Answer
+
+SessionGame now has `purchaseFromSavings`, `clearActiveGoal`, and `boughtAsActiveGoalCount`. The fake funds a Цель without shrinking the pot or moving Настроение, stamps a Копилка buy as bought-as-active-Цель, and ignores those purchases in План actuals. First run, demo, and `seedReturningChild` seed catalog id `skateboard`. `engineItem` passes `once`. `tsc --noEmit` passed.

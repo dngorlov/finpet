@@ -31,7 +31,7 @@ type Phase =
   | { name: "blocked"; item: CatalogItemContent; missing: number };
 
 function engineItem(item: CatalogItemContent) {
-  return { id: item.id, kind: item.kind, price: item.price, effect: item.effect };
+  return { id: item.id, kind: item.kind, price: item.price, effect: item.effect, once: item.once };
 }
 
 export default function ShopScreen({ navigation }: Props) {

@@ -16,8 +16,8 @@ function identityInput(
   content: GameContent,
   profile: { name: string; petName: string; species: string; color: string; accessory: string },
 ): CreateProfileInput {
-  const firstGoal = content.goals[0];
-  if (!firstGoal) throw new Error("Нет целей в контенте");
+  const skateboard = content.catalog.find((item) => item.id === "skateboard");
+  if (!skateboard) throw new Error("Нет целей в контенте");
   return {
     name: profile.name,
     petName: profile.petName,
@@ -25,8 +25,8 @@ function identityInput(
     color: profile.color,
     accessory: profile.accessory,
     contentVersion: content.contentVersion,
-    goals: content.goals.map((goal) => ({ key: goal.id, cost: goal.cost })),
-    activeGoalKey: firstGoal.id,
+    goals: [{ key: skateboard.id, cost: skateboard.price }],
+    activeGoalKey: skateboard.id,
   };
 }
 
