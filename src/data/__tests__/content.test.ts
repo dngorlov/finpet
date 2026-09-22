@@ -26,6 +26,16 @@ describe("loadContent", () => {
     expect(byId.toy).toMatchObject({ kind: "optional", price: 25, effect: { meter: "mood", delta: 10 } });
   });
 
+  it("ships a Счета cycle of mandatory items with a medicine day", () => {
+    const mandatory = new Set(content.catalog.filter((item) => item.kind === "mandatory").map((item) => item.id));
+    expect(content.bills.length).toBeGreaterThanOrEqual(5);
+    for (const day of content.bills) {
+      for (const id of day.items) expect(mandatory.has(id)).toBe(true);
+    }
+    expect(content.bills[0].items).toEqual(["lunch", "transport"]);
+    expect(content.bills.some((day) => day.items.includes("medicine") && day.note)).toBe(true);
+  });
+
   it("ships the three preset goals", () => {
     expect(content.goals.map((g) => [g.name, g.cost])).toEqual([
       ["Скейтборд", 90],

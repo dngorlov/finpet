@@ -1,5 +1,9 @@
 import {
   applyMeterDelta,
+  billsForDay,
+  billsTotal,
+  planKept,
+  planMandatoryFloor,
   checkPurchase,
   dayCloseMeterDeltas,
   validatePlan,
@@ -57,5 +61,50 @@ describe("day-close meters", () => {
   it("clamps meters to 0–100", () => {
     expect(applyMeterDelta(10, -15)).toBe(0);
     expect(applyMeterDelta(95, 12)).toBe(100);
+  });
+});
+
+describe("Счета and the План floor", () => {
+  const cycle = [{ items: ["lunch"] }, { items: ["lunch", "medicine"], note: "Питомец простыл" }];
+  const catalog = [
+    { id: "lunch", price: 12 },
+    { id: "medicine", price: 15 },
+  ];
+
+  it("repeats the Счета cycle by Игровой день", () => {
+    expect(billsForDay(1, cycle).items).toEqual(["lunch"]);
+    expect(billsForDay(2, cycle).note).toBe("Питомец простыл");
+    expect(billsForDay(3, cycle).items).toEqual(["lunch"]);
+    expect(billsForDay(1, [])).toEqual({ items: [] });
+  });
+
+  it("sums today's Счета and clamps the floor to what the child has", () => {
+    expect(billsTotal(billsForDay(2, cycle), catalog)).toBe(27);
+    expect(planMandatoryFloor(27, 100)).toBe(27);
+    expect(planMandatoryFloor(27, 10)).toBe(10);
+  });
+
+  it("rejects a План whose Обязательные are under the floor", () => {
+    expect(validatePlan({ mandatory: 5, optional: 0, savings: 0 }, 100, 12).ok).toBe(false);
+    expect(validatePlan({ mandatory: 12, optional: 0, savings: 0 }, 100, 12).ok).toBe(true);
+  });
+});
+
+describe("planKept", () => {
+  const plan = { mandatory: 20, optional: 10, savings: 15 };
+
+  it("holds when every bucket is followed", () => {
+    expect(planKept({ plan, actual: { mandatory: 20, optional: 10, savings: 15 } })).toBe(true);
+  });
+
+  it("breaks on Желаемые overspend, a skipped Копилка, or no confirmed План", () => {
+    expect(planKept({ plan, actual: { mandatory: 20, optional: 11, savings: 15 } })).toBe(false);
+    expect(planKept({ plan, actual: { mandatory: 20, optional: 0, savings: 5 } })).toBe(false);
+    expect(planKept({ plan: null, actual: { mandatory: 0, optional: 0, savings: 0 } })).toBe(false);
+  });
+
+  it("lets a Копилка-0 plan be kept — its cost shows in the Цель forecast, not as a penalty", () => {
+    const greedy = { mandatory: 20, optional: 100, savings: 0 };
+    expect(planKept({ plan: greedy, actual: { mandatory: 20, optional: 45, savings: 0 } })).toBe(true);
   });
 });

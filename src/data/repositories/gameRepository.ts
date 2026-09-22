@@ -5,10 +5,13 @@ import { ECONOMY, METERS } from "../../core/config";
 import { canOpenNextDay, dayId as makeDayId } from "../../core/days";
 import {
   applyMeterDelta,
+  billsForDay,
   checkPurchase,
   dayCloseMeterDeltas,
+  planKept,
   validatePlan,
   type CatalogItem,
+  type DayBills,
   type PlanBuckets,
 } from "../../core/economy";
 import { applyGoalProgress, checkWithdrawal, estimateDaysToGoal, potFromTransfers } from "../../core/savings";
@@ -566,7 +569,8 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       });
     },
 
-    confirmPlan(profileId: string, dayId: string): ConfirmPlanResult {
+    /** `minMandatory` — today's Счета floor (see `planMandatoryFloor`). */
+    confirmPlan(profileId: string, dayId: string, minMandatory = 0): ConfirmPlanResult {
       return db.transaction((tx) => {
         requireOpenDay(tx, profileId, dayId);
         const existing = planForDay(tx, dayId);
@@ -576,6 +580,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         const check = validatePlan(
           { mandatory: existing.mandatory, optional: existing.optional, savings: existing.savings },
           available,
+          Math.min(minMandatory, available),
         );
         if (!check.ok) return { ok: false as const, remainder: check.remainder };
         tx.update(tables.plans)
@@ -803,7 +808,16 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       };
     },
 
-    closeDay(profileId: string, catalog: readonly CatalogItem[]): CloseDayResult {
+    /**
+     * `bills` is the Счета cycle from content: only the items due on this
+     * Игровой день count as «обязательное закрыто». An empty cycle falls back
+     * to every mandatory catalog item.
+     */
+    closeDay(
+      profileId: string,
+      catalog: readonly CatalogItem[],
+      bills: readonly DayBills[] = [],
+    ): CloseDayResult {
       return db.transaction((tx) => {
         const day = openDayRow(tx, profileId);
         if (!day) throw new Error("Нет открытого игрового дня");
@@ -814,13 +828,19 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           .from(tables.savingsTransfers)
           .where(and(eq(tables.savingsTransfers.dayId, day.id), eq(tables.savingsTransfers.kind, "in")))
           .all();
-        const mandatoryIds = catalog.filter((item) => item.kind === "mandatory").map((item) => item.id);
+        const mandatoryIds =
+          bills.length > 0
+            ? billsForDay(day.n, bills).items
+            : catalog.filter((item) => item.kind === "mandatory").map((item) => item.id);
         const boughtIds = new Set(bought.map((row) => row.itemId));
         const mandatoryCovered = mandatoryIds.every((id) => boughtIds.has(id));
-        const actualSpend = bought.reduce((sum, row) => sum + row.price, 0);
         const confirmed = plan?.status === "confirmed" ? plan : null;
-        const withinPlan =
-          confirmed !== null && actualSpend <= confirmed.mandatory + confirmed.optional;
+        const withinPlan = planKept({
+          plan: confirmed
+            ? { mandatory: confirmed.mandatory, optional: confirmed.optional, savings: confirmed.savings }
+            : null,
+          actual: actualForDay(tx, day.id),
+        });
         const deposited = deposits.length > 0;
         const score = dayScore({ mandatoryCovered, withinPlan, deposited });
         const optionalSpend = bought

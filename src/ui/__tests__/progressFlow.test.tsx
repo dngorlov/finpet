@@ -37,7 +37,7 @@ describe("Прогресс", () => {
     expect(screen.getByRole("button", { name: "Журнал" })).toBeSelected();
     expect(screen.getByText("День 1")).toBeOnTheScreen();
     expect(screen.getByText("Покупка: Обед -12")).toBeOnTheScreen();
-    expect(screen.getByText("Пособие +10")).toBeOnTheScreen();
+    expect(screen.getByText("Пособие +20")).toBeOnTheScreen();
     expect(screen.getByText("Старт")).toBeOnTheScreen();
     expect(screen.getByText("Стартовый бюджет +100")).toBeOnTheScreen();
 

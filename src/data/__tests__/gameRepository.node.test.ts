@@ -164,7 +164,7 @@ describe("grants and the balance invariant", () => {
     expect(sums(sqlite, input.id)).toEqual({ balance: 100, txSum: 100, pot: 0 });
   });
 
-  it("grants 100 at profile creation and +10 Пособие on first open of a day", () => {
+  it("grants 100 at profile creation and +20 Пособие on first open of a day", () => {
     const { game, sqlite, profileId } = seed();
 
     expect(game.getProfile(profileId)).toMatchObject({
@@ -179,12 +179,12 @@ describe("grants and the balance invariant", () => {
 
     const day = game.openDay(profileId);
     expect(day).toMatchObject({ status: "opened", n: 1, allowanceCredited: true });
-    expect(game.getProfile(profileId).balance).toBe(110);
-    expect(sums(sqlite, profileId).txSum).toBe(110);
+    expect(game.getProfile(profileId).balance).toBe(120);
+    expect(sums(sqlite, profileId).txSum).toBe(120);
 
     const again = game.openDay(profileId);
     expect(again).toMatchObject({ status: "opened", n: 1, allowanceCredited: false });
-    expect(game.getProfile(profileId).balance).toBe(110);
+    expect(game.getProfile(profileId).balance).toBe(120);
   });
 });
 
@@ -200,7 +200,7 @@ describe("plan validation", () => {
 
     const over = game.saveDraftPlan(profileId, dayId, { mandatory: 80, optional: 80, savings: 80 });
     expect(over).toBeUndefined();
-    expect(game.confirmPlan(profileId, dayId)).toEqual({ ok: false, remainder: -130 });
+    expect(game.confirmPlan(profileId, dayId)).toEqual({ ok: false, remainder: -120 });
 
     game.saveDraftPlan(profileId, dayId, { mandatory: 12, optional: 8, savings: 10 });
     expect(game.confirmPlan(profileId, dayId)).toEqual({ ok: true });
@@ -224,8 +224,8 @@ describe("debit", () => {
     if (opened.status !== "opened") throw new Error("expected opened");
 
     expect(game.purchase(profileId, opened.dayId, lunch)).toEqual({ status: "ok" });
-    expect(game.getProfile(profileId)).toMatchObject({ balance: 98, care: 60 });
-    expect(sums(sqlite, profileId)).toMatchObject({ balance: 98, txSum: 98 });
+    expect(game.getProfile(profileId)).toMatchObject({ balance: 108, care: 60 });
+    expect(sums(sqlite, profileId)).toMatchObject({ balance: 108, txSum: 108 });
 
     const purchase = sqlite
       .prepare("SELECT itemId, price FROM purchases WHERE profileId = ?")
@@ -238,8 +238,8 @@ describe("debit", () => {
     expect(event).toEqual({ meter: "care", delta: 10, source: "purchase:lunch" });
 
     const cheap: CatalogItem = { ...toy, price: 200 };
-    expect(game.purchase(profileId, opened.dayId, cheap)).toEqual({ status: "blocked", missing: 102 });
-    expect(game.getProfile(profileId).balance).toBe(98);
+    expect(game.purchase(profileId, opened.dayId, cheap)).toEqual({ status: "blocked", missing: 92 });
+    expect(game.getProfile(profileId).balance).toBe(108);
     expect(game.getProfile(profileId).balance).toBeGreaterThanOrEqual(0);
   });
 });
@@ -355,7 +355,7 @@ describe("task reward", () => {
     expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", false)).toBe(0);
     expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", true)).toBe(10);
     expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", true)).toBe(0);
-    expect(game.getProfile(profileId).balance).toBe(120);
+    expect(game.getProfile(profileId).balance).toBe(130);
     expect(sums(sqlite, profileId).balance).toBe(sums(sqlite, profileId).txSum);
   });
 
@@ -376,7 +376,7 @@ describe("task reward", () => {
       spawnTask: "budget_fix_backpack",
     });
 
-    expect(game.getProfile(profileId)).toMatchObject({ mood: 55, care: 35, balance: 112 });
+    expect(game.getProfile(profileId)).toMatchObject({ mood: 55, care: 35, balance: 122 });
     const spawned = sqlite
       .prepare("SELECT status FROM taskProgress WHERE taskKey = 'budget_fix_backpack'")
       .get() as { status: string };
@@ -493,7 +493,7 @@ describe("day and journal reads", () => {
       n: 1,
       open: true,
       plan: { status: "none", buckets: { mandatory: 0, optional: 0, savings: 0 } },
-      available: 110,
+      available: 120,
       actual: { mandatory: 0, optional: 0, savings: 0 },
     });
 
@@ -504,7 +504,7 @@ describe("day and journal reads", () => {
 
     expect(game.dayState(profileId)).toMatchObject({
       plan: { status: "confirmed", buckets: { mandatory: 12, optional: 5, savings: 10 } },
-      available: 83,
+      available: 93,
       actual: { mandatory: 12, optional: 0, savings: 15 },
     });
     expect(game.purchasedItemIds(profileId, opened.dayId)).toEqual(["lunch"]);
@@ -583,5 +583,60 @@ describe("day and journal reads", () => {
         { taskKey: "budget_first_plan", status: "completed", rewardPaid: true },
       ]),
     );
+  });
+});
+
+describe("Счета and a kept План", () => {
+  const medicine: CatalogItem = { id: "medicine", kind: "mandatory", price: 15, effect: { meter: "care", delta: 20 } };
+  const catalogWithMedicine: CatalogItem[] = [...tinyCatalog, medicine];
+  const bills = [{ items: ["lunch"] }, { items: ["lunch", "medicine"], note: "Питомец простыл" }];
+
+  it("counts only today's Счета as covered, so an unneeded mandatory item is not required", () => {
+    const { game, profileId } = seed();
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+    game.saveDraftPlan(profileId, opened.dayId, { mandatory: 12, optional: 0, savings: 0 });
+    game.confirmPlan(profileId, opened.dayId, 12);
+    game.purchase(profileId, opened.dayId, lunch);
+
+    const summary = game.closeDay(profileId, catalogWithMedicine, bills);
+    expect(summary.facts.mandatoryCovered).toBe(true);
+    expect(summary.meterDeltas.care).toBe(0);
+  });
+
+  it("requires the day's extra bill on its cycle day", () => {
+    const { game, profileId } = seed();
+    playScoredDay(game, profileId);
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+    game.saveDraftPlan(profileId, opened.dayId, { mandatory: 27, optional: 0, savings: 0 });
+    game.confirmPlan(profileId, opened.dayId, 27);
+    game.purchase(profileId, opened.dayId, lunch);
+
+    const summary = game.closeDay(profileId, catalogWithMedicine, bills);
+    expect(summary.facts.mandatoryCovered).toBe(false);
+  });
+
+  it("refuses a План whose Обязательные are below today's Счета", () => {
+    const { game, profileId } = seed();
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+    game.saveDraftPlan(profileId, opened.dayId, { mandatory: 5, optional: 0, savings: 0 });
+    expect(game.confirmPlan(profileId, opened.dayId, 12).ok).toBe(false);
+    game.saveDraftPlan(profileId, opened.dayId, { mandatory: 12, optional: 0, savings: 0 });
+    expect(game.confirmPlan(profileId, opened.dayId, 12).ok).toBe(true);
+  });
+
+  it("does not call a day «по плану» when the promised Копилка was not put in", () => {
+    const { game, profileId } = seed();
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+    game.saveDraftPlan(profileId, opened.dayId, { mandatory: 12, optional: 5, savings: 15 });
+    game.confirmPlan(profileId, opened.dayId, 12);
+    game.purchase(profileId, opened.dayId, lunch);
+    game.transferToSavings(profileId, opened.dayId, 5);
+
+    const summary = game.closeDay(profileId, tinyCatalog, [{ items: ["lunch"] }]);
+    expect(summary.facts.withinPlan).toBe(false);
   });
 });

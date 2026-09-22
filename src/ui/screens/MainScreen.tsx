@@ -217,7 +217,7 @@ export default function MainScreen({ navigation }: Props) {
             }
             const profileId = meta.get(META_KEYS.activeProfileId);
             if (!profileId) return;
-            game.closeDay(profileId, content.catalog);
+            game.closeDay(profileId, content.catalog, content.bills);
             navigation.navigate("DaySummary");
           }}
         />

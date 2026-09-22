@@ -18,10 +18,68 @@ export interface PlanValidation {
   remainder: number;
 }
 
-/** A plan is valid when its buckets never exceed the available amount (R5). */
-export function validatePlan(buckets: PlanBuckets, available: number): PlanValidation {
+/**
+ * A plan is valid when its buckets never exceed the available amount (R5) and
+ * the Обязательные bucket covers today's Счета (`minMandatory`, already clamped
+ * to what the child can afford — see `planMandatoryFloor`).
+ */
+export function validatePlan(
+  buckets: PlanBuckets,
+  available: number,
+  minMandatory = 0,
+): PlanValidation {
   const total = planTotal(buckets);
-  return { ok: total <= available, total, remainder: available - total };
+  return {
+    ok: total <= available && buckets.mandatory >= minMandatory,
+    total,
+    remainder: available - total,
+  };
+}
+
+/** One entry of the Счета cycle: mandatory item ids due that Игровой день. */
+export interface DayBills {
+  items: readonly string[];
+  /** Optional kid-facing reason, e.g. «Питомец простыл — нужно лекарство». */
+  note?: string;
+}
+
+/** Счета for Игровой день `n` (1-based): the content cycle repeats. */
+export function billsForDay(n: number, cycle: readonly DayBills[]): DayBills {
+  if (cycle.length === 0) return { items: [] };
+  const index = (((n - 1) % cycle.length) + cycle.length) % cycle.length;
+  return cycle[index];
+}
+
+/** Sum of today's Счета prices. Unknown ids cost 0 (content validation rejects them). */
+export function billsTotal(bills: DayBills, catalog: readonly Pick<CatalogItem, "id" | "price">[]): number {
+  return bills.items.reduce((sum, id) => sum + (catalog.find((item) => item.id === id)?.price ?? 0), 0);
+}
+
+/**
+ * Least the Обязательные bucket may hold: today's Счета, but never more than
+ * the child has — otherwise a short Баланс would make every План invalid.
+ */
+export function planMandatoryFloor(billsSum: number, available: number): number {
+  return Math.max(0, Math.min(billsSum, available));
+}
+
+export interface PlanKeptInput {
+  plan: PlanBuckets | null;
+  actual: PlanBuckets;
+}
+
+/**
+ * «Обещание сдержано» — checked per bucket, so a plan cannot be gamed by
+ * parking everything in Желаемые: Желаемые spend ≤ plan, Копилка deposits ≥
+ * plan, and total purchases ≤ Обязательные + Желаемые.
+ */
+export function planKept({ plan, actual }: PlanKeptInput): boolean {
+  if (plan === null) return false;
+  return (
+    actual.optional <= plan.optional &&
+    actual.savings >= plan.savings &&
+    actual.mandatory + actual.optional <= plan.mandatory + plan.optional
+  );
 }
 
 export type PurchaseCheck =

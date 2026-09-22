@@ -26,9 +26,11 @@ describe("Итоги дня", () => {
       expect(screen.getByText("Итоги дня")).toBeOnTheScreen();
       expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Настройки" })).toBeOnTheScreen();
-      expect(screen.getAllByText("план 1 · потрачено 0")).toHaveLength(3);
+      expect(screen.getByText("план 21 · потрачено 0")).toBeOnTheScreen();
+      expect(screen.getAllByText("план 1 · потрачено 0")).toHaveLength(2);
       expect(screen.getByText("Обязательные +0")).toBeOnTheScreen();
-      expect(screen.getByText("По плану +1")).toBeOnTheScreen();
+      // The План promised 1 to Копилка and nothing was put in: not «по плану».
+      expect(screen.getByText("По плану +0")).toBeOnTheScreen();
       expect(screen.getByText("Копилка +0")).toBeOnTheScreen();
       expect(screen.getByText("Забота -15: пропущены обязательные расходы")).toBeOnTheScreen();
       expect(screen.getByText("Настроение без изменений")).toBeOnTheScreen();
@@ -104,7 +106,7 @@ describe("Итоги дня", () => {
     expect(screen.queryByRole("button", { name: "Ждём завтра!" })).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Следующий день" }));
 
-    expect(screen.getByText("Пособие +10 монет")).toBeOnTheScreen();
+    expect(screen.getByText("Пособие +20 монет")).toBeOnTheScreen();
     expect(screen.queryByText("Новый день откроется завтра")).not.toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Закончить день" })).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "План" })).toBeEnabled();

@@ -65,5 +65,15 @@
       "effect": { "meter": "mood", "delta": 10 },
       "description": "Большая игрушка — стоит дорого"
     }
+  ],
+  "bills": [
+    { "items": ["lunch", "transport"] },
+    { "items": ["lunch", "transport", "school"] },
+    {
+      "items": ["lunch", "transport", "medicine"],
+      "note": "Питомец простыл — сегодня нужно лекарство."
+    },
+    { "items": ["lunch", "transport", "school"] },
+    { "items": ["lunch", "transport"] }
   ]
 }

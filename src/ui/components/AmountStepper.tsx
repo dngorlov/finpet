@@ -20,6 +20,8 @@ type AmountStepperProps = {
   value: number;
   onChange: (next: number) => void;
   disabled?: boolean;
+  /** Floor for −, hold-repeat, and the track (default 0). */
+  min?: number;
 } & ({ showTrack?: false; max?: number } | { showTrack: true; max: number });
 
 export function AmountStepper({
@@ -30,9 +32,10 @@ export function AmountStepper({
   disabled,
   max,
   showTrack,
+  min = 0,
 }: AmountStepperProps) {
   const plusDisabled = Boolean(disabled) || (max != null && value >= max);
-  const minusDisabled = Boolean(disabled) || value <= 0;
+  const minusDisabled = Boolean(disabled) || value <= min;
   const trackOn = showTrack === true;
   const fillWidth =
     `${Math.max(0, Math.min(100, trackOn && max > 0 ? (value / max) * 100 : 0))}%` as const;
@@ -43,6 +46,8 @@ export function AmountStepper({
   onChangeRef.current = onChange;
   const maxRef = useRef(max);
   maxRef.current = max;
+  const minRef = useRef(min);
+  minRef.current = min;
   const disabledRef = useRef(disabled);
   disabledRef.current = disabled;
 
@@ -69,7 +74,7 @@ export function AmountStepper({
     }
     const next = valueRef.current + delta;
     const cap = maxRef.current;
-    if (next < 0 || (cap != null && next > cap)) {
+    if (next < minRef.current || (cap != null && next > cap)) {
       return false;
     }
     onChangeRef.current(next);
@@ -115,8 +120,8 @@ export function AmountStepper({
       return;
     }
     const x = Math.max(0, Math.min(width, pageX - trackPageXRef.current));
-    const next = cap === 0 ? 0 : Math.round((x / width) * cap);
-    onChangeRef.current(next);
+    const raw = cap === 0 ? 0 : Math.round((x / width) * cap);
+    onChangeRef.current(Math.max(minRef.current, raw));
   }, []);
 
   const panResponder = useMemo(
