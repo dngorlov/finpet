@@ -41,7 +41,6 @@ export default function SavingsScreen(_props: Props) {
   const [savings, setSavings] = useState<SavingsView | null>(null);
   const [day, setDay] = useState<DayState | null>(null);
   const [balance, setBalance] = useState(0);
-  const [ownedOnceIds, setOwnedOnceIds] = useState<Set<string>>(new Set());
   const [phase, setPhase] = useState<Phase>({ name: "home" });
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -53,13 +52,6 @@ export default function SavingsScreen(_props: Props) {
     setSavings(game.savingsState(profileId));
     setDay(game.dayState(profileId));
     setBalance(game.getProfile(profileId).balance);
-    const owned = new Set(
-      game
-        .listJournal(profileId)
-        .filter((row) => row.kind === "purchase" && row.itemId)
-        .map((row) => row.itemId as string),
-    );
-    setOwnedOnceIds(owned);
   }, [game, meta]);
 
   useFocusEffect(
@@ -95,9 +87,6 @@ export default function SavingsScreen(_props: Props) {
   const activeName = activeItem?.name ?? null;
   const accumulated = savings.activeGoal ? savings.activeGoal.cost - savings.activeGoal.remaining : 0;
   const funded = Boolean(savings.activeGoal?.achieved);
-  const pickerItems = content.catalog.filter(
-    (item) => item.kind === "optional" && !(item.once && ownedOnceIds.has(item.id)),
-  );
   const savingsLeftover = confirmedLeftover(day, "savings");
   const leftoverAfterDeposit =
     phase.name === "deposit" ? leftoverAfterTap(savingsLeftover, phase.amount) : null;
@@ -175,15 +164,6 @@ export default function SavingsScreen(_props: Props) {
   const openPicker = () => {
     if (tour.active) return;
     setPickerOpen(true);
-  };
-
-  const chooseGoal = (item: CatalogItemContent) => {
-    const profileId = meta.get(META_KEYS.activeProfileId);
-    if (!profileId) return;
-    game.setActiveGoal(profileId, engineItem(item));
-    load();
-    setPickerOpen(false);
-    setOfferPickGoal(false);
   };
 
   const dropGoal = () => {
@@ -363,16 +343,14 @@ export default function SavingsScreen(_props: Props) {
         </Card>
       ) : null}
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}
-      {pickerOpen ? (
-        <GoalPicker
-          items={pickerItems}
-          activeGoalId={savings.activeGoal?.key ?? null}
-          pot={savings.pot}
-          onChoose={chooseGoal}
-          onDrop={savings.activeGoal ? dropGoal : undefined}
-          onClose={() => setPickerOpen(false)}
-        />
-      ) : null}
+      <GoalPicker
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onChanged={() => {
+          load();
+          setOfferPickGoal(false);
+        }}
+      />
     </Screen>
   );
 }

@@ -6,8 +6,8 @@
 
 **Type:** task
 
-**Status:** ready-for-agent
-
+**Status:** resolved
+    10|
 ## Pointers
 
 - Spec: `.scratch/shop-goals/spec.md` (stories 4–9, 11–16, 24–25, 33–43, 54; picker / sheet / BlockedSheet decisions)
@@ -26,3 +26,11 @@
 ## Done when
 
 `npm test -- src/ui/__tests__/shopFlow.test.tsx` and `npm run typecheck` pass.
+
+## Answer
+
+Shared `GoalPicker` (`src/ui/components/GoalPicker.tsx`) lists settable optional catalog rows, marks the current Цель, supports drop (`clearActiveGoal`), and confirm-replace copy. Lifetime `once` ownership is derived from `listJournal` itemIds (plus today’s `purchasedItemIds`); owned once rows are omitted from Желаемое and the picker.
+
+Магазин: «Сделать целью» + confirm-switch; «Купить из копилки» when funded active Цель; Баланс buy warns and clears Цель; BlockedSheet optional uses «Сделать целью» (already-Цель points at Копилка); one-shot label on shelf. Main Цель card reads catalog optional name / empty pick prompt.
+
+`shopFlow.test.tsx` and `npm run typecheck` pass. SavingsScreen chips left for ticket 04/06.

@@ -114,11 +114,24 @@ export const strings = {
   shopBought: "Куплено",
   shopBuy: "Купить",
   shopPostpone: "Отложить",
+  shopMakeGoal: "Сделать целью",
+  shopBuyFromSavings: "Купить из копилки",
+  shopOnceLabel: "Можно купить один раз",
   shopConfirmBuy: (name: string, price: number) => `Купить ${name} за ${price}?`,
+  shopConfirmReplaceGoal: (name: string, pot: number) =>
+    `Цель станет ${name}. В копилке останется ${pot}.`,
+  shopBuyActiveGoalWarn: (pot: number) =>
+    `Это твоя Цель. После покупки Цель снимется, в копилке останется ${pot}.`,
   shopBlocked: (n: number) => `Не хватает ${n} монет`,
+  shopBlockedAlreadyGoal: "Это уже твоя Цель. Копи дальше в Копилке.",
   shopWaitAllowance: "Дождаться пособия",
   shopDoTask: "Выполнить задание",
   shopWaitExplain: "Пособие придёт в следующий игровой день. Можно сделать задание или отложить покупку.",
+
+  goalPickerTitle: "Выбери цель",
+  goalDrop: "Без цели",
+  goalEmptyPrompt: "Выбери цель",
+  pickNewGoal: "Выбрать новую цель",
 
   savingsPot: (n: number) => `В копилке ${n}`,
   savingsEstimateNone: "—",
