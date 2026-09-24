@@ -5,8 +5,12 @@
 export const ECONOMY = {
   /** Стартовый бюджет: granted once at profile creation (§2.1). */
   startingBudget: 100,
-  /** Пособие: +10 on first open of each new Игровой день (§2.1). */
-  allowance: 10,
+  /**
+   * Пособие: credited on first open of each new Игровой день (§2.1).
+   * 20 so that Счета (~27/day on average, see catalog.json `bills`) plus a
+   * Цель are reachable over the 5-day demo only with a kept План and Задания.
+   */
+  allowance: 20,
   /** Задание reward: first correct completion only (§2.1). */
   taskReward: 10,
 } as const;

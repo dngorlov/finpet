@@ -77,6 +77,7 @@ describe("Задания combined loop", () => {
       ports.game.purchase(profileId, day.dayId, cinema);
       ports.game.purchase(profileId, day.dayId, cinema);
       ports.game.purchase(profileId, day.dayId, cinema);
+      ports.game.purchase(profileId, day.dayId, cinema);
 
       await user.press(screen.getByRole("button", { name: "Магазин" }));
       await user.press(screen.getByRole("button", { name: "Желаемое" }));

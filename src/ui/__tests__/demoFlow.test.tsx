@@ -52,7 +52,7 @@ describe("Демо-режим panel", () => {
       const childTasksBefore = ports.game.listTaskProgress(childId);
 
       const { user } = await renderApp(ports);
-      expect(screen.getByLabelText("Баланс 108")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Баланс 118")).toBeOnTheScreen();
       expect(screen.getByText("Первый план")).toBeOnTheScreen();
       expect(screen.queryByText("Демо: дни идут подряд")).not.toBeOnTheScreen();
       expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
@@ -61,7 +61,7 @@ describe("Демо-режим panel", () => {
 
       expect(screen.getByText("Демо: дни идут подряд")).toBeOnTheScreen();
       expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
-      expect(screen.getByLabelText("Баланс 110")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
       expect(screen.getByLabelText(/Питомец Демо/)).toBeOnTheScreen();
       expect(screen.getByText("Первый план")).toBeOnTheScreen();
       expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
@@ -89,7 +89,7 @@ describe("Демо-режим panel", () => {
 
       expect(screen.getByText("Демо: дни идут подряд")).toBeOnTheScreen();
       expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
-      expect(screen.getByLabelText("Баланс 110")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
       expect(screen.getByText("Первый план")).toBeOnTheScreen();
       expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Задания" }));
@@ -98,7 +98,7 @@ describe("Демо-режим panel", () => {
 
       await user.press(screen.getByRole("button", { name: "Прогресс" }));
       expect(screen.getByText("Стартовый бюджет +100")).toBeOnTheScreen();
-      expect(screen.getByText("Пособие +10")).toBeOnTheScreen();
+      expect(screen.getByText("Пособие +20")).toBeOnTheScreen();
       expect(screen.getByText("День 1")).toBeOnTheScreen();
       expect(screen.queryByText("Покупка: Обед -12")).not.toBeOnTheScreen();
       expect(screen.queryByText("День 2")).not.toBeOnTheScreen();
@@ -107,7 +107,7 @@ describe("Демо-режим panel", () => {
       await passAdultGate(user);
       await user.press(screen.getByRole("button", { name: "Демо-режим" }));
 
-      expect(screen.getByLabelText("Баланс 108")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Баланс 118")).toBeOnTheScreen();
       expect(screen.queryByText("Демо: дни идут подряд")).not.toBeOnTheScreen();
       expect(screen.getByLabelText(/Питомец Пух/)).toBeOnTheScreen();
       expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();

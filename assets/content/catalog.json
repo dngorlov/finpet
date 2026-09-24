@@ -92,5 +92,15 @@
       "description": "Длинные поездки в парк",
       "once": true
     }
+  ],
+  "bills": [
+    { "items": ["lunch", "transport"] },
+    { "items": ["lunch", "transport", "school"] },
+    {
+      "items": ["lunch", "transport", "medicine"],
+      "note": "Питомец простыл — сегодня нужно лекарство."
+    },
+    { "items": ["lunch", "transport", "school"] },
+    { "items": ["lunch", "transport"] }
   ]
 }

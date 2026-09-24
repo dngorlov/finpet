@@ -28,7 +28,7 @@
 - Income from completing tasks and/or a clear recurring income (doc's example: daily login)
 - Every accrual shows source + amount; balance never changes without an explanation to the user
 - Starting budget granted at profile setup (game loop step 4)
-- **Resolved:** currency = монеты. Стартовый бюджет **100** granted at profile creation with an explanation screen. Пособие **+10** per Игровой день (recurring income). Task reward **+10**, first correct completion of each Задание only. Every movement goes through a feedback card (source + amount). (ROADMAP §2.1, §4.2)
+- **Resolved:** currency = монеты. Стартовый бюджет **100** granted at profile creation with an explanation screen. Пособие **+20** per Игровой день (recurring income; raised from 10 on 2026-09-22 so Счета and a Цель both fit the 5-day demo). Task reward **+10**, first correct completion of each Задание only. Every movement goes through a feedback card (source + amount). (ROADMAP §2.1, §4.2)
 
 ## 5. Budget Planning
 - Before each game period: distribute available amount across **≥3 areas** — mandatory expenses, optional expenses, savings
@@ -41,7 +41,7 @@
 - Pre-purchase display: price, category, estimated impact on the pet
 - Purchase requires confirmation → deducts balance → recorded in current-period history
 - Block negative balance & insufficient-funds purchases; instead explain what's missing and what options exist
-- **Resolved:** 11 items — mandatory: Обед 12 (Забота +10), Школьные принадлежности 10 (Забота +5), Проезд 8 (Забота +5), Лекарство 15 (Забота +20); optional (rebuyable): Конфета 5 (Настроение +5), Стикеры 7 (Настроение +6), Кино 20 (Настроение +12), Игрушка 25 (Настроение +10); optional (`once`): Скейтборд 90 (Настроение +12), Телескоп 160 (Настроение +15), Велосипед 240 (Настроение +18). Blocked purchase shows a sheet: how much is missing + options (wait for Пособие / do a Задание / «Сделать целью» for a Желаемое, «Отложить» for an Обязательное). (ROADMAP §2.1, §4.2)
+- **Resolved:** 11 items — mandatory: Обед 12 (Забота +10), Школьные принадлежности 10 (Забота +5), Проезд 8 (Забота +5), Лекарство 15 (Забота +20); optional (rebuyable): Конфета 5 (Настроение +5), Стикеры 7 (Настроение +6), Кино 20 (Настроение +12), Игрушка 25 (Настроение +10); optional (`once`): Скейтборд 90 (Настроение +12), Телескоп 160 (Настроение +15), Велосипед 240 (Настроение +18). Mandatory items are not all due every day: each Игровой день has **Счета** — the mandatory items due that day, from the `bills` cycle in `catalog.json` (Обед + Проезд daily, Школьные every other day, Лекарство only on the «простыл» day). Blocked purchase shows a sheet: how much is missing + options (wait for Пособие / do a Задание / «Сделать целью» for a Желаемое, «Отложить» for an Обязательное). (ROADMAP §2.1, §4.2)
 
 ## 7. Savings & Goals
 - Goals with a clear cost, or goal creation from preset parameters — minimum **3 goals**
@@ -71,7 +71,7 @@
 - Minimum **3 development stages/states**
 - Stage changes depend on decisions combined over several game periods: mandatory expenses covered, actual spending vs. plan, savings regularity
 - Show a brief explanation for every change in the pet's emotional state
-- **Resolved:** stages **Новичок → Друг → Мастер**. Day score: +2 all mandatory purchases made · +1 actual spend ≤ plan · +1 savings deposit made; stage = rolling sum over the last 3 closed days (<3 / 3–8 / ≥9), recomputed at every day close. Visuals faked programmatically (scale/glow) over the designer's poses; every change (meters or stage) shows a kid-worded explanation. (ROADMAP §2.2)
+- **Resolved:** stages **Новичок → Друг → Мастер**. Day score: +2 all of today's Счета bought · +1 «по плану» (per bucket: Желаемые spend ≤ plan, Копилка deposits ≥ plan, purchases ≤ Обязательные + Желаемые) · +1 savings deposit made; stage = rolling sum over the last 3 closed days (<3 / 3–8 / ≥9), recomputed at every day close. Visuals faked programmatically (scale/glow) over the designer's poses; every change (meters or stage) shows a kid-worded explanation. (ROADMAP §2.2)
 
 ## 11. History & Learning Progress
 - Visible: completed tasks, progress toward current goal, results of the last game period

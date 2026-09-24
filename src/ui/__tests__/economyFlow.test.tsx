@@ -78,7 +78,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     expect(screen.getByText("Покупка: Обед -12")).toBeOnTheScreen();
     expect(screen.getByText("Покупка: Конфета -5")).toBeOnTheScreen();
     expect(screen.getByText("Перевод в копилку -1")).toBeOnTheScreen();
-    expect(screen.getByText("Пособие +10")).toBeOnTheScreen();
+    expect(screen.getByText("Пособие +20")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
     expect(screen.getByText("План готов")).toBeOnTheScreen();
@@ -88,7 +88,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
 );
 
   it(
-    "shows leftover on Магазин and Копилка after confirm, and still buys Обед past the bucket",
+    "shows leftover on Магазин and Копилка after confirm, and still buys a Желаемое past the bucket",
     async () => {
       const ports = createFakePorts();
       seedReturningChild(ports);
@@ -99,28 +99,36 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
       await confirmTinyPlan(user);
-      expect(screen.getByLabelText("Баланс 110")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
 
       await user.press(screen.getByRole("button", { name: "Магазин" }));
-      expect(screen.getByText("Осталось 1")).toBeOnTheScreen();
-      expect(screen.getByLabelText("Обязательные: осталось 1")).toBeOnTheScreen();
-      expect(screen.getAllByText("Осталось 1")).toHaveLength(1);
+      // Обязательные start at today's Счета (Обед 12 + Проезд 8) + 1 from confirmTinyPlan.
+      expect(screen.getByText("Осталось 21")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Обязательные: осталось 21")).toBeOnTheScreen();
+      expect(screen.getAllByText(/^Осталось \d+$/)).toHaveLength(1);
+
+      await user.press(screen.getByRole("button", { name: "Обед" }));
+      await user.press(screen.getByRole("button", { name: "Купить" }));
+      expect(screen.getByText("в плане останется 9")).toBeOnTheScreen();
+      expect(screen.queryByText("Это сверх плана.")).not.toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Купить" }));
+      await user.press(screen.getByRole("button", { name: "Понятно" }));
+      expect(screen.getByLabelText("Обязательные: осталось 9")).toBeOnTheScreen();
 
       await user.press(screen.getByRole("button", { name: "Желаемое" }));
       expect(screen.getByLabelText("Желаемые: осталось 1")).toBeOnTheScreen();
-      expect(screen.queryByLabelText("Обязательные: осталось 1")).not.toBeOnTheScreen();
+      expect(screen.queryByLabelText("Обязательные: осталось 9")).not.toBeOnTheScreen();
 
-      await user.press(screen.getByRole("button", { name: "Обязательное" }));
-      await user.press(screen.getByRole("button", { name: "Обед" }));
+      await user.press(screen.getByRole("button", { name: "Конфета" }));
       await user.press(screen.getByRole("button", { name: "Купить" }));
-      expect(screen.getByText("в плане останется -11")).toBeOnTheScreen();
+      expect(screen.getByText("в плане останется -4")).toBeOnTheScreen();
       expect(screen.getByText("Это сверх плана.")).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Купить" })).toBeEnabled();
       await user.press(screen.getByRole("button", { name: "Купить" }));
-      expect(screen.getByText("Баланс -12")).toBeOnTheScreen();
+      expect(screen.getByText("Баланс -5")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Понятно" }));
-      expect(screen.getByText("сверх плана 11")).toBeOnTheScreen();
-      expect(screen.getByLabelText("Обязательные: сверх плана 11")).toBeOnTheScreen();
+      expect(screen.getByText("сверх плана 4")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Желаемые: сверх плана 4")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
       await user.press(screen.getByRole("button", { name: "Копилка" }));

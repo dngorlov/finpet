@@ -1,4 +1,4 @@
-import type { CatalogItem, PlanBuckets } from "../../core/economy";
+import type { CatalogItem, DayBills, PlanBuckets } from "../../core/economy";
 import type { TaskStepResult } from "../../core/tasks";
 import type { GameContent } from "../../data/content";
 import type {
@@ -30,7 +30,7 @@ export type SessionGame = {
   lastClosedDay(profileId: string): DaySummaryView | null;
   listTaskProgress(profileId: string): TaskProgressView[];
   saveDraftPlan(profileId: string, dayId: string, buckets: PlanBuckets): void;
-  confirmPlan(profileId: string, dayId: string): ConfirmPlanResult;
+  confirmPlan(profileId: string, dayId: string, minMandatory?: number): ConfirmPlanResult;
   purchase(profileId: string, dayId: string, item: CatalogItem): PurchaseResult;
   purchaseFromSavings(profileId: string, dayId: string, item: CatalogItem): PurchaseResult;
   transferToSavings(profileId: string, dayId: string, amount: number): TransferResult;
@@ -43,7 +43,7 @@ export type SessionGame = {
   boughtAsActiveGoalCount(profileId: string): number;
   applyTaskStep(profileId: string, dayId: string, result: TaskStepResult): void;
   claimTaskReward(profileId: string, dayId: string, taskId: string, correct: boolean): number;
-  closeDay(profileId: string, catalog: readonly CatalogItem[]): DaySummaryView;
+  closeDay(profileId: string, catalog: readonly CatalogItem[], bills?: readonly DayBills[]): DaySummaryView;
 };
 
 export type SessionMeta = {

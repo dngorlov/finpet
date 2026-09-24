@@ -57,7 +57,11 @@ The end-of-day screen: plan vs. actual, the day's score, and meter/Этап chan
 _Avoid_: отчёт, дневник
 
 **Обязательные расходы (Mandatory expenses)**:
-Purchases the pet needs every Game Day (food, school supplies, transport); skipping them hurts Забота.
+Purchases the pet needs (food, school supplies, transport, medicine); skipping today's Счета hurts Забота.
+
+**Счета (Day bills)**:
+The mandatory items due on a given Game Day, from a fixed content cycle; the План's Обязательные cannot be set below them.
+_Avoid_: список обязательных, долги
 _Avoid_: нужное, необходимое
 
 **Желаемые расходы (Optional expenses)**:

@@ -64,7 +64,7 @@ export const strings = {
   meterReasonMoodOverspend: "Настроение -5: желаемое сверх плана.",
   meterReasonUnchanged: (label: string) => `${label} без изменений`,
   nextDayPlanNeeds: "Завтра сначала запланируй обязательное.",
-  allowanceRibbon: "Пособие +10 монет",
+  allowanceRibbon: "Пособие +20 монет",
   allowanceDayChip: "Начало игрового дня",
 
   feedbackBalance: (n: number) => `Баланс ${n > 0 ? "+" : ""}${n}`,
@@ -185,6 +185,18 @@ export const strings = {
   journalAmount: (n: number) => `${n > 0 ? "+" : ""}${n}`,
 
   planAvailable: (n: number) => `Можно распределить: ${n}`,
+  planIncomeToday: (n: number) => `Сегодня пришло: +${n}`,
+  planBillsTitle: "Счета на сегодня",
+  planBillsLine: (parts: readonly { name: string; price: number }[], total: number) =>
+    `${parts.map((part) => `${part.name} ${part.price}`).join(" · ")} = ${total}`,
+  planBillsFloor: (n: number) => `Обязательных не меньше ${n} — это счета.`,
+  planBillsShort: (missing: number) =>
+    `На все счета не хватает ${missing}. Сделай Задание — за него дают монеты.`,
+  planGoalForecast: (goal: string, days: number) =>
+    `${goal}: накопишь через ${days} ${daysWord(days)}, если откладывать столько каждый день.`,
+  planGoalNoSavings: (goal: string) => `Если ничего не отложить, ${goal} не станет ближе.`,
+  planWantsHint: (names: readonly string[]) =>
+    names.length > 0 ? `Хватит на: ${names.join(", ")}` : "Пока ни на что из желаемого не хватит.",
   planRemainder: (n: number) => `Останется свободных: ${n}`,
   planOverBudget: "В плане больше монет, чем есть. Убавь суммы.",
   planPromise: "Это обещание на сегодня. Монеты пока в Балансе.",
@@ -305,3 +317,13 @@ export const strings = {
   stubTasks: "Скоро: задания. Пока вернись на главный экран.",
   stubAdult: "Скоро: взрослый раздел. Пока вернись на главный экран.",
 } as const;
+
+/** «1 день / 3 дня / 5 дней». */
+function daysWord(n: number): string {
+  const mod100 = n % 100;
+  const mod10 = n % 10;
+  if (mod100 >= 11 && mod100 <= 14) return "дней";
+  if (mod10 === 1) return "день";
+  if (mod10 >= 2 && mod10 <= 4) return "дня";
+  return "дней";
+}

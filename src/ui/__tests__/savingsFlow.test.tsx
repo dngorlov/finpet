@@ -31,13 +31,13 @@ describe("Копилка", () => {
     expect(screen.queryByText(stringsDash())).not.toBeOnTheScreen();
     expect(screen.getByText(/примерно 89/)).toBeOnTheScreen();
     expect(screen.getByText("В копилке 1")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Баланс 109")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 119")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
     expect(screen.getByRole("button", { name: "Копилка" })).toBeOnTheScreen();
     expect(screen.getByText("1")).toBeOnTheScreen();
     expect(screen.getByText("1 / 90")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Баланс 109")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 119")).toBeOnTheScreen();
     expect(screen.queryByLabelText("Баланс 1")).not.toBeOnTheScreen();
   });
 

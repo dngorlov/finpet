@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { validatePlan, type PlanBuckets } from "../../core/economy";
+import { planMandatoryFloor, validatePlan, type PlanBuckets } from "../../core/economy";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, DaySummaryView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
@@ -18,28 +18,38 @@ import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, type } from "../theme";
+import { daysToGoalAt, incomeToday, todayBills, wantsThatFit } from "./planDraft";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Plan">;
 
 const EMPTY: PlanBuckets = { mandatory: 0, optional: 0, savings: 0 };
 
 export default function PlanScreen(_props: Props) {
-  const { game, meta } = useSession();
+  const { game, meta, content } = useSession();
   const tour = useHowToPlayTour();
   const [day, setDay] = useState<DayState | null>(null);
   const [buckets, setBuckets] = useState<PlanBuckets>(EMPTY);
   const [lastClosed, setLastClosed] = useState<DaySummaryView | null>(null);
   const [askingConfirm, setAskingConfirm] = useState(false);
+  const [income, setIncome] = useState(0);
+  const [goal, setGoal] = useState<{ name: string; remaining: number } | null>(null);
 
   const load = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
     const next = game.dayState(profileId);
     setDay(next);
-    setBuckets(next.plan.buckets);
+    const floor = planMandatoryFloor(todayBills(next.n, content.bills, content.catalog).total, next.available);
+    // A fresh draft starts with today's Счета already in Обязательные.
+    setBuckets(next.plan.status === "none" ? { ...EMPTY, mandatory: floor } : next.plan.buckets);
     setLastClosed(game.lastClosedDay(profileId));
+    setIncome(incomeToday(game.listJournal(profileId), next.n));
+    const savings = game.savingsState(profileId);
+    const active = savings.activeGoal;
+    const name = active ? content.goals.find((entry) => entry.id === active.key)?.name : undefined;
+    setGoal(active && name && !active.achieved ? { name, remaining: active.remaining } : null);
     setAskingConfirm(false);
-  }, [game, meta]);
+  }, [game, meta, content]);
 
   useFocusEffect(
     useCallback(() => {
@@ -57,7 +67,11 @@ export default function PlanScreen(_props: Props) {
   }
 
   const confirmed = day.plan.status === "confirmed";
-  const check = validatePlan(buckets, day.available);
+  const bills = todayBills(day.n, content.bills, content.catalog);
+  const floor = planMandatoryFloor(bills.total, day.available);
+  const billsShort = bills.total - floor;
+  const check = validatePlan(buckets, day.available, floor);
+  const goalDays = goal ? daysToGoalAt(goal.remaining, buckets.savings) : null;
   const persist = (next: PlanBuckets) => {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId || confirmed || tour.active) return;
@@ -80,7 +94,7 @@ export default function PlanScreen(_props: Props) {
     if (tour.active) return;
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
-    const result = game.confirmPlan(profileId, day.dayId);
+    const result = game.confirmPlan(profileId, day.dayId, floor);
     if (!result.ok) {
       setAskingConfirm(false);
       load();
@@ -105,8 +119,17 @@ export default function PlanScreen(_props: Props) {
     >
       {tour.active ? null : <BackButton />}
       <Text style={styles.title}>{strings.navPlan}</Text>
+      {confirmed || income <= 0 ? null : <Text style={styles.body}>{strings.planIncomeToday(income)}</Text>}
       <Text style={styles.body}>{strings.planAvailable(day.available)}</Text>
       {confirmed ? null : <Text style={styles.body}>{strings.planPromise}</Text>}
+      {confirmed || bills.parts.length === 0 ? null : (
+        <Card>
+          <Text style={styles.section}>{strings.planBillsTitle}</Text>
+          {bills.note ? <Text style={styles.body}>{bills.note}</Text> : null}
+          <Text style={styles.body}>{strings.planBillsLine(bills.parts, bills.total)}</Text>
+          {billsShort > 0 ? <Text style={styles.body}>{strings.planBillsShort(billsShort)}</Text> : null}
+        </Card>
+      )}
       {confirmed ? (
         <TourAnchor id="plan-buckets">
           <Card>
@@ -118,21 +141,16 @@ export default function PlanScreen(_props: Props) {
       ) : (
         <TourAnchor id="plan-buckets">
           <Card>
+            {/* Order = order of decisions: Счета → себе на Цель → желаемое на остаток. */}
             <DraftBucket
               label={strings.bucketMandatory}
               pictogram={strings.navPlanPictogram}
               value={buckets.mandatory}
+              min={floor}
               max={day.available}
               yesterday={lastClosed?.actual.mandatory}
-              onChange={(mandatory) => persist({ ...buckets, mandatory })}
-            />
-            <DraftBucket
-              label={strings.bucketOptional}
-              pictogram={strings.navShopPictogram}
-              value={buckets.optional}
-              max={day.available}
-              yesterday={lastClosed?.actual.optional}
-              onChange={(optional) => persist({ ...buckets, optional })}
+              extra={floor > 0 ? strings.planBillsFloor(floor) : undefined}
+              onChange={(mandatory) => persist({ ...buckets, mandatory: Math.max(floor, mandatory) })}
             />
             <DraftBucket
               label={strings.bucketSavings}
@@ -141,7 +159,23 @@ export default function PlanScreen(_props: Props) {
               max={day.available}
               yesterday={lastClosed?.actual.savings}
               extra={strings.planSavingsExtra}
+              hint={
+                goal
+                  ? goalDays == null
+                    ? strings.planGoalNoSavings(goal.name)
+                    : strings.planGoalForecast(goal.name, goalDays)
+                  : undefined
+              }
               onChange={(savings) => persist({ ...buckets, savings })}
+            />
+            <DraftBucket
+              label={strings.bucketOptional}
+              pictogram={strings.navShopPictogram}
+              value={buckets.optional}
+              max={day.available}
+              yesterday={lastClosed?.actual.optional}
+              hint={strings.planWantsHint(wantsThatFit(content.catalog, buckets.optional))}
+              onChange={(optional) => persist({ ...buckets, optional })}
             />
           </Card>
         </TourAnchor>
@@ -165,6 +199,8 @@ function DraftBucket({
   max,
   yesterday,
   extra,
+  hint,
+  min,
   onChange,
 }: {
   label: string;
@@ -173,6 +209,8 @@ function DraftBucket({
   max: number;
   yesterday?: number;
   extra?: string;
+  hint?: string;
+  min?: number;
   onChange: (next: number) => void;
 }) {
   return (
@@ -181,12 +219,14 @@ function DraftBucket({
         label={label}
         pictogram={pictogram}
         value={value}
+        min={min}
         max={max}
         showTrack
         onChange={onChange}
       />
       {yesterday == null ? null : <Text style={styles.body}>{strings.planYesterday(yesterday)}</Text>}
       {extra ? <Text style={styles.body}>{extra}</Text> : null}
+      {hint ? <Text style={styles.body}>{hint}</Text> : null}
     </View>
   );
 }

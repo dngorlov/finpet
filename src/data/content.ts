@@ -21,10 +21,32 @@ const catalogItemSchema = z.object({
   once: z.boolean().optional().default(false),
 });
 
-const catalogFileSchema = z.object({
-  contentVersion: z.literal(CONTENT_VERSION),
-  items: z.array(catalogItemSchema).length(11),
+const dayBillsSchema = z.object({
+  items: z.array(z.string().min(1)).min(1),
+  note: z.string().min(1).optional(),
 });
+
+const catalogFileSchema = z
+  .object({
+    contentVersion: z.literal(CONTENT_VERSION),
+    items: z.array(catalogItemSchema).length(11),
+    /** Счета cycle: day n uses bills[(n - 1) % length]. */
+    bills: z.array(dayBillsSchema).min(1),
+  })
+  .superRefine((file, ctx) => {
+    const mandatory = new Set(file.items.filter((item) => item.kind === "mandatory").map((item) => item.id));
+    file.bills.forEach((day, dayIndex) => {
+      day.items.forEach((id, itemIndex) => {
+        if (!mandatory.has(id)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["bills", dayIndex, "items", itemIndex],
+            message: `Счёт «${id}» должен быть обязательным товаром каталога`,
+          });
+        }
+      });
+    });
+  });
 
 const goalSchema = z.object({
   id: z.string().min(1),
@@ -93,6 +115,7 @@ const tasksFileSchema = z.object({
 });
 
 export type CatalogItemContent = z.infer<typeof catalogItemSchema>;
+export type DayBillsContent = z.infer<typeof dayBillsSchema>;
 export type GoalContent = z.infer<typeof goalSchema>;
 export type TermContent = z.infer<typeof termSchema>;
 export type HintCardContent = z.infer<typeof hintCardSchema>;
@@ -101,6 +124,8 @@ export type TaskFileContent = z.infer<typeof taskSchema>;
 export interface GameContent {
   contentVersion: typeof CONTENT_VERSION;
   catalog: CatalogItemContent[];
+  /** Счета cycle — which mandatory items are due on each Игровой день. */
+  bills: DayBillsContent[];
   goals: GoalContent[];
   terms: TermContent[];
   hints: HintCardContent[];
@@ -117,6 +142,7 @@ export function loadContent(): GameContent {
   return {
     contentVersion: CONTENT_VERSION,
     catalog: catalog.items,
+    bills: catalog.bills,
     goals: catalog.items
       .filter((item) => item.kind === "optional")
       .map((item) => ({

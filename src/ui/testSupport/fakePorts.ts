@@ -1,8 +1,10 @@
 import { ECONOMY, METERS } from "../../core/config";
 import {
   applyMeterDelta,
+  billsForDay,
   checkPurchase,
   dayCloseMeterDeltas,
+  planKept,
   validatePlan,
   type CatalogItem,
   type PlanBuckets,
@@ -279,12 +281,12 @@ export function createFakePorts(): SessionPorts {
         row.planStatus = "draft";
         row.buckets = { ...buckets };
       },
-      confirmPlan(profileId, dayId) {
+      confirmPlan(profileId, dayId, minMandatory = 0) {
         const row = requireRow(profiles, profileId);
         requireOpen(row, dayId);
         if (row.planStatus === "none") throw new Error("Сначала составь план");
         if (row.planStatus === "confirmed") throw new Error("План уже подтверждён");
-        const check = validatePlan(row.buckets, row.balance);
+        const check = validatePlan(row.buckets, row.balance, Math.min(minMandatory, row.balance));
         if (!check.ok) return { ok: false as const, remainder: check.remainder };
         row.planStatus = "confirmed";
         return { ok: true as const };
@@ -473,16 +475,18 @@ export function createFakePorts(): SessionPorts {
         }
         return reward;
       },
-      closeDay(profileId, catalog) {
+      closeDay(profileId, catalog, bills = []) {
         const row = requireRow(profiles, profileId);
         if (!row.dayOpen) throw new Error("Нет открытого игрового дня");
         const bought = row.purchases.filter((item) => item.dayId === row.dayId);
-        const mandatoryIds = catalog.filter((item) => item.kind === "mandatory").map((item) => item.id);
+        const mandatoryIds =
+          bills.length > 0
+            ? billsForDay(row.dayN, bills).items
+            : catalog.filter((item) => item.kind === "mandatory").map((item) => item.id);
         const boughtIds = new Set(bought.map((item) => item.itemId));
         const mandatoryCovered = mandatoryIds.every((id) => boughtIds.has(id));
-        const planSpend = bought.filter((item) => item.paidFrom !== "savings").reduce((sum, item) => sum + item.price, 0);
         const confirmed = row.planStatus === "confirmed" ? row.buckets : null;
-        const withinPlan = confirmed !== null && planSpend <= confirmed.mandatory + confirmed.optional;
+        const withinPlan = planKept({ plan: confirmed, actual: actuals(row) });
         const deposited = row.transfers.some((item) => item.dayId === row.dayId && item.kind === "in");
         const score = dayScore({ mandatoryCovered, withinPlan, deposited });
         const optionalSpend = bought

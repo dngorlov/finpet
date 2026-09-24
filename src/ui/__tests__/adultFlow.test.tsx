@@ -31,7 +31,7 @@ describe("Взрослый раздел contents and persistence", () => {
     playSomeEconomy(ports, childId);
     const { user } = await renderApp(ports);
 
-    expect(screen.getByLabelText("Баланс 93")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 103")).toBeOnTheScreen();
     await passAdultGate(user);
     expect(screen.getByText("Бюджет: одно задание сделано")).toBeOnTheScreen();
     expect(screen.getByText("Копилки: ещё впереди")).toBeOnTheScreen();
@@ -47,7 +47,7 @@ describe("Взрослый раздел contents and persistence", () => {
     await user.press(screen.getByRole("button", { name: "Готово" }));
     await user.press(screen.getByRole("button", { name: "Понятно" }));
 
-    expect(screen.getByLabelText("Баланс 110")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
     expect(screen.getByLabelText(/Питомец Пух/)).toBeOnTheScreen();
     expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
     expect(screen.getByText("0 / 90")).toBeOnTheScreen();
@@ -60,7 +60,7 @@ describe("Взрослый раздел contents and persistence", () => {
     playSomeEconomy(ports, childId);
     const { view } = await renderApp(ports);
 
-    expect(screen.getByLabelText("Баланс 93")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 103")).toBeOnTheScreen();
     expect(screen.getByText("15")).toBeOnTheScreen();
     expect(screen.getByText("15 / 90")).toBeOnTheScreen();
     expect(screen.getByText("Забота 60")).toBeOnTheScreen();
@@ -71,7 +71,7 @@ describe("Взрослый раздел contents and persistence", () => {
     await view.unmount();
     await render(<FinPetApp ports={ports} />);
 
-    expect(screen.getByLabelText("Баланс 93")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 103")).toBeOnTheScreen();
     expect(screen.getByText("15")).toBeOnTheScreen();
     expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
     expect(screen.getByText("15 / 90")).toBeOnTheScreen();

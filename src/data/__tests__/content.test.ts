@@ -52,6 +52,16 @@ describe("loadContent", () => {
     });
   });
 
+  it("ships a Счета cycle of mandatory items with a medicine day", () => {
+    const mandatory = new Set(content.catalog.filter((item) => item.kind === "mandatory").map((item) => item.id));
+    expect(content.bills.length).toBeGreaterThanOrEqual(5);
+    for (const day of content.bills) {
+      for (const id of day.items) expect(mandatory.has(id)).toBe(true);
+    }
+    expect(content.bills[0].items).toEqual(["lunch", "transport"]);
+    expect(content.bills.some((day) => day.items.includes("medicine") && day.note)).toBe(true);
+  });
+
   it("ships the eleven Словарик terms including План and seven Как играть steps", () => {
     expect(content.terms.map((t) => t.term)).toEqual([
       "Баланс",
