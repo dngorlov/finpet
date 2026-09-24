@@ -103,8 +103,11 @@ export const strings = {
   missionRewardLeft: (left: number) =>
     left > 0 ? `За лучший ответ можно получить ещё ${left}` : "Ты собрал все монеты за это задание",
   missionLockedAfter: (title: string) => `Откроется после «${title}»`,
-  missionPinA11y: (title: string, state: "locked" | "open" | "done") =>
-    `${title}, ${state === "locked" ? "закрыто" : state === "done" ? "пройдено" : "открыто"}`,
+  missionPinA11y: (title: string, state: "locked" | "open" | "done" | "soon") =>
+    `${title}, ${state === "locked" ? "закрыто" : state === "done" ? "пройдено" : state === "soon" ? "скоро" : "открыто"}`,
+  missionSoon: "Урок скоро появится.",
+  missionGames: "Мини-игры",
+  missionPlayGame: (title: string) => `Играть: ${title}`,
   missionCorrections: "Исправить ошибку",
   taskCardNext: "Дальше",
   taskSortPrompt: "Куда это отнести?",

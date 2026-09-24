@@ -1,6 +1,6 @@
 import { screen, userEvent } from "@testing-library/react-native";
 
-/** Every map mission — all open at once in Демо-режим. */
+/** Every ready lesson pin — all open at once in Демо-режим. */
 export const demoMissions = [
   "Что такое бюджет?",
   "Планирование бюджета",
@@ -8,9 +8,6 @@ export const demoMissions = [
   "Где живут накопления?",
   "Платежи",
   "Покупки",
-  "Скидка или ловушка",
-  "Что дешевле?",
-  "Охота за ценником",
 ] as const;
 
 function collectText(node: unknown): string {

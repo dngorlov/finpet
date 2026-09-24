@@ -275,6 +275,31 @@
       ]
     },
     {
+      "id": "budget_3",
+      "topic": "budget",
+      "order": 3,
+      "difficulty": 2,
+      "comingSoon": true,
+      "title": "Новый урок",
+      "reward": 15,
+      "description": "Савва готовит этот урок — скоро он появится здесь.",
+      "pin": {
+        "x": 0.37,
+        "y": 0.31,
+        "district": "Пресненский"
+      },
+      "intro": "Урок скоро появится.",
+      "nodes": [
+        {
+          "id": "c1",
+          "kind": "card",
+          "title": "Скоро",
+          "text": "Этот урок ещё готовится.",
+          "next": "exit"
+        }
+      ]
+    },
+    {
       "id": "budget_fix_backpack",
       "topic": "budget",
       "title": "Почини рюкзак",
@@ -595,6 +620,31 @@
       ]
     },
     {
+      "id": "savings_3",
+      "topic": "savings",
+      "order": 3,
+      "difficulty": 2,
+      "comingSoon": true,
+      "title": "Новый урок",
+      "reward": 15,
+      "description": "Савва готовит этот урок — скоро он появится здесь.",
+      "pin": {
+        "x": 0.26,
+        "y": 0.22,
+        "district": "Хорошёво"
+      },
+      "intro": "Урок скоро появится.",
+      "nodes": [
+        {
+          "id": "c1",
+          "kind": "card",
+          "title": "Скоро",
+          "text": "Этот урок ещё готовится.",
+          "next": "exit"
+        }
+      ]
+    },
+    {
       "id": "payments_pay",
       "topic": "payments",
       "order": 1,
@@ -748,7 +798,7 @@
       "difficulty": 2,
       "title": "Покупки",
       "reward": 15,
-      "description": "Цена, выбор и проверка баланса. Открывает три мини-игры.",
+      "description": "Цена, выбор и проверка баланса. После урока здесь откроются три мини-игры.",
       "pin": {
         "x": 0.69,
         "y": 0.6,
@@ -841,19 +891,37 @@
       ]
     },
     {
-      "id": "payments_sale_trap",
+      "id": "payments_3",
       "topic": "payments",
       "order": 3,
-      "requires": "payments_shop",
       "difficulty": 2,
-      "title": "Скидка или ловушка",
-      "reward": 10,
-      "description": "Какая скидка правда выгодна, а какая заманивает?",
+      "comingSoon": true,
+      "title": "Новый урок",
+      "reward": 15,
+      "description": "Савва готовит этот урок — скоро он появится здесь.",
       "pin": {
         "x": 0.75,
         "y": 0.38,
         "district": "Басманный"
       },
+      "intro": "Урок скоро появится.",
+      "nodes": [
+        {
+          "id": "c1",
+          "kind": "card",
+          "title": "Скоро",
+          "text": "Этот урок ещё готовится.",
+          "next": "exit"
+        }
+      ]
+    },
+    {
+      "id": "payments_sale_trap",
+      "topic": "payments",
+      "difficulty": 2,
+      "title": "Скидка или ловушка",
+      "reward": 10,
+      "description": "Какая скидка правда выгодна, а какая заманивает?",
       "intro": "Мини-игра: отличи выгодную скидку от ловушки.",
       "nodes": [
         {
@@ -924,22 +992,16 @@
           "next": "exit",
           "button": "Понятно"
         }
-      ]
+      ],
+      "parent": "payments_shop"
     },
     {
       "id": "payments_cheaper",
       "topic": "payments",
-      "order": 4,
-      "requires": "payments_shop",
       "difficulty": 3,
       "title": "Что дешевле?",
       "reward": 15,
       "description": "Сравни предложения и найди выгодное — сначала цены, потом количество.",
-      "pin": {
-        "x": 0.86,
-        "y": 0.5,
-        "district": "Лефортово"
-      },
       "intro": "Мини-игра: сравни предложения и выбери, что дешевле.",
       "nodes": [
         {
@@ -1014,22 +1076,16 @@
             }
           ]
         }
-      ]
+      ],
+      "parent": "payments_shop"
     },
     {
       "id": "payments_price_hunt",
       "topic": "payments",
-      "order": 5,
-      "requires": "payments_shop",
       "difficulty": 3,
       "title": "Охота за ценником",
       "reward": 15,
       "description": "Найди нужный ценник среди ярких витрин и уложись в бюджет.",
-      "pin": {
-        "x": 0.8,
-        "y": 0.76,
-        "district": "Печатники"
-      },
       "intro": "Мини-игра: ты в магазине, а ценники спрятались среди ярких наклеек.",
       "nodes": [
         {
@@ -1130,7 +1186,8 @@
             }
           ]
         }
-      ]
+      ],
+      "parent": "payments_shop"
     }
   ]
 }

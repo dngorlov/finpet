@@ -120,24 +120,31 @@ describe("loadContent", () => {
     );
   });
 
-  it("ships Савва's six lessons plus three bonus mini-games on the map, every answer explained", () => {
-    const playable = content.tasks.filter((t) => !t.correction);
-    expect(playable.map((t) => t.id)).toEqual([
+  it("ships nine lesson pins (three «скоро») and three mini-games inside «Покупки», every answer explained", () => {
+    const pins = content.tasks.filter((t) => !t.correction && !t.parent);
+    expect(pins.map((t) => t.id)).toEqual([
       "budget_what",
       "budget_plan",
+      "budget_3",
       "savings_what",
       "savings_where",
+      "savings_3",
       "payments_pay",
       "payments_shop",
-      "payments_sale_trap",
-      "payments_cheaper",
-      "payments_price_hunt",
+      "payments_3",
     ]);
-    for (const task of playable) {
+    for (const task of pins) {
       expect(task.pin).toBeDefined();
       expect(task.order).toBeGreaterThan(0);
     }
-    expect(playable.filter((t) => t.requires === "payments_shop")).toHaveLength(3);
+    // Три урока Саввы ещё пишутся: точка есть, пройти нельзя.
+    expect(pins.filter((t) => t.comingSoon).map((t) => t.order)).toEqual([3, 3, 3]);
+    const playable = content.tasks.filter((t) => !t.correction && !t.comingSoon);
+    expect(content.tasks.filter((t) => t.parent === "payments_shop").map((t) => t.title)).toEqual([
+      "Скидка или ловушка",
+      "Что дешевле?",
+      "Охота за ценником",
+    ]);
     expect(content.tasks.some((t) => t.id === "budget_fix_backpack" && t.correction)).toBe(true);
     const spawn = content.tasks
       .find((t) => t.id === "budget_plan")
@@ -166,7 +173,7 @@ describe("loadContent", () => {
         // Every sort item has a right basket and at least one wrong one.
         if (node.kind === "sort") ["good", "bad"].forEach((v) => verdicts.add(v));
       }
-      if (!task.correction) expect(verdicts.size).toBeGreaterThan(1);
+      if (!task.correction && !task.comingSoon) expect(verdicts.size).toBeGreaterThan(1);
     }
   });
 

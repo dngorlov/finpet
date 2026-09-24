@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
+  childGames,
   missionPrerequisite,
   rewardLeft,
   taskUnlockOrder,
@@ -47,7 +48,7 @@ const TOPIC_COPY: Record<TaskTopic, { title: string; icon: string }> = {
   },
 };
 
-type PinState = "locked" | "open" | "done";
+type PinState = "locked" | "open" | "done" | "soon";
 
 /** Карта заданий (replaces the Задания list): pins by district, unlock chain, reward left. */
 export default function TaskListScreen({ navigation }: Props) {
@@ -81,7 +82,13 @@ export default function TaskListScreen({ navigation }: Props) {
   const missions = taskUnlockOrder(content.tasks);
   const corrections = correctionTasks(content.tasks, progress);
   const stateOf = (task: TaskContent): PinState =>
-    completed.has(task.id) ? "done" : openIds.has(task.id) ? "open" : "locked";
+    task.comingSoon
+      ? "soon"
+      : completed.has(task.id)
+        ? "done"
+        : openIds.has(task.id)
+          ? "open"
+          : "locked";
   const selected = missions.find((task) => task.id === selectedId) ?? null;
 
   // Pins sit in % of the map box so they follow the art at any screen width.
@@ -89,7 +96,8 @@ export default function TaskListScreen({ navigation }: Props) {
     x: task.pin?.x ?? 0.5,
     y: task.pin?.y ?? 0.5,
   });
-  const pct = (fraction: number): `${number}%` => `${Math.round(fraction * 1000) / 10}%`;
+  const pct = (fraction: number): `${number}%` =>
+    `${Math.round(fraction * 1000) / 10}%`;
 
   return (
     <Screen header={<StatusStrip />}>
@@ -140,7 +148,7 @@ export default function TaskListScreen({ navigation }: Props) {
               hitSlop={(minTarget - PIN) / 2}
               style={[
                 styles.pin,
-                state === "locked"
+                state === "locked" || state === "soon"
                   ? styles.pinLocked
                   : state === "done"
                     ? styles.pinDone
@@ -150,11 +158,13 @@ export default function TaskListScreen({ navigation }: Props) {
               ]}
             >
               <Text style={styles.pinIcon}>
-                {state === "locked"
-                  ? "🔒"
-                  : state === "done"
-                    ? "✓"
-                    : TOPIC_COPY[task.topic].icon}
+                {state === "soon"
+                  ? "⏳"
+                  : state === "locked"
+                    ? "🔒"
+                    : state === "done"
+                      ? "✓"
+                      : TOPIC_COPY[task.topic].icon}
               </Text>
             </Pressable>
           );
@@ -166,9 +176,12 @@ export default function TaskListScreen({ navigation }: Props) {
           state={stateOf(selected)}
           best={byKey.get(selected.id)?.bestReward ?? 0}
           blocker={missionPrerequisite(selected, content.tasks)}
-          onStart={() =>
-            navigation.navigate("TaskRun", { taskId: selected.id })
-          }
+          games={childGames(selected, content.tasks).map((game) => ({
+            task: game,
+            state: stateOf(game),
+            best: byKey.get(game.id)?.bestReward ?? 0,
+          }))}
+          onPlay={(taskId) => navigation.navigate("TaskRun", { taskId })}
         />
       ) : null}
       {corrections.length > 0 ? (
@@ -198,13 +211,15 @@ function MissionSheet({
   state,
   best,
   blocker,
-  onStart,
+  games,
+  onPlay,
 }: {
   task: TaskContent;
   state: PinState;
   best: number;
   blocker: TaskContent | null;
-  onStart: () => void;
+  games: { task: TaskContent; state: PinState; best: number }[];
+  onPlay: (taskId: string) => void;
 }) {
   const topic = TOPIC_COPY[task.topic];
   return (
@@ -214,7 +229,7 @@ function MissionSheet({
         {topic.icon} {topic.title}
         {task.pin ? ` · ${strings.missionDistrict(task.pin.district)}` : ""}
       </Text>
-      {task.difficulty ? (
+      {task.difficulty && state !== "soon" ? (
         <Text style={styles.body}>
           {strings.missionDifficulty(task.difficulty)}
         </Text>
@@ -222,19 +237,12 @@ function MissionSheet({
       {task.description ? (
         <Text style={styles.body}>{task.description}</Text>
       ) : null}
-      {state === "done" ? (
-        <>
-          <Text style={styles.body}>
-            {strings.missionRewardBest(best, task.reward)}
-          </Text>
-          <Text style={styles.body}>
-            {strings.missionRewardLeft(rewardLeft(task, best))}
-          </Text>
-        </>
-      ) : (
-        <Text style={styles.body}>{strings.missionRewardMax(task.reward)}</Text>
+      {state === "soon" ? null : (
+        <RewardLines task={task} state={state} best={best} />
       )}
-      {state === "locked" && blocker ? (
+      {state === "soon" ? (
+        <Text style={styles.body}>{strings.missionSoon}</Text>
+      ) : state === "locked" && blocker ? (
         <Text style={styles.body}>
           {strings.missionLockedAfter(blocker.title)}
         </Text>
@@ -243,10 +251,57 @@ function MissionSheet({
           label={
             state === "done" ? strings.missionReplay : strings.missionStart
           }
-          onPress={onStart}
+          onPress={() => onPlay(task.id)}
         />
       )}
+      {games.length > 0 ? (
+        <Text style={styles.section}>{strings.missionGames}</Text>
+      ) : null}
+      {games.map((game) => (
+        <View key={game.task.id} style={styles.game}>
+          <Text style={styles.cardTitle}>{game.task.title}</Text>
+          {game.task.description ? (
+            <Text style={styles.body}>{game.task.description}</Text>
+          ) : null}
+          <RewardLines task={game.task} state={game.state} best={game.best} />
+          {game.state === "locked" ? (
+            <Text style={styles.body}>
+              {strings.missionLockedAfter(task.title)}
+            </Text>
+          ) : (
+            <PrimaryButton
+              label={strings.missionPlayGame(game.task.title)}
+              onPress={() => onPlay(game.task.id)}
+            />
+          )}
+        </View>
+      ))}
     </Card>
+  );
+}
+
+function RewardLines({
+  task,
+  state,
+  best,
+}: {
+  task: TaskContent;
+  state: PinState;
+  best: number;
+}) {
+  if (state !== "done")
+    return (
+      <Text style={styles.body}>{strings.missionRewardMax(task.reward)}</Text>
+    );
+  return (
+    <>
+      <Text style={styles.body}>
+        {strings.missionRewardBest(best, task.reward)}
+      </Text>
+      <Text style={styles.body}>
+        {strings.missionRewardLeft(rewardLeft(task, best))}
+      </Text>
+    </>
   );
 }
 
@@ -318,5 +373,11 @@ const styles = StyleSheet.create({
   },
   hit: {
     minHeight: minTarget,
+  },
+  game: {
+    borderTopColor: colors.track,
+    borderTopWidth: 1,
+    gap: 4,
+    paddingTop: 8,
   },
 });

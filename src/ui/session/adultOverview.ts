@@ -1,6 +1,7 @@
 import type { GameContent } from "../../data/content";
 import type { SessionGame } from "./types";
 import { strings } from "../strings";
+import { playableTasks } from "../../core/tasks";
 import { TASK_TOPICS, topicTaskGroups } from "../tasks/model";
 
 export type AdultOverview = {
@@ -21,7 +22,7 @@ export function adultOverview(game: SessionGame, content: GameContent, profileId
   const groups = topicTaskGroups(content.tasks);
   const byKey = new Map(progress.map((row) => [row.taskKey, row]));
   const completed = (taskId: string) => byKey.get(taskId)?.status === "completed";
-  const nonCorrection = content.tasks.filter((task) => !task.correction);
+  const nonCorrection = playableTasks(content.tasks);
   return {
     daysLine: last ? strings.resultsDaysPlayed(last.n) : strings.adultDaysEmpty,
     tasksLine: strings.resultsTasksDone(

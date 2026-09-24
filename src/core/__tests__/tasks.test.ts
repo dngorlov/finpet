@@ -118,6 +118,21 @@ describe("mission unlock chain", () => {
   });
 });
 
+describe("mini-games inside a lesson sheet and «скоро» pins", () => {
+  const tasks: TaskContent[] = [
+    fixture({ id: "budget_1", topic: "budget", order: 1 }),
+    fixture({ id: "budget_2", topic: "budget", order: 2, comingSoon: true }),
+    fixture({ id: "game", topic: "budget", parent: "budget_1" }),
+  ];
+
+  it("keeps games off the chain, opens them after the parent, and never opens a «скоро» pin", () => {
+    expect(missionPrerequisite(tasks[2]!, tasks)?.id).toBe("budget_1");
+    expect(unlockedTasks(tasks, new Set(), false).map((t) => t.id)).toEqual(["budget_1"]);
+    expect(unlockedTasks(tasks, new Set(["budget_1"]), false).map((t) => t.id)).toEqual(["budget_1", "game"]);
+    expect(unlockedTasks(tasks, new Set(), true).map((t) => t.id)).toEqual(["budget_1", "game"]);
+  });
+});
+
 describe("score-based reward", () => {
   const quiz = fixture({ id: "q", topic: "budget", reward: 15 });
 

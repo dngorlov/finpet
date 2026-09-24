@@ -35,7 +35,8 @@ describe("Задания combined loop", () => {
       expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Задания" }));
       expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
-      expect(screen.getAllByRole("button", { name: /, закрыто$/ })).toHaveLength(8);
+      expect(screen.getAllByRole("button", { name: /, закрыто$/ })).toHaveLength(5);
+      expect(screen.getAllByRole("button", { name: /, скоро$/ })).toHaveLength(3);
       expect(screen.queryByText("Почини рюкзак")).not.toBeOnTheScreen();
       await backToMain(user);
 
@@ -63,7 +64,11 @@ describe("Задания combined loop", () => {
 
       await user.press(screen.getByRole("button", { name: "Задания" }));
       expect(screen.queryAllByRole("button", { name: /, закрыто$/ })).toHaveLength(0);
-      expect(screen.getAllByRole("button", { name: /, открыто$/ })).toHaveLength(9);
+      expect(screen.getAllByRole("button", { name: /, открыто$/ })).toHaveLength(6);
+      await user.press(screen.getByRole("button", { name: "Покупки, открыто" }));
+      expect(screen.getByText("Мини-игры")).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Играть: Скидка или ловушка" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Играть: Охота за ценником" })).toBeOnTheScreen();
     },
     30000,
   );

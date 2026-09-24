@@ -74,8 +74,15 @@ export interface TaskContent {
   /** One-line mission description for the map sheet. */
   description?: string;
   pin?: MissionPin;
-  /** Explicit prerequisite id — overrides the topic chain (bonus mini-games). */
+  /** Explicit prerequisite id — overrides the topic chain. */
   requires?: string;
+  /**
+   * Mini-game that lives inside another Задание's map sheet instead of its own
+   * pin; opens when that parent is completed.
+   */
+  parent?: string;
+  /** Pin placeholder for a lesson still being written: visible, never playable. */
+  comingSoon?: boolean;
   nodes: TaskNode[];
 }
 
@@ -125,12 +132,23 @@ export function chooseOption(
 
 const TOPIC_ORDER = { budget: 0, savings: 1, payments: 2 } as const;
 
-/** Map missions (non-correction Задания) in topic order, then `order` inside a topic. */
+/** Map pins: non-correction Задания without a parent, topic order then `order`. */
 export function taskUnlockOrder(tasks: readonly TaskContent[]): TaskContent[] {
   return tasks
-    .filter((t) => !t.correction)
+    .filter((t) => !t.correction && !t.parent)
     .slice()
     .sort((a, b) => TOPIC_ORDER[a.topic] - TOPIC_ORDER[b.topic] || (a.order ?? 0) - (b.order ?? 0));
+}
+
+/** Mini-games shown inside `parent`'s sheet, in file order. */
+export function childGames(parent: TaskContent, tasks: readonly TaskContent[]): TaskContent[] {
+  return tasks.filter((t) => t.parent === parent.id && !t.correction);
+}
+
+/** Everything a child can finish: pins that are ready plus their mini-games. */
+export function playableTasks(tasks: readonly TaskContent[]): TaskContent[] {
+  const pins = taskUnlockOrder(tasks).filter((t) => !t.comingSoon);
+  return [...pins, ...pins.flatMap((pin) => childGames(pin, tasks))];
 }
 
 /**
@@ -141,6 +159,7 @@ export function taskUnlockOrder(tasks: readonly TaskContent[]): TaskContent[] {
  */
 export function missionPrerequisite(task: TaskContent, tasks: readonly TaskContent[]): TaskContent | null {
   if (task.correction) return null;
+  if (task.parent) return tasks.find((t) => t.id === task.parent) ?? null;
   const ordered = taskUnlockOrder(tasks);
   if (task.requires) return ordered.find((t) => t.id === task.requires) ?? null;
   const order = task.order ?? 1;
@@ -160,9 +179,9 @@ export function unlockedTasks(
   completedIds: ReadonlySet<string>,
   isDemo: boolean,
 ): TaskContent[] {
-  const ordered = taskUnlockOrder(tasks);
-  if (isDemo) return ordered;
-  return ordered.filter((task) => {
+  const playable = playableTasks(tasks);
+  if (isDemo) return playable;
+  return playable.filter((task) => {
     const before = missionPrerequisite(task, tasks);
     return before === null || completedIds.has(before.id);
   });

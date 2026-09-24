@@ -149,6 +149,8 @@ const taskSchema = z.object({
   description: z.string().min(1).optional(),
   pin: pinSchema.optional(),
   requires: z.string().min(1).optional(),
+  parent: z.string().min(1).optional(),
+  comingSoon: z.boolean().optional(),
   nodes: z.array(taskNodeSchema).min(1),
 });
 
@@ -164,8 +166,12 @@ const tasksFileSchema = z
   .superRefine((file, ctx) => {
     const ids = new Set(file.tasks.map((task) => task.id));
     for (const task of file.tasks) {
-      if (!task.correction && (!task.order || !task.pin || !task.description || !task.difficulty)) {
+      const onMap = !task.correction && !task.parent;
+      if (onMap && (!task.order || !task.pin || !task.description || !task.difficulty)) {
         ctx.addIssue({ code: "custom", message: `Задание ${task.id}: на карте нужны order, pin, description, difficulty` });
+      }
+      if (task.parent && !ids.has(task.parent)) {
+        ctx.addIssue({ code: "custom", message: `Задание ${task.id}: parent «${task.parent}» не найдено` });
       }
       if (task.requires && !ids.has(task.requires)) {
         ctx.addIssue({ code: "custom", message: `Задание ${task.id}: requires «${task.requires}» не найдено` });

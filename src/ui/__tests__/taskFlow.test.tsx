@@ -73,6 +73,7 @@ describe("Карта заданий", () => {
       expect(screen.getByRole("button", { name: "Что такое сбережения, открыто" })).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Платежи, открыто" })).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Где живут накопления?, закрыто" })).toBeOnTheScreen();
+      expect(screen.getAllByRole("button", { name: "Новый урок, скоро" })).toHaveLength(3);
       expect(screen.getByText("Лучший результат: 8 из 10 монет")).toBeOnTheScreen();
 
       await user.press(screen.getByRole("button", { name: "Пройти ещё раз" }));

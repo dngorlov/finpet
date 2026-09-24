@@ -1,4 +1,4 @@
-import { taskUnlockOrder, unlockedTasks, type TaskContent } from "../../core/tasks";
+import { playableTasks, unlockedTasks, type TaskContent } from "../../core/tasks";
 import type { TaskProgressView } from "../../data/repositories/gameRepository";
 
 export const TASK_TOPICS = ["budget", "savings", "payments"] as const;
@@ -28,8 +28,9 @@ export function preferredHubTask(
   return unlocked[0] ?? null;
 }
 
+/** Finishable Задания (lessons + mini-games, no «скоро» pins) per topic. */
 export function topicTaskGroups(tasks: readonly TaskContent[]): Record<TaskTopic, TaskContent[]> {
-  const ordered = taskUnlockOrder(tasks);
+  const ordered = playableTasks(tasks);
   return {
     budget: ordered.filter((task) => task.topic === "budget"),
     savings: ordered.filter((task) => task.topic === "savings"),

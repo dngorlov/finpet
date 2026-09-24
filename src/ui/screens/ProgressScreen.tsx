@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { STAGE_NAMES } from "../../core/stages";
+import { playableTasks } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
 import type {
   DaySummaryView,
@@ -90,7 +91,7 @@ export default function ProgressScreen(_props: Props) {
     return entry.amount;
   };
   const taskTitle = (id: string) => content.tasks.find((task) => task.id === id)?.title;
-  const topicTasks = content.tasks.filter((task) => !task.correction);
+  const topicTasks = playableTasks(content.tasks);
   const completedTopics = tasks.filter((row) => {
     if (row.status !== "completed") return false;
     return topicTasks.some((task) => task.id === row.taskKey);
