@@ -92,11 +92,27 @@ export const strings = {
   taskTopicBudgetIcon: "📋",
   taskTopicSavingsIcon: "🐷",
   taskTopicPaymentsIcon: "🪙",
-  taskLockedTomorrow: "Откроется: завтра",
-  taskRewardBadge: "+10",
-  taskRewardCoins: "+10 монет",
-  taskCompleted: "Готово",
-  taskBackToList: "В список заданий",
+  mapTitle: "Карта заданий",
+  mapHint: "Нажми на точку, чтобы узнать о задании.",
+  missionStart: "Начать",
+  missionReplay: "Пройти ещё раз",
+  missionDistrict: (district: string) => `Район: ${district}`,
+  missionDifficulty: (n: number) => `Сложность: ${"★".repeat(n)}${"☆".repeat(Math.max(0, 3 - n))}`,
+  missionRewardMax: (max: number) => `Награда: до ${max} монет`,
+  missionRewardBest: (best: number, max: number) => `Лучший результат: ${best} из ${max} монет`,
+  missionRewardLeft: (left: number) =>
+    left > 0 ? `За лучший ответ можно получить ещё ${left}` : "Ты собрал все монеты за это задание",
+  missionLockedAfter: (title: string) => `Откроется после «${title}»`,
+  missionPinA11y: (title: string, state: "locked" | "open" | "done") =>
+    `${title}, ${state === "locked" ? "закрыто" : state === "done" ? "пройдено" : "открыто"}`,
+  missionCorrections: "Исправить ошибку",
+  taskCardNext: "Дальше",
+  taskSortPrompt: "Куда это отнести?",
+  taskSortProgress: (n: number, total: number) => `${n} из ${total}`,
+  taskScore: (points: string, total: number) => `Верно с первого раза: ${points} из ${total}`,
+  taskEarned: (n: number) => `+${n} ${coinsWord(n)}`,
+  taskNoTopUp: "Новых монет нет — это не лучше прошлого результата.",
+  taskBackToMap: "На карту",
   taskSpawned: "Новое задание появилось в списке!",
   verdictLabel: (verdict: "good" | "warn" | "bad") => {
     if (verdict === "good") return "✅ Верно";
@@ -297,10 +313,10 @@ export const strings = {
   demoBanner: "Демо: дни идут подряд",
   demoReset: "Сбросить демо",
   adultDaysEmpty: "Игровых дней пока нет — это нормально.",
-  adultTopicLine: (topic: string, done: number) => {
-    if (done >= 2) return `${topic}: оба задания сделаны`;
-    if (done === 1) return `${topic}: одно задание сделано`;
-    return `${topic}: ещё впереди`;
+  adultTopicLine: (topic: string, done: number, total: number) => {
+    if (done === 0) return `${topic}: ещё впереди`;
+    if (done >= total) return `${topic}: все задания сделаны`;
+    return `${topic}: сделано ${done} из ${total}`;
   },
   resetProgress: "Сбросить прогресс",
   resetProgressBody: "Прогресс сбросится, имена и вид питомца останутся.",
@@ -326,4 +342,14 @@ function daysWord(n: number): string {
   if (mod10 === 1) return "день";
   if (mod10 >= 2 && mod10 <= 4) return "дня";
   return "дней";
+}
+
+/** «1 монета / 3 монеты / 5 монет». */
+function coinsWord(n: number): string {
+  const mod100 = n % 100;
+  const mod10 = n % 10;
+  if (mod100 >= 11 && mod100 <= 14) return "монет";
+  if (mod10 === 1) return "монета";
+  if (mod10 >= 2 && mod10 <= 4) return "монеты";
+  return "монет";
 }

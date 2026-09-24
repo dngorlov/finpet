@@ -138,6 +138,8 @@ export const taskProgress = sqliteTable("taskProgress", {
   taskKey: text("taskKey").notNull(),
   status: text("status").notNull(),
   rewardPaid: integer("rewardPaid").notNull(),
+  /** Best coins earned on this Задание so far; replays only pay above it. */
+  bestReward: integer("bestReward").notNull().default(0),
   completedAt: integer("completedAt"),
 });
 

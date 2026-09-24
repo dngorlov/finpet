@@ -11,7 +11,7 @@ import {
 } from "../../core/economy";
 import { applyGoalProgress, checkWithdrawal, estimateDaysToGoal, potFromTransfers } from "../../core/savings";
 import { dayScore, explainStageChange, stageFromScores } from "../../core/stages";
-import { taskRewardDue, type TaskStepResult } from "../../core/tasks";
+import { rewardTopUp, type TaskStepResult } from "../../core/tasks";
 import { loadContent } from "../../data/content";
 import { META_KEYS } from "../../data/metaKeys";
 import type {
@@ -450,15 +450,15 @@ export function createFakePorts(): SessionPorts {
           }
         }
         if (result.spawnTask && !row.tasks.some((task) => task.taskKey === result.spawnTask)) {
-          row.tasks.push({ taskKey: result.spawnTask, status: "available", rewardPaid: false });
+          row.tasks.push({ taskKey: result.spawnTask, status: "available", rewardPaid: false, bestReward: 0 });
         }
       },
-      claimTaskReward(profileId, dayId, taskId, correct) {
+      claimTaskReward(profileId, dayId, taskId, earned) {
         const row = requireRow(profiles, profileId);
         requireDayForTask(row, dayId);
         const existing = row.tasks.find((task) => task.taskKey === taskId);
-        const alreadyPaid = existing?.rewardPaid === true;
-        const reward = correct ? taskRewardDue(alreadyPaid) : 0;
+        const best = existing?.bestReward ?? 0;
+        const reward = rewardTopUp(best, earned);
         if (reward > 0) {
           row.balance += reward;
           appendJournal(row, {
@@ -467,11 +467,13 @@ export function createFakePorts(): SessionPorts {
             labelKey: `task_reward:${taskId}`,
           });
         }
+        const bestReward = Math.max(best, earned);
         if (existing) {
           existing.status = "completed";
-          existing.rewardPaid = alreadyPaid || reward > 0;
+          existing.rewardPaid = existing.rewardPaid || bestReward > 0;
+          existing.bestReward = bestReward;
         } else {
-          row.tasks.push({ taskKey: taskId, status: "completed", rewardPaid: reward > 0 });
+          row.tasks.push({ taskKey: taskId, status: "completed", rewardPaid: bestReward > 0, bestReward });
         }
         return reward;
       },

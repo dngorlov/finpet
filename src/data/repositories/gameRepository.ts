@@ -23,7 +23,7 @@ import {
   stageFromScores,
   type Stage,
 } from "../../core/stages";
-import { taskRewardDue, type TaskStepResult } from "../../core/tasks";
+import { rewardTopUp, type TaskStepResult } from "../../core/tasks";
 import { createLocalId } from "../localId";
 import { META_KEYS } from "../metaKeys";
 import * as tables from "../schema";
@@ -70,6 +70,8 @@ export interface TaskProgressView {
   taskKey: string;
   status: "available" | "completed";
   rewardPaid: boolean;
+  /** Best coins earned on this Задание so far (0 if never finished). */
+  bestReward: number;
 }
 
 /** Read model for the hub and PetView (appearance + meters + Баланс). */
@@ -822,6 +824,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           taskKey: row.taskKey,
           status: row.status === "completed" ? ("completed" as const) : ("available" as const),
           rewardPaid: row.rewardPaid === 1,
+          bestReward: row.bestReward,
         }));
     },
 
@@ -1014,24 +1017,31 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       });
     },
 
-    claimTaskReward(profileId: string, dayId: string, taskId: string, correct: boolean): number {
+    /**
+     * Finishes a Задание with `earned` coins (score × max, computed by the
+     * caller from core/tasks). Pays only the top-up over the best earlier run.
+     */
+    claimTaskReward(profileId: string, dayId: string, taskId: string, earned: number): number {
       return db.transaction((tx) => {
         requireDayForTask(tx, profileId, dayId);
+        if (earned < 0) throw new Error("Награда не может быть отрицательной");
         const existing = tx
           .select()
           .from(tables.taskProgress)
           .where(and(eq(tables.taskProgress.profileId, profileId), eq(tables.taskProgress.taskKey, taskId)))
           .get();
-        const alreadyPaid = existing?.rewardPaid === 1;
-        const reward = correct ? taskRewardDue(alreadyPaid) : 0;
+        const best = existing?.bestReward ?? 0;
+        const reward = rewardTopUp(best, earned);
         if (reward > 0) {
           credit(tx, profileId, dayId, reward, "task_reward", `task_reward:${taskId}`);
         }
+        const bestReward = Math.max(best, earned);
         if (existing) {
           tx.update(tables.taskProgress)
             .set({
               status: "completed",
-              rewardPaid: alreadyPaid || reward > 0 ? 1 : existing.rewardPaid,
+              rewardPaid: bestReward > 0 ? 1 : existing.rewardPaid,
+              bestReward,
               completedAt: nowMs(),
             })
             .where(eq(tables.taskProgress.id, existing.id))
@@ -1043,7 +1053,8 @@ export function createGameRepository(db: GameDb, clock: Clock) {
               profileId,
               taskKey: taskId,
               status: "completed",
-              rewardPaid: reward > 0 ? 1 : 0,
+              rewardPaid: bestReward > 0 ? 1 : 0,
+              bestReward,
               completedAt: nowMs(),
             })
             .run();
@@ -1051,5 +1062,6 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         return reward;
       });
     },
+
   };
 }

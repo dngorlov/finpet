@@ -93,10 +93,48 @@ const taskOptionSchema = z.object({
   spawnTask: z.string().nullable().optional(),
 });
 
-const taskNodeSchema = z.object({
-  id: z.string().min(1),
-  text: z.string().min(1),
-  options: z.array(taskOptionSchema).min(1),
+const sortItemSchema = z.object({
+  label: z.string().min(1),
+  bin: z.number().int().nonnegative(),
+  explanation: z.string().min(1),
+});
+
+/** choice (default) asks; card teaches; sort is the «Нужно или хочется?» style mini-game. */
+const taskNodeSchema = z
+  .object({
+    id: z.string().min(1),
+    kind: z.enum(["choice", "card", "sort"]).optional(),
+    title: z.string().min(1).optional(),
+    text: z.string().min(1),
+    options: z.array(taskOptionSchema).min(1).optional(),
+    next: z.string().min(1).optional(),
+    button: z.string().min(1).optional(),
+    bins: z.array(z.string().min(1)).min(2).optional(),
+    items: z.array(sortItemSchema).min(1).optional(),
+  })
+  .superRefine((node, ctx) => {
+    const kind = node.kind ?? "choice";
+    if (kind === "choice" && !node.options) {
+      ctx.addIssue({ code: "custom", message: `Узел ${node.id}: у вопроса нет вариантов` });
+    }
+    if (kind !== "choice" && !node.next) {
+      ctx.addIssue({ code: "custom", message: `Узел ${node.id}: нет next` });
+    }
+    if (kind === "sort") {
+      const bins = node.bins?.length ?? 0;
+      if (bins < 2 || !node.items) {
+        ctx.addIssue({ code: "custom", message: `Узел ${node.id}: игре-сортировке нужны корзины и предметы` });
+      }
+      node.items?.forEach((item) => {
+        if (item.bin >= bins) ctx.addIssue({ code: "custom", message: `Узел ${node.id}: «${item.label}» в несуществующей корзине` });
+      });
+    }
+  });
+
+const pinSchema = z.object({
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+  district: z.string().min(1),
 });
 
 const taskSchema = z.object({
@@ -106,13 +144,49 @@ const taskSchema = z.object({
   reward: z.number().int().nonnegative(),
   intro: z.string().min(1),
   correction: z.boolean().optional(),
+  order: z.number().int().positive().optional(),
+  difficulty: z.number().int().min(1).max(3).optional(),
+  description: z.string().min(1).optional(),
+  pin: pinSchema.optional(),
+  requires: z.string().min(1).optional(),
   nodes: z.array(taskNodeSchema).min(1),
 });
 
-const tasksFileSchema = z.object({
-  contentVersion: z.literal(CONTENT_VERSION),
-  tasks: z.array(taskSchema).min(6),
-});
+/**
+ * Map missions need order + pin + description; correction tasks need none.
+ * Every `next`, `spawnTask` and `requires` must point at something real.
+ */
+const tasksFileSchema = z
+  .object({
+    contentVersion: z.literal(CONTENT_VERSION),
+    tasks: z.array(taskSchema).min(6),
+  })
+  .superRefine((file, ctx) => {
+    const ids = new Set(file.tasks.map((task) => task.id));
+    for (const task of file.tasks) {
+      if (!task.correction && (!task.order || !task.pin || !task.description || !task.difficulty)) {
+        ctx.addIssue({ code: "custom", message: `Задание ${task.id}: на карте нужны order, pin, description, difficulty` });
+      }
+      if (task.requires && !ids.has(task.requires)) {
+        ctx.addIssue({ code: "custom", message: `Задание ${task.id}: requires «${task.requires}» не найдено` });
+      }
+      const nodeIds = new Set(task.nodes.map((node) => node.id));
+      const targetOk = (next: string) => next === "exit" || next === "retry" || nodeIds.has(next);
+      for (const node of task.nodes) {
+        if (node.next && !targetOk(node.next)) {
+          ctx.addIssue({ code: "custom", message: `Задание ${task.id}: узел ${node.id} ведёт в «${node.next}»` });
+        }
+        for (const option of node.options ?? []) {
+          if (!targetOk(option.next)) {
+            ctx.addIssue({ code: "custom", message: `Задание ${task.id}: вариант «${option.label}» ведёт в «${option.next}»` });
+          }
+          if (option.spawnTask && !ids.has(option.spawnTask)) {
+            ctx.addIssue({ code: "custom", message: `Задание ${task.id}: spawnTask «${option.spawnTask}» не найдено` });
+          }
+        }
+      }
+    }
+  });
 
 export type CatalogItemContent = z.infer<typeof catalogItemSchema>;
 export type DayBillsContent = z.infer<typeof dayBillsSchema>;

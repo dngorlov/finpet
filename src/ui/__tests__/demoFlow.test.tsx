@@ -2,7 +2,7 @@ import { render, screen, userEvent } from "@testing-library/react-native";
 import type { CatalogItem } from "../../core/economy";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
-import { passAdultGate, sixUnlocked } from "../testSupport/flowHelpers";
+import { passAdultGate, demoMissions } from "../testSupport/flowHelpers";
 
 const lunch: CatalogItem = {
   id: "lunch",
@@ -33,8 +33,8 @@ async function confirmDemo(user: ReturnType<typeof userEvent.setup>) {
 }
 
 function expectUnlockedTitles() {
-  for (const title of sixUnlocked) {
-    expect(screen.getByText(title)).toBeOnTheScreen();
+  for (const title of demoMissions) {
+    expect(screen.getByRole("button", { name: `${title}, открыто` })).toBeOnTheScreen();
   }
   expect(screen.queryByText("Почини рюкзак")).not.toBeOnTheScreen();
 }
@@ -47,15 +47,15 @@ describe("Демо-режим panel", () => {
       const childId = seedReturningChild(ports);
       const childDay = ports.game.dayState(childId);
       ports.game.purchase(childId, childDay.dayId, lunch);
-      ports.game.claimTaskReward(childId, childDay.dayId, "budget_first_plan", true);
+      ports.game.claimTaskReward(childId, childDay.dayId, "budget_what", 10);
       const childBefore = ports.game.getProfile(childId);
       const childTasksBefore = ports.game.listTaskProgress(childId);
 
       const { user } = await renderApp(ports);
       expect(screen.getByLabelText("Баланс 118")).toBeOnTheScreen();
-      expect(screen.getByText("Первый план")).toBeOnTheScreen();
+      expect(screen.getByText("Планирование бюджета")).toBeOnTheScreen();
       expect(screen.queryByText("Демо: дни идут подряд")).not.toBeOnTheScreen();
-      expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
+      expect(screen.queryByText("Охота за ценником")).not.toBeOnTheScreen();
 
       await confirmDemo(user);
 
@@ -63,8 +63,8 @@ describe("Демо-режим panel", () => {
       expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
       expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
       expect(screen.getByLabelText(/Питомец Демо/)).toBeOnTheScreen();
-      expect(screen.getByText("Первый план")).toBeOnTheScreen();
-      expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
+      expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
+      expect(screen.queryByText("Охота за ценником")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Задания" }));
       expectUnlockedTitles();
       await user.press(screen.getByRole("button", { name: "Назад" }));
@@ -78,7 +78,7 @@ describe("Демо-режим panel", () => {
       ports.game.purchase(demoId, demoDay.dayId, lunch);
       ports.game.purchase(demoId, demoDay.dayId, candy);
       ports.game.transferToSavings(demoId, demoDay.dayId, 15);
-      ports.game.claimTaskReward(demoId, demoDay.dayId, "budget_first_plan", true);
+      ports.game.claimTaskReward(demoId, demoDay.dayId, "budget_what", 10);
       ports.game.closeDay(demoId, tinyCatalog);
 
       await passAdultGate(user);
@@ -90,8 +90,8 @@ describe("Демо-режим panel", () => {
       expect(screen.getByText("Демо: дни идут подряд")).toBeOnTheScreen();
       expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
       expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
-      expect(screen.getByText("Первый план")).toBeOnTheScreen();
-      expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
+      expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
+      expect(screen.queryByText("Охота за ценником")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Задания" }));
       expectUnlockedTitles();
       await user.press(screen.getByRole("button", { name: "Назад" }));
@@ -110,7 +110,7 @@ describe("Демо-режим panel", () => {
       expect(screen.getByLabelText("Баланс 118")).toBeOnTheScreen();
       expect(screen.queryByText("Демо: дни идут подряд")).not.toBeOnTheScreen();
       expect(screen.getByLabelText(/Питомец Пух/)).toBeOnTheScreen();
-      expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
+      expect(screen.queryByText("Охота за ценником")).not.toBeOnTheScreen();
       expect(ports.game.getProfile(childId)).toEqual(childBefore);
       expect(ports.game.listTaskProgress(childId)).toEqual(childTasksBefore);
     },

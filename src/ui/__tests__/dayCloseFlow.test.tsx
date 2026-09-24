@@ -49,12 +49,16 @@ describe("Итоги дня", () => {
       expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
 
       await user.press(screen.getByRole("button", { name: "Задания" }));
-      expect(screen.getByText("Бюджет")).toBeOnTheScreen();
-      await user.press(screen.getByRole("button", { name: "Первый план" }));
-      await user.press(screen.getByRole("button", { name: "Купить обед (10)" }));
+      expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
+      // Задания stay playable after the day closes (economy frozen, learning open).
+      await user.press(screen.getByRole("button", { name: "Начать" }));
+      await user.press(screen.getByRole("button", { name: "Дальше" }));
+      await user.press(screen.getByRole("button", { name: "Дальше" }));
+      await user.press(screen.getByRole("button", { name: "Начать игру" }));
+      await user.press(screen.getByRole("button", { name: "Нужно" }));
       expect(screen.getByRole("status", { name: "✅ Верно" })).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
-      expect(screen.getByText("Бюджет")).toBeOnTheScreen();
+      expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
       await user.press(screen.getByRole("button", { name: "Прогресс" }));

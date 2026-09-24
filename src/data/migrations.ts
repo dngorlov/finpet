@@ -126,4 +126,11 @@ DELETE FROM goals WHERE isActive = 0;
 UPDATE goals SET status = 'active', achievedAt = NULL;
 `,
   },
+  {
+    version: 4,
+    up: `
+ALTER TABLE taskProgress ADD COLUMN bestReward INTEGER NOT NULL DEFAULT 0;
+UPDATE taskProgress SET bestReward = 10 WHERE rewardPaid = 1;
+`,
+  },
 ];

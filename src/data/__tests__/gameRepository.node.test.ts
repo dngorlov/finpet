@@ -369,14 +369,19 @@ describe("day gating", () => {
 });
 
 describe("task reward", () => {
-  it("pays +10 only on the first correct completion", () => {
+  it("pays only the improvement over the best run, so replays cannot farm coins", () => {
     const { game, sqlite, profileId } = seed();
     const opened = game.openDay(profileId);
     if (opened.status !== "opened") throw new Error("expected opened");
 
-    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", false)).toBe(0);
-    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", true)).toBe(10);
-    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", true)).toBe(0);
+    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", 0)).toBe(0);
+    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", 6)).toBe(6);
+    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", 4)).toBe(0);
+    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", 10)).toBe(4);
+    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", 10)).toBe(0);
+    expect(game.listTaskProgress(profileId)).toEqual([
+      { taskKey: "budget_first_plan", status: "completed", rewardPaid: true, bestReward: 10 },
+    ]);
     expect(game.getProfile(profileId).balance).toBe(130);
     expect(sums(sqlite, profileId).balance).toBe(sums(sqlite, profileId).txSum);
   });
@@ -421,11 +426,11 @@ describe("task reward", () => {
       effects: [],
       spawnTask: "budget_fix_backpack",
     });
-    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", true)).toBe(10);
+    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", 10)).toBe(10);
     expect(game.listTaskProgress(profileId)).toEqual(
       expect.arrayContaining([
-        { taskKey: "budget_fix_backpack", status: "available", rewardPaid: false },
-        { taskKey: "budget_first_plan", status: "completed", rewardPaid: true },
+        { taskKey: "budget_fix_backpack", status: "available", rewardPaid: false, bestReward: 0 },
+        { taskKey: "budget_first_plan", status: "completed", rewardPaid: true, bestReward: 10 },
       ]),
     );
   });
@@ -438,7 +443,7 @@ describe("schema roundtrip", () => {
     if (opened.status !== "opened") throw new Error("expected opened");
     game.purchase(profileId, opened.dayId, lunch);
     game.transferToSavings(profileId, opened.dayId, 15);
-    game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", true);
+    game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", 10);
     meta.set("activeProfileId", profileId);
 
     const tables = sqlite
@@ -482,7 +487,7 @@ describe("Удалить профиль", () => {
     if (opened.status !== "opened") throw new Error("expected opened");
     game.purchase(childId, opened.dayId, lunch);
     game.transferToSavings(childId, opened.dayId, 15);
-    game.claimTaskReward(childId, opened.dayId, "budget_first_plan", true);
+    game.claimTaskReward(childId, opened.dayId, "budget_first_plan", 10);
 
     const demoId = game.createProfile({
       name: "Демо",
@@ -594,12 +599,12 @@ describe("day and journal reads", () => {
       effects: [],
       spawnTask: "budget_fix_backpack",
     });
-    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", true)).toBe(10);
+    expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", 10)).toBe(10);
 
     expect(game.listTaskProgress(profileId)).toEqual(
       expect.arrayContaining([
-        { taskKey: "budget_fix_backpack", status: "available", rewardPaid: false },
-        { taskKey: "budget_first_plan", status: "completed", rewardPaid: true },
+        { taskKey: "budget_fix_backpack", status: "available", rewardPaid: false, bestReward: 0 },
+        { taskKey: "budget_first_plan", status: "completed", rewardPaid: true, bestReward: 10 },
       ]),
     );
   });

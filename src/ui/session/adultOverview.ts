@@ -30,7 +30,7 @@ export function adultOverview(game: SessionGame, content: GameContent, profileId
     ),
     topics: TASK_TOPICS.map((topic) => {
       const pair = groups[topic].filter((task) => !task.correction);
-      return strings.adultTopicLine(TOPIC_TITLE[topic], pair.filter((task) => completed(task.id)).length);
+      return strings.adultTopicLine(TOPIC_TITLE[topic], pair.filter((task) => completed(task.id)).length, pair.length);
     }),
   };
 }

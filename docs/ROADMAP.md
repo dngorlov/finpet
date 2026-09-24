@@ -35,7 +35,7 @@ These were decided in the planning interview; do not re-derive them. If a number
 | Стартовый бюджет | 100, granted once at profile creation with an explanation screen |
 | Пособие (allowance) | +20, credited on first open of a new Игровой день |
 | Счета (day bills) | `catalog.json` `bills` cycle, day n = bills[(n − 1) mod 5]: Обед+Проезд 20 · +Школьные 30 · +Лекарство 35 («простыл») · +Школьные 30 · Обед+Проезд 20 |
-| Task reward | +10, first correct completion of each Задание only; replays give 0 |
+| Task reward | up to the Задание's `reward` (10/15 by difficulty) × share of first-try answers (right 1, «с ценой» ½, wrong 0); a replay pays only the improvement over the best run (`taskProgress.bestReward`) |
 | Plan areas (≥3) | Обязательные / Желаемые / Копилка |
 
 **Catalog — 11 items** (price / pet impact shown pre-purchase; optional flag `once` defaults false):
@@ -70,7 +70,7 @@ These were decided in the planning interview; do not re-derive them. If a number
 
 ### 2.3 Задания (R8)
 
-6 tasks, 2 per topic. Unlock order in normal play: topics sequential `budget → savings → payments`, one new task per day; completed tasks replayable (no reward). In Демо-режиме **all 6 are open from the start**. Full scripts in §6; JSON schema in §5.3.
+**Карта заданий** (2026-09-24, replaces the list): Савва's 6 lessons, 2 per topic, plus 3 bonus mini-games after «Покупки» (9 on the map) and the «Почини рюкзак» correction. Each is a pin (`pin: {x, y, district}` in fractions of `assets/map/moscow.png`). Unlock is by completion only, no calendar gate: only budget #1 is open; finishing it opens #1 of savings and payments and budget #2; then each topic goes by `order`; `requires` overrides the chain (bonus games). Демо-режим opens every pin at once. Tapping a pin opens a sheet: topic, district, difficulty stars, description, «Награда: до N» or best result + «можно получить ещё N», «Начать» / «Пройти ещё раз» or «Откроется после «X»». Content is `assets/content/tasks.json` (§5.3); the map art is one PNG that Andrei's design replaces.
 
 ### 2.4 Взрослый раздел & Демо-режим (R12, R13)
 
@@ -255,6 +255,8 @@ Catalog optional rows are the only Цель source (`id`, `name`, `cost` = price
             "effect": { "meter": "care", "delta": 5 },
             "spawnTask": null } ] } ] } ] }
 ```
+
+Node kinds: `choice` (default — `text` + `options`), `card` (`title?`, `text`, `next`, `button?` — teaching card, not scored), `sort` (`text`, `bins`, `items: [{label, bin, explanation}]`, `next` — «Нужно или хочется?»-style game; each item scored on its first answer, a wrong basket retries the item). Mission fields: `order`, `difficulty` 1–3, `description`, `pin`, optional `requires`. `{pet}` in any text is replaced with the pet's name. The loader rejects dangling `next` / `spawnTask` / `requires` and a map mission without pin/order.
 
 Rules: every option carries `explanation` (shown after the action, regardless of verdict — R8); `verdict` renders icon+text, never color-only (`UX`); `retry` = correction path back into the same node; `spawnTask` enqueues a timed correction Задание (safe-error rule, R9); runner is generic — a new task is data only.
 

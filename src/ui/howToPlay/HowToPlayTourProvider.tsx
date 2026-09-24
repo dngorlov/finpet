@@ -83,10 +83,8 @@ export function HowToPlayTourProvider({
     let beats: TourBeatId[] = TOUR_BEATS.map((beat) => beat.id);
     if (profileId) {
       const profile = game.getProfile(profileId);
-      const day = game.dayState(profileId);
       const task = preferredHubTask(
         content.tasks,
-        day.n,
         profile.isDemo,
         game.listTaskProgress(profileId),
       );

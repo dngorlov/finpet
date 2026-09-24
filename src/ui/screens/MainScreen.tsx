@@ -54,8 +54,7 @@ export default function MainScreen({ navigation }: Props) {
       const profile = game.getProfile(profileId);
       const savings = game.savingsState(profileId);
       const day = game.dayState(profileId);
-      const dayN = opened.status === "opened" ? opened.n : day.n;
-      const task = preferredHubTask(content.tasks, dayN, profile.isDemo, game.listTaskProgress(profileId));
+      const task = preferredHubTask(content.tasks, profile.isDemo, game.listTaskProgress(profileId));
       const activeGoal = savings.activeGoal;
       const goalItem = activeGoal
         ? content.catalog.find((item) => item.id === activeGoal.key && item.kind === "optional")

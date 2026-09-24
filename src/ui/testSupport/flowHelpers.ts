@@ -1,12 +1,16 @@
 import { screen, userEvent } from "@testing-library/react-native";
 
-export const sixUnlocked = [
-  "Первый план",
-  "Сломался рюкзак",
-  "Копилка мечты",
-  "Большая распродажа",
-  "Две цены",
-  "Чек",
+/** Every map mission — all open at once in Демо-режим. */
+export const demoMissions = [
+  "Что такое бюджет?",
+  "Планирование бюджета",
+  "Что такое сбережения",
+  "Где живут накопления?",
+  "Платежи",
+  "Покупки",
+  "Скидка или ловушка",
+  "Что дешевле?",
+  "Охота за ценником",
 ] as const;
 
 function collectText(node: unknown): string {
