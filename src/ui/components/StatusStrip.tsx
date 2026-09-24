@@ -7,10 +7,11 @@ import { META_KEYS } from "../../data/metaKeys";
 import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
-import { colors, minTarget, spacing, type } from "../theme";
+import { colors, minTarget, radius, spacing, type } from "../theme";
 import { MeterBar } from "./MeterBar";
 
 const STAGE_ORDER: Stage[] = ["novice", "friend", "master"];
+const EDGE = 4;
 
 export function StatusStrip() {
   const focused = useIsFocused();
@@ -26,88 +27,144 @@ export function StatusStrip() {
   const reached = STAGE_CODES[profile.stage];
 
   return (
-    <View style={styles.row}>
-      <MeterBar compact icon={strings.careIcon} label={strings.care} value={profile.care} />
-      <MeterBar compact icon={strings.moodIcon} label={strings.mood} value={profile.mood} />
-      <View accessible aria-label={strings.balanceBadge(profile.balance)} style={styles.balance}>
-        <Text aria-hidden style={styles.icon}>
-          {strings.balanceIcon}
-        </Text>
-        <Text aria-hidden style={styles.balanceValue}>
-          {profile.balance}
-        </Text>
+    <View style={styles.wrap}>
+      <View style={styles.status}>
+        <View accessible aria-label={strings.balanceBadge(profile.balance)} style={styles.balance}>
+          <Text aria-hidden style={styles.balanceIcon}>
+            {strings.balanceIcon}
+          </Text>
+          <Text aria-hidden style={styles.balanceValue}>
+            {profile.balance}
+          </Text>
+        </View>
+        <View accessible aria-label={strings.stageA11y(stageName)} style={styles.stage}>
+          <View aria-hidden style={styles.beads}>
+            <View style={styles.beadLine} />
+            {STAGE_ORDER.map((stage) => (
+              <View
+                key={stage}
+                style={[styles.disc, STAGE_CODES[stage] <= reached ? styles.discReached : styles.discAhead]}
+              >
+                <View style={styles.spindle} />
+              </View>
+            ))}
+          </View>
+          <Text style={styles.stageName}>{stageName}</Text>
+        </View>
+        <Pressable
+          role="button"
+          aria-label={strings.settings}
+          onPress={() => navigation.navigate("Settings")}
+          style={({ pressed }) => [styles.settingsShell, pressed ? styles.settingsPressed : null]}
+        >
+          <View style={styles.settingsFace}>
+            <Text aria-hidden style={styles.settingsIcon}>
+              {strings.settingsIcon}
+            </Text>
+          </View>
+        </Pressable>
       </View>
-      <View accessible aria-label={strings.stageA11y(stageName)} style={styles.stage}>
-        {STAGE_ORDER.map((stage) => (
-          <View
-            key={stage}
-            aria-hidden
-            style={[styles.dot, STAGE_CODES[stage] <= reached ? styles.dotReached : styles.dotAhead]}
-          />
-        ))}
-        <Text style={styles.stageName}>{stageName}</Text>
+      <View style={styles.meters}>
+        <MeterBar compact icon={strings.careIcon} label={strings.care} value={profile.care} />
+        <MeterBar compact icon={strings.moodIcon} label={strings.mood} value={profile.mood} />
       </View>
-      <Pressable
-        role="button"
-        aria-label={strings.settings}
-        onPress={() => navigation.navigate("Settings")}
-        style={styles.settings}
-      >
-        <Text aria-hidden style={styles.settingsIcon}>
-          {strings.settingsIcon}
-        </Text>
-      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    alignItems: "center",
+  wrap: {
     backgroundColor: colors.background,
-    flexDirection: "row",
     gap: spacing.s,
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.s,
   },
-  balance: {
+  status: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 4,
+    gap: spacing.s,
   },
-  icon: {
-    fontSize: type.body,
+  meters: {
+    flexDirection: "row",
+    gap: spacing.m,
+  },
+  balance: {
+    alignItems: "center",
+    backgroundColor: colors.badgeFill,
+    borderRadius: radius.card,
+    flexDirection: "row",
+    gap: spacing.s,
+    minHeight: minTarget,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+  },
+  balanceIcon: {
+    fontSize: type.section,
   },
   balanceValue: {
     color: colors.text,
-    fontSize: type.body,
+    fontSize: type.section,
     fontWeight: "700",
   },
   stage: {
     alignItems: "center",
     flexDirection: "row",
     flexGrow: 1,
-    gap: 4,
+    gap: spacing.s,
   },
-  dot: {
-    borderRadius: 6,
-    height: 12,
-    width: 12,
+  beads: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.s,
+    justifyContent: "center",
   },
-  dotReached: {
+  beadLine: {
+    backgroundColor: colors.track,
+    height: 4,
+    left: 10,
+    position: "absolute",
+    right: 10,
+  },
+  disc: {
+    alignItems: "center",
+    borderRadius: 11,
+    borderWidth: 3,
+    height: 22,
+    justifyContent: "center",
+    width: 22,
+  },
+  discReached: {
     backgroundColor: colors.fill,
+    borderColor: colors.fill,
   },
-  dotAhead: {
-    backgroundColor: colors.disabledFace,
+  discAhead: {
+    backgroundColor: colors.card,
+    borderColor: colors.disabledFace,
+  },
+  spindle: {
+    backgroundColor: colors.card,
+    borderRadius: 3,
+    height: 6,
+    width: 6,
   },
   stageName: {
     color: colors.text,
     fontSize: type.body,
-    fontWeight: "700",
   },
-  settings: {
+  settingsShell: {
+    backgroundColor: colors.raisedEdge,
+    borderRadius: minTarget / 2,
+    paddingBottom: EDGE,
+  },
+  settingsPressed: {
+    paddingBottom: 0,
+    paddingTop: EDGE,
+  },
+  settingsFace: {
     alignItems: "center",
-    height: minTarget,
+    backgroundColor: colors.card,
+    borderRadius: minTarget / 2,
+    height: minTarget - EDGE,
     justifyContent: "center",
     width: minTarget,
   },
