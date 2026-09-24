@@ -18,7 +18,7 @@ export function MeterBar({
   if (compact) {
     return (
       <View accessible aria-label={name} style={styles.compact}>
-        <Text aria-hidden style={styles.icon}>
+        <Text aria-hidden style={styles.compactIcon}>
           {icon}
         </Text>
         <View style={styles.compactTrack} accessibilityElementsHidden>
@@ -68,20 +68,25 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     height: spacing.l,
   },
+  compactIcon: {
+    fontSize: type.section,
+  },
   compact: {
     alignItems: "center",
+    flex: 1,
     flexDirection: "row",
-    gap: 4,
+    gap: spacing.s,
+    minWidth: 0,
   },
   compactTrack: {
     backgroundColor: colors.track,
     borderRadius: radius.card,
-    height: 8,
+    flex: 1,
+    height: spacing.m,
     overflow: "hidden",
-    width: 36,
   },
   compactFill: {
     backgroundColor: colors.fill,
-    height: 8,
+    height: spacing.m,
   },
 });
