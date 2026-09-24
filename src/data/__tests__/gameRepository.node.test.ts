@@ -829,3 +829,52 @@ describe("shop-item Цели", () => {
     expect(sums(sqlite, "p1")).toEqual({ balance: 10, txSum: 10, pot: 0 });
   });
 });
+
+describe("Банк: вклад", () => {
+  function nextDay(game: ReturnType<typeof seed>["game"], profileId: string) {
+    game.closeDay(profileId, tinyCatalog);
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+    return opened.dayId;
+  }
+
+  it("takes coins on open, keeps them locked, and pays principal + interest once on the due day", () => {
+    const { game, sqlite, profileId } = seed();
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+
+    expect(game.openDeposit(profileId, opened.dayId, "short", 5)).toEqual({ status: "tooSmall", min: 10 });
+    expect(game.openDeposit(profileId, opened.dayId, "short", 500)).toMatchObject({ status: "blocked" });
+    expect(game.openDeposit(profileId, opened.dayId, "short", 100)).toEqual({
+      status: "ok",
+      payout: 110,
+      maturesDayN: 4,
+    });
+    expect(game.getProfile(profileId).balance).toBe(20);
+    expect(sums(sqlite, profileId).balance).toBe(sums(sqlite, profileId).txSum);
+    expect(game.listDeposits(profileId)).toMatchObject([{ amount: 100, payout: 110, daysLeft: 3, status: "open" }]);
+
+    let dayId = nextDay(game, profileId);
+    expect(game.collectDeposits(profileId, dayId)).toEqual({ paid: 0, interest: 0, count: 0 });
+    dayId = nextDay(game, profileId);
+    dayId = nextDay(game, profileId);
+    const before = game.getProfile(profileId).balance;
+    expect(game.collectDeposits(profileId, dayId)).toEqual({ paid: 110, interest: 10, count: 1 });
+    expect(game.collectDeposits(profileId, dayId)).toEqual({ paid: 0, interest: 0, count: 0 });
+    expect(game.getProfile(profileId).balance).toBe(before + 110);
+    expect(game.listDeposits(profileId)).toMatchObject([{ status: "paid", daysLeft: 0 }]);
+    expect(sums(sqlite, profileId).balance).toBe(sums(sqlite, profileId).txSum);
+    expect(game.listJournal(profileId).map((row) => row.labelKey)).toEqual(
+      expect.arrayContaining(["bank_in", "bank_out"]),
+    );
+  });
+
+  it("deletes вклады with the profile", () => {
+    const { game, sqlite, profileId } = seed();
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+    game.openDeposit(profileId, opened.dayId, "long", 20);
+    game.deleteProfile(profileId);
+    expect((sqlite.prepare("SELECT COUNT(*) AS n FROM deposits").get() as { n: number }).n).toBe(0);
+  });
+});

@@ -58,6 +58,8 @@ These were decided in the planning interview; do not re-derive them. If a number
 
 **Day rules:** Игровой день opens when the player starts it (unlocked at local midnight in normal play; back-to-back in Демо-режим). Day close sequence: compute day score → update meters' decay/messages → recompute Этап → show Итоги дня (plan-vs-actual, stage change explanation) → offer next day.
 
+**Банк (2026-09-24):** tile «Банк» on Main after `savings_where` is completed (Демо-режим: always). Offers in `core/config.ts` `BANK`: 3 дня +10%, 5 дней +20%, minimum 10. «Открыть вклад» → confirm sheet → debit `bank_in` from Баланс; row in `deposits` (migration 5) with `maturesDayN = day n + days`. When a later Игровой день opens on Main, `collectDeposits` credits principal + floor(interest) as `bank_out` once and the day's FeedbackCard says «Вклад вернулся: +N (из них M — проценты)». No early withdrawal; Журнал labels «Вклад в банк» / «Вклад вернулся».
+
 ### 2.2 Pet (R2, R3, R9, R10)
 
 - **Identity:** the profile "character" **is** the pet. Appearance = Вид (species) + Окрас (color) + Аксессуар (accessory): **3 × 3 × 3 = 27 combinations** (≥9 required), designer's PNG bundle.

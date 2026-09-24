@@ -133,4 +133,21 @@ ALTER TABLE taskProgress ADD COLUMN bestReward INTEGER NOT NULL DEFAULT 0;
 UPDATE taskProgress SET bestReward = 10 WHERE rewardPaid = 1;
 `,
   },
+  {
+    version: 5,
+    up: `
+CREATE TABLE IF NOT EXISTS deposits (
+  id TEXT PRIMARY KEY NOT NULL,
+  profileId TEXT NOT NULL REFERENCES profiles(id),
+  amount INTEGER NOT NULL,
+  ratePercent INTEGER NOT NULL,
+  days INTEGER NOT NULL,
+  openedDayN INTEGER NOT NULL,
+  maturesDayN INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  openedAt INTEGER NOT NULL,
+  paidAt INTEGER
+);
+`,
+  },
 ];
