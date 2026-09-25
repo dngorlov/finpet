@@ -86,7 +86,9 @@ function CoinPrice({ amount }: { amount: number }) {
 function ItemHead({ item, shortfall }: { item: CatalogItemContent; shortfall: number | null }) {
   return (
     <View style={styles.itemTop}>
-      <Text style={styles.emoji}>{item.icon}</Text>
+      <Text {...hiddenFromReader} style={styles.emoji}>
+        {item.icon}
+      </Text>
       <Text style={[styles.section, styles.name]}>{item.name}</Text>
       <View style={styles.priceCol}>
         <CoinPrice amount={item.price} />
@@ -109,7 +111,7 @@ function EffectChips({
 }) {
   const skip = due && !bought ? skipLine(item) : null;
   return (
-    <View style={styles.chips}>
+    <View style={styles.chips} {...(announce ? {} : hiddenFromReader)}>
       {itemMeterEffects(item).map((effect) => {
         const spoken = strings.shopMeterA11y(meterWord(effect.meter), effect.delta);
         return (
@@ -129,16 +131,32 @@ function EffectChips({
   );
 }
 
-function StateChips({ goal, bought, once }: { goal: boolean; bought: boolean; once: boolean }) {
+function StateChips({
+  goal,
+  bought,
+  once,
+  hidden,
+}: {
+  goal: boolean;
+  bought: boolean;
+  once: boolean;
+  hidden?: boolean;
+}) {
   if (!goal && !bought && !once) return null;
   return (
-    <View style={styles.chips}>
+    <View style={styles.chips} {...(hidden ? hiddenFromReader : {})}>
       {goal ? <StateChip label={strings.shopGoalChip} /> : null}
       {bought ? <StateChip label={strings.shopBought} icon={strings.selectedCheck} /> : null}
       {once ? <StateChip label={strings.shopOnceChip} /> : null}
     </View>
   );
 }
+
+const hiddenFromReader = {
+  "aria-hidden": true as const,
+  accessibilityElementsHidden: true as const,
+  importantForAccessibility: "no-hide-descendants" as const,
+};
 
 function StateChip({ label, icon }: { label: string; icon?: string }) {
   return (
@@ -407,7 +425,7 @@ export default function ShopScreen({ navigation }: Props) {
                 <Card>
                   <ItemHead item={item} shortfall={shortfall} />
                     <EffectChips item={item} due={flags.due} bought={flags.bought} announce={false} />
-                    <StateChips goal={flags.goal} bought={flags.bought} once={Boolean(item.once)} />
+                    <StateChips goal={flags.goal} bought={flags.bought} once={Boolean(item.once)} hidden />
                 </Card>
               </Pressable>
             );
