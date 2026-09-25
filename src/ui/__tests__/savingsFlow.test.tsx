@@ -18,7 +18,7 @@ describe("Копилка", () => {
     await openMoney(user, "Копилка");
     expect(screen.getByText("В копилке 0")).toBeOnTheScreen();
     expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
-    expect(screen.getByText("90 монет")).toBeOnTheScreen();
+    expect(screen.getByLabelText("90 монет")).toBeOnTheScreen();
     expect(screen.getByText(stringsDash())).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Положить" }));
@@ -101,7 +101,7 @@ describe("Копилка", () => {
     expect(screen.getByRole("button", { name: "Самокат" })).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Самокат" }));
     expect(screen.getByText("Самокат")).toBeOnTheScreen();
-    expect(screen.getByText("160 монет")).toBeOnTheScreen();
+    expect(screen.getByLabelText("160 монет")).toBeOnTheScreen();
   });
 });
 

@@ -1,9 +1,10 @@
 import { useCallback, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { taskUnlockOrder, unlockedTasks, type TaskContent } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
 import { BackButton } from "../components/BackButton";
+import { CoinText } from "../components/CoinText";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
@@ -68,18 +69,18 @@ export default function HandbookScreen() {
                 onPress={() => setOpenId((current) => (current === term.id ? null : term.id))}
                 style={styles.term}
               >
-                <Text style={styles.termLabel}>{term.term}</Text>
+                <CoinText inline labelled={false} text={term.term} style={styles.termLabel} />
               </Pressable>
-              {openId === term.id ? <Text style={styles.body}>{term.definition}</Text> : null}
+              {openId === term.id ? <CoinText text={term.definition} style={styles.body} /> : null}
             </Card>
           ))
         : lessons.map((task) => (
             <Card key={task.id}>
-              <Text style={styles.section}>{task.title}</Text>
+              <CoinText text={task.title} style={styles.section} />
               {lessonCards(task).map((card) => (
                 <View key={card.id}>
-                  {card.title ? <Text style={styles.termLabel}>{withPet(card.title, petName)}</Text> : null}
-                  <Text style={styles.body}>{withPet(card.text, petName)}</Text>
+                  {card.title ? <CoinText text={withPet(card.title, petName)} style={styles.termLabel} /> : null}
+                  <CoinText text={withPet(card.text, petName)} style={styles.body} />
                 </View>
               ))}
             </Card>

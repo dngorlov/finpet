@@ -1,5 +1,6 @@
 import { Modal, StyleSheet, Text, View } from "react-native";
 import { Pictogram } from "./Pictogram";
+import { CoinText } from "./CoinText";
 import { PrimaryButton } from "./PrimaryButton";
 import { strings } from "../strings";
 import { colors, radius, spacing, type } from "../theme";
@@ -57,8 +58,10 @@ export function FeedbackCard({
           {deltas.mood ? (
             <DeltaRow icon={strings.moodIcon} label={strings.feedbackMood(deltas.mood)} />
           ) : null}
-          {model.cause ? <Text style={styles.body}>{model.cause}</Text> : null}
-          {model.nextStep ? <Text style={styles.body}>{model.nextStep}</Text> : null}
+          {model.cause ? (
+            <CoinText coin={/[+\-−]\d/.test(model.cause)} text={model.cause} style={styles.body} />
+          ) : null}
+          {model.nextStep ? <CoinText text={model.nextStep} style={styles.body} /> : null}
           <PrimaryButton
             label={strings.gotIt}
             onPress={onDismiss}

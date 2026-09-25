@@ -11,6 +11,7 @@ import {
 import { strings } from "../strings";
 import { colors, minTarget, radius, spacing, type } from "../theme";
 import { Pictogram } from "./Pictogram";
+import { CoinText } from "./CoinText";
 
 const HOLD_DELAY_MS = 400;
 const HOLD_INTERVAL_MS = 120;
@@ -189,7 +190,7 @@ export function AmountStepper({
     </Pressable>
   );
 
-  const valueText = <Text style={styles.value}>{strings.bucketValue(label, value)}</Text>;
+  const valueText = <CoinText coin text={strings.bucketValue(label, value)} style={styles.value} />;
 
   const heading = (
     <>

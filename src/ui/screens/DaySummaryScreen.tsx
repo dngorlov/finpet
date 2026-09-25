@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DaySummaryView } from "../../data/repositories/gameRepository";
 import { BackButton } from "../components/BackButton";
+import { CoinText } from "../components/CoinText";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -74,11 +75,11 @@ export default function DaySummaryScreen({ navigation }: Props) {
       />
       <Card>
         <Text style={styles.section}>{strings.bucketMandatory}</Text>
-        <Text style={styles.body}>{strings.planVsActual(summary.plan.mandatory, summary.actual.mandatory)}</Text>
+        <CoinText coin text={strings.planVsActual(summary.plan.mandatory, summary.actual.mandatory)} style={styles.body} />
         <Text style={styles.section}>{strings.bucketOptional}</Text>
-        <Text style={styles.body}>{strings.planVsActual(summary.plan.optional, summary.actual.optional)}</Text>
+        <CoinText coin text={strings.planVsActual(summary.plan.optional, summary.actual.optional)} style={styles.body} />
         <Text style={styles.section}>{strings.bucketSavings}</Text>
-        <Text style={styles.body}>{strings.planVsActual(summary.plan.savings, summary.actual.savings)}</Text>
+        <CoinText coin text={strings.planVsActual(summary.plan.savings, summary.actual.savings)} style={styles.body} />
       </Card>
       <Card>
         {reasons.map((line) => (

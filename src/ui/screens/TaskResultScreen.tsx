@@ -1,8 +1,9 @@
 import { useCallback, useState } from "react";
-import { BackHandler, StyleSheet, Text } from "react-native";
+import { BackHandler, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BackButton } from "../components/BackButton";
+import { CoinText } from "../components/CoinText";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -64,10 +65,10 @@ export default function TaskResultScreen({ navigation, route }: Props) {
     >
       <BackButton onPress={dayEnded ? leave : undefined} />
       <ScreenTitle style={styles.title}>{task?.title ?? strings.navTasks}</ScreenTitle>
-      {total > 0 ? <Text style={styles.body}>{strings.taskScore(formatPoints(points), total)}</Text> : null}
-      {reward > 0 ? <Text style={styles.section}>{strings.taskEarned(reward)}</Text> : null}
-      {reward === 0 && earned > 0 ? <Text style={styles.body}>{strings.taskNoTopUp}</Text> : null}
-      {task ? <Text style={styles.body}>{strings.missionRewardLeft(rewardLeft(task, best))}</Text> : null}
+      {total > 0 ? <CoinText text={strings.taskScore(formatPoints(points), total)} style={styles.body} /> : null}
+      {reward > 0 ? <CoinText text={strings.taskEarned(reward)} style={styles.section} /> : null}
+      {reward === 0 && earned > 0 ? <CoinText text={strings.taskNoTopUp} style={styles.body} /> : null}
+      {task ? <CoinText coin text={strings.missionRewardLeft(rewardLeft(task, best))} style={styles.body} /> : null}
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}
     </Screen>
   );

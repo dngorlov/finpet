@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { IntroCardContent } from "../../data/content";
 import { createLocalId } from "../../data/localId";
 import { BeadSlider } from "../components/BeadSlider";
+import { CoinText } from "../components/CoinText";
 import { Pictogram } from "../components/Pictogram";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -159,7 +160,7 @@ function OpeningCards({
       footer={<PrimaryButton label={last ? strings.done : strings.next} onPress={onNext} />}
     >
       <ScreenTitle style={styles.title}>{card.title}</ScreenTitle>
-      <Text style={styles.body}>{card.body}</Text>
+      <CoinText text={card.body} style={styles.body} />
     </Screen>
   );
 }

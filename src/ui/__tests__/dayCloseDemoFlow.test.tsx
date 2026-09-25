@@ -26,7 +26,7 @@ async function closeDemoDayAndAdvance(
   await user.press(screen.getByRole("button", { name: "Настройки" }));
   ports.game.closeDay(demoId, content.catalog, content.bills);
   await user.press(screen.getByRole("button", { name: "Назад" }));
-  expect(screen.getByText("Пособие +20 монет")).toBeOnTheScreen();
+  expect(screen.getByLabelText("Пособие +20 монет")).toBeOnTheScreen();
   await user.press(screen.getByRole("button", { name: "Понятно" }));
 }
 
@@ -46,7 +46,7 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
       expect(screen.getByText("День 2")).toBeOnTheScreen();
-      expect(screen.getByText("Пособие +20 монет")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Пособие +20 монет")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Понятно" }));
       expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
 

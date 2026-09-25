@@ -6,6 +6,7 @@ import { playableTasks } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DaySummaryView, JournalEntry, TaskProgressView } from "../../data/repositories/gameRepository";
 import { Badge } from "../components/Badge";
+import { CoinText } from "../components/CoinText";
 import { GlyphLabel } from "../components/Pictogram";
 import { Card } from "../components/Card";
 import { useSession } from "../session/SessionProvider";
@@ -91,9 +92,12 @@ export function JournalPanel() {
         <Card key={dayN}>
           <Text style={styles.section}>{dayN === 0 ? strings.journalStart : strings.journalDay(dayN)}</Text>
           {entries.map((entry) => (
-            <Text key={entry.id} style={styles.body}>
-              {journalLabel(entry, itemName, taskTitle)} {strings.journalAmount(journalAmount(entry))}
-            </Text>
+            <CoinText
+              key={entry.id}
+              coin
+              text={`${journalLabel(entry, itemName, taskTitle)} ${strings.journalAmount(journalAmount(entry))}`}
+              style={styles.body}
+            />
           ))}
         </Card>
       ))}
@@ -170,7 +174,7 @@ function BucketLine({
   return (
     <View>
       <GlyphLabel glyph={pictogram} label={label} labelStyle={styles.body} />
-      <Text style={styles.body}>{strings.planVsActual(plan, actual)}</Text>
+      <CoinText coin text={strings.planVsActual(plan, actual)} style={styles.body} />
     </View>
   );
 }

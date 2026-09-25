@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 import { strings } from "../strings";
+import { CoinText } from "./CoinText";
 import { Pictogram } from "./Pictogram";
 import { colors, minTarget, spacing, type } from "../theme";
 
@@ -27,7 +28,7 @@ export function Chip({
       style={[styles.chip, selected ? styles.chipOn : null, disabled ? styles.chipOff : null]}
     >
       {pictogram ? <Pictogram glyph={pictogram} /> : null}
-      <Text style={styles.label}>{label}</Text>
+      <CoinText inline labelled={false} text={label} style={styles.label} />
       {selected ? <Pictogram glyph={strings.selectedCheck} /> : null}
     </Pressable>
   );

@@ -1,10 +1,11 @@
 import { useCallback, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { planMandatoryFloor, validatePlan, type PlanBuckets } from "../../core/economy";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, DaySummaryView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
+import { CoinText } from "../components/CoinText";
 import { GlyphLabel } from "../components/Pictogram";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
@@ -56,7 +57,7 @@ export default function PlanScreen() {
   if (!day) {
     return (
       <Screen>
-        <Text style={styles.body}>{strings.appName}</Text>
+        <CoinText text={strings.appName} style={styles.body} />
       </Screen>
     );
   }
@@ -65,7 +66,7 @@ export default function PlanScreen() {
     return (
       <Screen>
         <ScreenTitle style={styles.title}>{strings.navPlan}</ScreenTitle>
-        <Text style={styles.body}>{strings.waitingEconomyHint}</Text>
+        <CoinText text={strings.waitingEconomyHint} style={styles.body} />
       </Screen>
     );
   }
@@ -116,15 +117,15 @@ export default function PlanScreen() {
       }
     >
       <ScreenTitle style={styles.title}>{strings.navPlan}</ScreenTitle>
-      {confirmed || income <= 0 ? null : <Text style={styles.body}>{strings.planIncomeToday(income)}</Text>}
-      <Text style={styles.body}>{strings.planAvailable(day.available)}</Text>
-      {confirmed ? null : <Text style={styles.body}>{strings.planPromise}</Text>}
+      {confirmed || income <= 0 ? null : <CoinText coin text={strings.planIncomeToday(income)} style={styles.body} />}
+      <CoinText coin text={strings.planAvailable(day.available)} style={styles.body} />
+      {confirmed ? null : <CoinText text={strings.planPromise} style={styles.body} />}
       {confirmed || bills.parts.length === 0 ? null : (
         <Card>
-          <Text style={styles.section}>{strings.planBillsTitle}</Text>
-          {bills.note ? <Text style={styles.body}>{bills.note}</Text> : null}
-          <Text style={styles.body}>{strings.planBillsLine(bills.parts, bills.total)}</Text>
-          {billsShort > 0 ? <Text style={styles.body}>{strings.planBillsShort(billsShort)}</Text> : null}
+          <CoinText text={strings.planBillsTitle} style={styles.section} />
+          {bills.note ? <CoinText text={bills.note} style={styles.body} /> : null}
+          <CoinText coin text={strings.planBillsLine(bills.parts, bills.total)} style={styles.body} />
+          {billsShort > 0 ? <CoinText text={strings.planBillsShort(billsShort)} style={styles.body} /> : null}
         </Card>
       )}
       {confirmed ? (
@@ -173,12 +174,12 @@ export default function PlanScreen() {
             />
           </Card>
       )}
-      {confirmed ? null : <Text style={styles.body}>{strings.planRemainder(check.remainder)}</Text>}
-      {confirmed || check.ok ? null : <Text style={styles.body}>{strings.planOverBudget}</Text>}
+      {confirmed ? null : <CoinText coin text={strings.planRemainder(check.remainder)} style={styles.body} />}
+      {confirmed || check.ok ? null : <CoinText text={strings.planOverBudget} style={styles.body} />}
       {askingConfirm ? (
         <Card>
-          <Text style={styles.section}>{strings.confirmPlanTitle}</Text>
-          <Text style={styles.body}>{strings.confirmPlanBody}</Text>
+          <CoinText text={strings.confirmPlanTitle} style={styles.section} />
+          <CoinText text={strings.confirmPlanBody} style={styles.body} />
         </Card>
       ) : null}
     </Screen>
@@ -217,9 +218,9 @@ function DraftBucket({
         showTrack
         onChange={onChange}
       />
-      {yesterday == null ? null : <Text style={styles.body}>{strings.planYesterday(yesterday)}</Text>}
-      {extra ? <Text style={styles.body}>{extra}</Text> : null}
-      {hint ? <Text style={styles.body}>{hint}</Text> : null}
+      {yesterday == null ? null : <CoinText coin text={strings.planYesterday(yesterday)} style={styles.body} />}
+      {extra ? <CoinText coin={/\d/.test(extra)} text={extra} style={styles.body} /> : null}
+      {hint ? <CoinText text={hint} style={styles.body} /> : null}
     </View>
   );
 }
@@ -238,7 +239,7 @@ function BucketActual({
   return (
     <View>
       <GlyphLabel glyph={pictogram} label={label} labelStyle={styles.body} />
-      <Text style={styles.body}>{strings.planVsActual(plan, actual)}</Text>
+      <CoinText coin text={strings.planVsActual(plan, actual)} style={styles.body} />
     </View>
   );
 }

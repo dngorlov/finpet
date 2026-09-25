@@ -13,6 +13,7 @@ import {
 import { META_KEYS } from "../../data/metaKeys";
 import type { TaskProgressView } from "../../data/repositories/gameRepository";
 import { Card } from "../components/Card";
+import { CoinText } from "../components/CoinText";
 import { GlyphLabel, Pictogram } from "../components/Pictogram";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -221,9 +222,9 @@ export default function TaskListScreen() {
           style={styles.hit}
         >
           <Card>
-            <Text style={styles.cardTitle}>{task.title}</Text>
-            <Text style={styles.body}>{task.intro}</Text>
-            <Text style={styles.body}>{strings.playTask}</Text>
+            <CoinText text={task.title} style={styles.cardTitle} />
+            <CoinText text={task.intro} style={styles.body} />
+            <CoinText text={strings.playTask} style={styles.body} />
           </Card>
         </Pressable>
       ))}
@@ -270,16 +271,14 @@ function MissionSheet({
   const topic = TOPIC_COPY[task.topic];
   return (
     <Card>
-      <Text style={styles.cardTitle}>{task.title}</Text>
+      <CoinText text={task.title} style={styles.cardTitle} />
       <GlyphLabel
         glyph={topic.icon}
         label={`${topic.title}${task.pin ? ` · ${strings.missionDistrict(task.pin.district)}` : ""}`}
         labelStyle={styles.body}
       />
       {task.difficulty && state !== "soon" ? <DifficultyMarks level={task.difficulty} /> : null}
-      {task.description ? (
-        <Text style={styles.body}>{task.description}</Text>
-      ) : null}
+      {task.description ? <CoinText text={task.description} style={styles.body} /> : null}
       {state === "soon" ? null : (
         <RewardLines task={task} state={state} best={best} />
       )}
@@ -303,9 +302,9 @@ function MissionSheet({
       ) : null}
       {games.map((game) => (
         <View key={game.task.id} style={styles.game}>
-          <Text style={styles.cardTitle}>{game.task.title}</Text>
+          <CoinText text={game.task.title} style={styles.cardTitle} />
           {game.task.description ? (
-            <Text style={styles.body}>{game.task.description}</Text>
+            <CoinText text={game.task.description} style={styles.body} />
           ) : null}
           <RewardLines task={game.task} state={game.state} best={game.best} />
           {game.state === "locked" ? (
@@ -333,18 +332,14 @@ function RewardLines({
   state: PinState;
   best: number;
 }) {
-  if (state !== "done")
-    return (
-      <Text style={styles.body}>{strings.missionRewardMax(task.reward)}</Text>
-    );
+  const left = rewardLeft(task, best);
+  if (state !== "done") {
+    return <CoinText coin text={strings.missionRewardMax(task.reward)} style={styles.body} />;
+  }
   return (
     <>
-      <Text style={styles.body}>
-        {strings.missionRewardBest(best, task.reward)}
-      </Text>
-      <Text style={styles.body}>
-        {strings.missionRewardLeft(rewardLeft(task, best))}
-      </Text>
+      <CoinText coin text={strings.missionRewardBest(best, task.reward)} style={styles.body} />
+      <CoinText coin text={strings.missionRewardLeft(left)} style={styles.body} />
     </>
   );
 }

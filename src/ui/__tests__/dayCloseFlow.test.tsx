@@ -28,7 +28,7 @@ describe("Итоги дня", () => {
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
       expect(screen.getByText("День 2")).toBeOnTheScreen();
-      expect(screen.getByText("Пособие +20 монет")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Пособие +20 монет")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Понятно" }));
       expect(screen.getByRole("button", { name: "Магазин" })).toBeEnabled();
       expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
@@ -95,7 +95,7 @@ describe("Итоги дня", () => {
     ports.game.closeDay(profileId, content.catalog, content.bills);
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
-    expect(screen.getByText("Пособие +20 монет")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Пособие +20 монет")).toBeOnTheScreen();
     expect(screen.queryByText("Новый день откроется завтра")).not.toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Магазин" })).toBeEnabled();

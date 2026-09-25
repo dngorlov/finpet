@@ -6,6 +6,7 @@ import { META_KEYS } from "../../data/metaKeys";
 import type { CatalogItemContent } from "../../data/content";
 import type { DayState, SavingsView } from "../../data/repositories/gameRepository";
 import { Pictogram } from "../components/Pictogram";
+import { CoinText } from "../components/CoinText";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
@@ -91,7 +92,9 @@ function ItemHead({ item, shortfall }: { item: CatalogItemContent; shortfall: nu
       <Text style={[styles.section, styles.name]}>{item.name}</Text>
       <View style={styles.priceCol}>
         <CoinPrice amount={item.price} />
-        {shortfall != null ? <Text style={styles.body}>{strings.shopShortfall(shortfall)}</Text> : null}
+        {shortfall != null ? (
+          <CoinText coin labelled={false} text={strings.shopShortfall(shortfall)} style={styles.body} />
+        ) : null}
       </View>
     </View>
   );
@@ -365,13 +368,12 @@ export default function ShopScreen({ navigation }: Props) {
             />
           </View>
           {tabLeftover != null ? (
-            <Text
-              accessible
-              aria-label={strings.planLeftoverA11y(tabBucketLabel, tabLeftover)}
+            <CoinText
+              coin
+              label={strings.planLeftoverA11y(tabBucketLabel, tabLeftover)}
+              text={tabLeftover >= 0 ? strings.planLeftover(tabLeftover) : strings.planOvershoot(Math.abs(tabLeftover))}
               style={styles.body}
-            >
-              {tabLeftover >= 0 ? strings.planLeftover(tabLeftover) : strings.planOvershoot(Math.abs(tabLeftover))}
-            </Text>
+            />
           ) : null}
           {items.map((item) => {
             const shortfall = balance < item.price ? item.price - balance : null;
@@ -406,7 +408,7 @@ export default function ShopScreen({ navigation }: Props) {
       {phase.name === "item" ? (
         <Card>
           <ItemHead item={phase.item} shortfall={null} />
-          <Text style={styles.body}>{phase.item.description}</Text>
+          <CoinText text={phase.item.description} style={styles.body} />
           <EffectChips
             item={phase.item}
             due={dueIds.has(phase.item.id)}
@@ -419,36 +421,36 @@ export default function ShopScreen({ navigation }: Props) {
             once={Boolean(phase.item.once)}
           />
           {balance >= phase.item.price ? (
-            <Text style={styles.body}>{strings.shopAfterBuy(balance - phase.item.price)}</Text>
+            <CoinText text={strings.shopAfterBuy(balance - phase.item.price)} style={styles.body} />
           ) : (
-            <Text style={styles.body}>{strings.shopShortfall(phase.item.price - balance)}</Text>
+            <CoinText coin text={strings.shopShortfall(phase.item.price - balance)} style={styles.body} />
           )}
-          {phase.item.once ? <Text style={styles.body}>{strings.shopOnceLabel}</Text> : null}
+          {phase.item.once ? <CoinText text={strings.shopOnceLabel} style={styles.body} /> : null}
           {balance < phase.item.price && activeKey === phase.item.id ? (
-            <Text style={styles.body}>{strings.shopBlockedAlreadyGoal}</Text>
+            <CoinText text={strings.shopBlockedAlreadyGoal} style={styles.body} />
           ) : null}
-          {waiting && balance < phase.item.price ? <Text style={styles.body}>{strings.shopWaitExplain}</Text> : null}
+          {waiting && balance < phase.item.price ? <CoinText text={strings.shopWaitExplain} style={styles.body} /> : null}
         </Card>
       ) : null}
       {phase.name === "confirm" ? (
         <Card>
-          <Text style={styles.section}>{strings.shopConfirmBuy(phase.item.name, phase.item.price)}</Text>
+          <CoinText coin text={strings.shopConfirmBuy(phase.item.name, phase.item.price)} style={styles.section} />
           {leftoverAfterBuy != null ? (
             <>
-              <Text style={styles.body}>{strings.planAfterTap(leftoverAfterBuy)}</Text>
-              {leftoverAfterBuy < 0 ? <Text style={styles.body}>{strings.planOverWarn}</Text> : null}
+              <CoinText coin text={strings.planAfterTap(leftoverAfterBuy)} style={styles.body} />
+              {leftoverAfterBuy < 0 ? <CoinText text={strings.planOverWarn} style={styles.body} /> : null}
             </>
           ) : null}
         </Card>
       ) : null}
       {phase.name === "confirmActiveGoalBuy" ? (
         <Card>
-          <Text style={styles.section}>{strings.shopConfirmBuy(phase.item.name, phase.item.price)}</Text>
-          <Text style={styles.body}>{strings.shopBuyActiveGoalWarn(pot)}</Text>
+          <CoinText coin text={strings.shopConfirmBuy(phase.item.name, phase.item.price)} style={styles.section} />
+          <CoinText coin text={strings.shopBuyActiveGoalWarn(pot)} style={styles.body} />
           {leftoverAfterBuy != null ? (
             <>
-              <Text style={styles.body}>{strings.planAfterTap(leftoverAfterBuy)}</Text>
-              {leftoverAfterBuy < 0 ? <Text style={styles.body}>{strings.planOverWarn}</Text> : null}
+              <CoinText coin text={strings.planAfterTap(leftoverAfterBuy)} style={styles.body} />
+              {leftoverAfterBuy < 0 ? <CoinText text={strings.planOverWarn} style={styles.body} /> : null}
             </>
           ) : null}
         </Card>

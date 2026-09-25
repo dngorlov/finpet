@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
@@ -16,6 +16,7 @@ import {
 import { META_KEYS } from "../../data/metaKeys";
 import type { ProfileView } from "../../data/repositories/gameRepository";
 import { BackButton } from "../components/BackButton";
+import { CoinText } from "../components/CoinText";
 import { Pictogram } from "../components/Pictogram";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -71,7 +72,7 @@ export default function TaskRunScreen({ navigation, route }: Props) {
     return (
       <Screen>
         <BackButton />
-        <Text style={styles.body}>{strings.navTasks}</Text>
+        <CoinText text={strings.navTasks} style={styles.body} />
       </Screen>
     );
   }
@@ -213,20 +214,22 @@ export default function TaskRunScreen({ navigation, route }: Props) {
         mood={profile.mood}
         pose={shownVerdict ? poseForVerdict(shownVerdict) : undefined}
       />
-      {node?.id === task.nodes[0]?.id && kind === "choice" ? <Text style={styles.body}>{withPet(task.intro)}</Text> : null}
+      {node?.id === task.nodes[0]?.id && kind === "choice" ? (
+        <CoinText text={withPet(task.intro)} style={styles.body} />
+      ) : null}
       {kind === "card" && node ? (
         <View style={styles.verdict}>
-          {node.title ? <Text style={styles.section}>{withPet(node.title)}</Text> : null}
-          <Text style={styles.body}>{withPet(node.text)}</Text>
+          {node.title ? <CoinText text={withPet(node.title)} style={styles.section} /> : null}
+          <CoinText text={withPet(node.text)} style={styles.body} />
         </View>
       ) : null}
-      {kind === "choice" && node ? <Text style={styles.section}>{withPet(node.text)}</Text> : null}
+      {kind === "choice" && node ? <CoinText text={withPet(node.text)} style={styles.section} /> : null}
       {kind === "sort" && node ? (
         <View style={styles.verdict}>
-          <Text style={styles.section}>{withPet(node.text)}</Text>
-          <Text style={styles.body}>{strings.taskSortProgress(sortIndex + 1, node.items?.length ?? 0)}</Text>
-          {sortItem ? <Text style={styles.item}>{withPet(sortItem.label)}</Text> : null}
-          {sortResult ? null : <Text style={styles.body}>{strings.taskSortPrompt}</Text>}
+          <CoinText text={withPet(node.text)} style={styles.section} />
+          <CoinText text={strings.taskSortProgress(sortIndex + 1, node.items?.length ?? 0)} style={styles.body} />
+          {sortItem ? <CoinText text={withPet(sortItem.label)} style={styles.item} /> : null}
+          {sortResult ? null : <CoinText text={strings.taskSortPrompt} style={styles.body} />}
         </View>
       ) : null}
       {result || sortResult ? (
@@ -238,17 +241,19 @@ export default function TaskRunScreen({ navigation, route }: Props) {
         >
           <View style={styles.verdictTitle}>
             <Pictogram glyph={strings.verdictGlyph((result?.verdict ?? sortResult?.verdict)!)} />
-            <Text style={styles.section}>{strings.verdictLabel((result?.verdict ?? sortResult?.verdict)!)}</Text>
+            <CoinText text={strings.verdictLabel((result?.verdict ?? sortResult?.verdict)!)} style={styles.section} />
           </View>
-          <Text style={styles.body}>{withPet((result?.explanation ?? sortResult?.explanation)!)}</Text>
+          <CoinText text={withPet((result?.explanation ?? sortResult?.explanation)!)} style={styles.body} />
           {result?.effects.map((effect, index) =>
             effect.meter && effect.delta ? (
-              <Text key={`${effect.meter}-${index}`} style={styles.body}>
-                {effect.meter === "care" ? strings.feedbackCare(effect.delta) : strings.feedbackMood(effect.delta)}
-              </Text>
+              <CoinText
+                key={`${effect.meter}-${index}`}
+                text={effect.meter === "care" ? strings.feedbackCare(effect.delta) : strings.feedbackMood(effect.delta)}
+                style={styles.body}
+              />
             ) : null,
           )}
-          {result?.spawnTask ? <Text style={styles.body}>{strings.taskSpawned}</Text> : null}
+          {result?.spawnTask ? <CoinText text={strings.taskSpawned} style={styles.body} /> : null}
         </View>
       ) : null}
       {sceneFeedback ? <FeedbackCard model={sceneFeedback} onDismiss={() => setSceneFeedback(null)} /> : null}

@@ -214,7 +214,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     await user.press(screen.getByRole("button", { name: "Понятно" }));
 
     expect(screen.queryByRole("button", { name: "Пропустить" })).not.toBeOnTheScreen();
-    expect(screen.getByText("Пособие +20 монет")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Пособие +20 монет")).toBeOnTheScreen();
 
     expect(screen.getByText("Новичок")).toBeOnTheScreen();
     expectMainChrome();
@@ -239,7 +239,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Что такое бюджет?, открыто" }));
     await user.press(screen.getByRole("button", { name: "Начать" }));
-    expect(screen.getByText(/Бюджет — это план твоих денег/)).toBeOnTheScreen();
+    expect(screen.getByLabelText(/Бюджет — это план твоих денег/)).toBeOnTheScreen();
     expect(screen.queryByLabelText("Баланс 120")).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
@@ -260,7 +260,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
       expect(screen.getByText(term.term)).toBeOnTheScreen();
     }
     await user.press(screen.getByRole("button", { name: "Баланс" }));
-    expect(screen.getByText(content.terms[0]!.definition)).toBeOnTheScreen();
+    expect(screen.getByLabelText(content.terms[0]!.definition)).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Как играть" })).not.toBeOnTheScreen();
     expect(complete).toHaveBeenCalledTimes(1);
   });
@@ -369,7 +369,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     const { user } = await renderApp(ports);
 
     expectMainChrome();
-    expect(screen.queryByText("Пособие +20 монет")).not.toBeOnTheScreen();
+    expect(screen.queryByLabelText("Пособие +20 монет")).not.toBeOnTheScreen();
     expect(screen.queryByText("Потому что начался новый игровой день.")).not.toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Настройки" }));

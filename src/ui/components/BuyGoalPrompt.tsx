@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Modal, StyleSheet, Text, View } from "react-native";
+import { Modal, StyleSheet, View } from "react-native";
 import { meterDeltaMap } from "../../core/economy";
 import { META_KEYS } from "../../data/metaKeys";
 import { usePlayChrome } from "../navigation/playChrome";
@@ -7,6 +7,7 @@ import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { resolveCurrentTask } from "../tasks/resolveCurrentTask";
 import { colors, radius, spacing, type } from "../theme";
+import { CoinText } from "./CoinText";
 import { FeedbackCard, type FeedbackModel } from "./FeedbackCard";
 import { PrimaryButton } from "./PrimaryButton";
 import { ScreenTitle } from "./ScreenTitle";
@@ -68,8 +69,8 @@ export function BuyGoalPrompt() {
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <ScreenTitle style={styles.title}>{strings.savingsAchieved}</ScreenTitle>
-          <Text style={styles.body}>{goal.name}</Text>
-          <Text style={styles.body}>{strings.shopPrice(goal.price)}</Text>
+          <CoinText text={goal.name} style={styles.body} />
+          <CoinText text={strings.shopPrice(goal.price)} style={styles.body} />
           <TextButton label={strings.savingsLater} onPress={dismiss} />
           <PrimaryButton label={strings.savingsBuyFromSavings} onPress={buy} />
         </View>

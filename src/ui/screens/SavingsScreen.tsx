@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { CatalogItemContent, GoalContent } from "../../data/content";
 import { applyGoalProgress, estimateDaysToGoal } from "../../core/savings";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, SavingsView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
+import { CoinText } from "../components/CoinText";
 import { GlyphLabel } from "../components/Pictogram";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
@@ -75,7 +76,7 @@ export default function SavingsScreen() {
   if (!savings) {
     return (
       <Screen>
-        <Text style={styles.body}>{strings.appName}</Text>
+        <CoinText text={strings.appName} style={styles.body} />
       </Screen>
     );
   }
@@ -84,7 +85,7 @@ export default function SavingsScreen() {
     return (
       <Screen>
         <ScreenTitle style={styles.title}>{strings.navSavings}</ScreenTitle>
-        <Text style={styles.body}>{strings.waitingEconomyHint}</Text>
+        <CoinText text={strings.waitingEconomyHint} style={styles.body} />
       </Screen>
     );
   }
@@ -278,33 +279,37 @@ export default function SavingsScreen() {
   return (
     <Screen footer={footer}>
       <ScreenTitle style={styles.title}>{strings.navSavings}</ScreenTitle>
-      <Text style={styles.pot}>{strings.savingsPot(savings.pot)}</Text>
+      <CoinText coin text={strings.savingsPot(savings.pot)} style={styles.pot} />
       {savingsLeftover != null && phase.name === "home" ? (
-        <Text
-          accessible
-          aria-label={strings.planLeftoverA11y(strings.bucketSavings, savingsLeftover)}
+        <CoinText
+          coin
+          label={strings.planLeftoverA11y(strings.bucketSavings, savingsLeftover)}
+          text={
+            savingsLeftover >= 0
+              ? strings.planLeftover(savingsLeftover)
+              : strings.planOvershoot(Math.abs(savingsLeftover))
+          }
           style={styles.body}
-        >
-          {savingsLeftover >= 0
-            ? strings.planLeftover(savingsLeftover)
-            : strings.planOvershoot(Math.abs(savingsLeftover))}
-        </Text>
+        />
       ) : null}
       <Card>
         {savings.activeGoal && activeName ? (
           <>
-            <Text style={styles.section}>{activeName}</Text>
-            <Text style={styles.body}>{strings.shopPrice(savings.activeGoal.cost)}</Text>
-            <Text style={styles.body}>{strings.goalRatio(accumulated, savings.activeGoal.cost)}</Text>
-            <Text style={styles.body}>{strings.savingsRemaining(savings.activeGoal.remaining)}</Text>
-            <Text style={styles.body}>
-              {savings.estimateDays == null
-                ? strings.savingsEstimateNone
-                : strings.savingsEstimate(savings.estimateDays)}
-            </Text>
+            <CoinText text={activeName} style={styles.section} />
+            <CoinText text={strings.shopPrice(savings.activeGoal.cost)} style={styles.body} />
+            <CoinText coin text={strings.goalRatio(accumulated, savings.activeGoal.cost)} style={styles.body} />
+            <CoinText coin text={strings.savingsRemaining(savings.activeGoal.remaining)} style={styles.body} />
+            <CoinText
+              text={
+                savings.estimateDays == null
+                  ? strings.savingsEstimateNone
+                  : strings.savingsEstimate(savings.estimateDays)
+              }
+              style={styles.body}
+            />
           </>
         ) : (
-          <Text style={styles.body}>{strings.savingsPickGoal}</Text>
+          <CoinText text={strings.savingsPickGoal} style={styles.body} />
         )}
       </Card>
       {phase.name === "home" && !offerPickGoal ? (
@@ -327,11 +332,11 @@ export default function SavingsScreen() {
             max={balance}
             onChange={(amount) => setPhase({ name: "deposit", amount })}
           />
-          <Text style={styles.body}>{strings.savingsConfirmDeposit(phase.amount)}</Text>
+          <CoinText coin text={strings.savingsConfirmDeposit(phase.amount)} style={styles.body} />
           {leftoverAfterDeposit != null ? (
             <>
-              <Text style={styles.body}>{strings.planAfterTap(leftoverAfterDeposit)}</Text>
-              {leftoverAfterDeposit < 0 ? <Text style={styles.body}>{strings.planOverWarn}</Text> : null}
+              <CoinText coin text={strings.planAfterTap(leftoverAfterDeposit)} style={styles.body} />
+              {leftoverAfterDeposit < 0 ? <CoinText text={strings.planOverWarn} style={styles.body} /> : null}
             </>
           ) : null}
         </Card>
@@ -349,12 +354,16 @@ export default function SavingsScreen() {
       ) : null}
       {phase.name === "withdrawPreview" ? (
         <Card>
-          <Text style={styles.section}>{strings.savingsConfirmWithdraw(phase.amount)}</Text>
-          <Text style={styles.body}>
-            {phase.days == null
-              ? strings.savingsWithdrawPreviewNone(phase.potAfter)
-              : strings.savingsWithdrawPreview(phase.potAfter, phase.days)}
-          </Text>
+          <CoinText coin text={strings.savingsConfirmWithdraw(phase.amount)} style={styles.section} />
+          <CoinText
+            coin
+            text={
+              phase.days == null
+                ? strings.savingsWithdrawPreviewNone(phase.potAfter)
+                : strings.savingsWithdrawPreview(phase.potAfter, phase.days)
+            }
+            style={styles.body}
+          />
         </Card>
       ) : null}
       {phase.name === "celebration" ? (

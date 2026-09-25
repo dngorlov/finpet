@@ -47,7 +47,7 @@ describe("Магазин", () => {
     expect(screen.getByText(lunch.description)).toBeOnTheScreen();
     expect(screen.getByLabelText("Сытость +10")).toBeOnTheScreen();
     expect(screen.getByLabelText("Если не купить Обед, Сытость −15")).toBeOnTheScreen();
-    expect(screen.getByText("после покупки: 108 монет")).toBeOnTheScreen();
+    expect(screen.getByLabelText("после покупки: 108 монет")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText("Купить Обед за 12?")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Купить" }));

@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, type PressableProps } from "react-native";
+import { Pressable, StyleSheet, type PressableProps } from "react-native";
 import { buttonIcon } from "../buttonIcon";
 import { colors, minTarget, spacing, type } from "../theme";
+import { CoinText } from "./CoinText";
 import { PixelIcon } from "./Pictogram";
 
 export function TextButton({
@@ -20,7 +21,12 @@ export function TextButton({
       style={styles.button}
     >
       <PixelIcon name={buttonIcon(label)} color={disabled ? colors.subtle : colors.accentText} />
-      <Text style={[styles.label, disabled ? styles.labelDisabled : null]}>{label}</Text>
+      <CoinText
+        inline
+        labelled={false}
+        text={label}
+        style={[styles.label, disabled ? styles.labelDisabled : null]}
+      />
     </Pressable>
   );
 }

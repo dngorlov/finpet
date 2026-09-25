@@ -1,11 +1,12 @@
 import { useCallback, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { checkDeposit, depositPayout, maturesOnDay } from "../../core/bank";
 import { BANK } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, DepositView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
+import { CoinText } from "../components/CoinText";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
@@ -75,7 +76,7 @@ export default function BankScreen() {
     return (
       <Screen>
         <ScreenTitle style={styles.title}>{strings.bankTitle}</ScreenTitle>
-        <Text style={styles.body}>{strings.waitingEconomyHint}</Text>
+        <CoinText text={strings.waitingEconomyHint} style={styles.body} />
       </Screen>
     );
   }
@@ -94,7 +95,7 @@ export default function BankScreen() {
       }
     >
       <ScreenTitle style={styles.title}>{strings.bankTitle}</ScreenTitle>
-      <Text style={styles.body}>{strings.bankIntro}</Text>
+      <CoinText text={strings.bankIntro} style={styles.body} />
       <View style={styles.row}>
         {BANK.offers.map((item) => (
           <Chip
@@ -115,21 +116,21 @@ export default function BankScreen() {
           showTrack
           onChange={setAmount}
         />
-        <Text style={styles.body}>{strings.bankPreview(amount, payout, offer.days)}</Text>
-        {check.status === "tooSmall" ? <Text style={styles.body}>{strings.bankMin(check.min)}</Text> : null}
+        <CoinText coin text={strings.bankPreview(amount, payout, offer.days)} style={styles.body} />
+        {check.status === "tooSmall" ? <CoinText text={strings.bankMin(check.min)} style={styles.body} /> : null}
       </Card>
       {confirming ? (
         <Card>
-          <Text style={styles.section}>{strings.bankConfirmTitle}</Text>
-          <Text style={styles.body}>{strings.bankConfirmBody(amount, returnsOn)}</Text>
+          <CoinText text={strings.bankConfirmTitle} style={styles.section} />
+          <CoinText text={strings.bankConfirmBody(amount, returnsOn)} style={styles.body} />
         </Card>
       ) : null}
-      <Text style={styles.section}>{strings.bankActive}</Text>
-      {deposits.length === 0 ? <Text style={styles.body}>{strings.bankEmpty}</Text> : null}
+      <CoinText text={strings.bankActive} style={styles.section} />
+      {deposits.length === 0 ? <CoinText text={strings.bankEmpty} style={styles.body} /> : null}
       {deposits.map((dep) => (
         <Card key={dep.id}>
-          <Text style={styles.body}>{strings.bankDepositLine(dep.amount, dep.ratePercent, dep.payout)}</Text>
-          <Text style={styles.body}>{dep.status === "paid" ? strings.bankPaid : strings.bankDaysLeft(dep.daysLeft)}</Text>
+          <CoinText coin text={strings.bankDepositLine(dep.amount, dep.ratePercent, dep.payout)} style={styles.body} />
+          <CoinText text={dep.status === "paid" ? strings.bankPaid : strings.bankDaysLeft(dep.daysLeft)} style={styles.body} />
         </Card>
       ))}
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}

@@ -41,18 +41,18 @@ describe("Банк", () => {
       const { user } = await renderApp(ports);
 
       await openMoney(user, "Банк");
-      expect(screen.getByText(/Забрать раньше нельзя/)).toBeOnTheScreen();
+      expect(screen.getByLabelText(/Забрать раньше нельзя/)).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "3 дня · +10%" }));
       for (let i = 0; i < 10; i += 1) await user.press(screen.getByRole("button", { name: "Сумма, больше" }));
       expect(screen.getByText("Положишь 20 — через 3 дня вернётся 22.")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Открыть вклад" }));
       expect(screen.getByText("Открыть вклад?")).toBeOnTheScreen();
-      expect(screen.getByText(/вернутся с процентами в Игровой день 4/)).toBeOnTheScreen();
+      expect(screen.getByLabelText(/вернутся с процентами в Игровой день 4/)).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Открыть вклад" }));
       expect(screen.getByText("Баланс -20")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Понятно" }));
       expect(screen.getByLabelText("Баланс 100")).toBeOnTheScreen();
-      expect(screen.getByText("20 монет · +10% → 22")).toBeOnTheScreen();
+      expect(screen.getByLabelText("20 монет · +10% → 22")).toBeOnTheScreen();
       expect(screen.getByText("Вернётся через 3 дня")).toBeOnTheScreen();
 
       // Three demo days pass; the вклад comes back on day 4 as the day opens on Main.

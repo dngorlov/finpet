@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Modal, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, View } from "react-native";
 import type { CatalogItemContent, GoalContent } from "../../data/content";
 import type { JournalEntry } from "../../data/repositories/gameRepository";
 import { META_KEYS } from "../../data/metaKeys";
@@ -7,6 +7,7 @@ import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, minTarget, radius, spacing, type } from "../theme";
 import { Chip } from "./Chip";
+import { CoinText } from "./CoinText";
 import { ScreenTitle } from "./ScreenTitle";
 import { PrimaryButton } from "./PrimaryButton";
 import { TextButton } from "./TextButton";
@@ -109,7 +110,7 @@ export function GoalPicker({
           {pending ? (
             <>
               <ScreenTitle style={styles.title}>{strings.goalPickerTitle}</ScreenTitle>
-              <Text style={styles.body}>{strings.shopConfirmReplaceGoal(pending.name, pot)}</Text>
+              <CoinText coin text={strings.shopConfirmReplaceGoal(pending.name, pot)} style={styles.body} />
               <TextButton label={strings.close} onPress={() => setPending(null)} />
               <PrimaryButton label={strings.shopMakeGoal} onPress={() => apply(pending)} />
             </>

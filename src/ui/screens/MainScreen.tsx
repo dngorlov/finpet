@@ -6,6 +6,7 @@ import { BANK, ECONOMY, FEATURES } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
 import { Card } from "../components/Card";
+import { CoinText } from "../components/CoinText";
 import { Pictogram, PixelIcon } from "../components/Pictogram";
 import type { PixelIconName } from "../pixelIconXml";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
@@ -178,16 +179,16 @@ export default function MainScreen({ navigation }: Props) {
             </View>
             <Text style={styles.body}>{strings.journalDay(hub.day.n)}</Text>
             {waiting ? <Text style={styles.body}>{strings.waitingBanner}</Text> : null}
-            {hub.allowanceCredited ? <Text style={styles.body}>{strings.allowanceRibbon}</Text> : null}
+            {hub.allowanceCredited ? <CoinText text={strings.allowanceRibbon} style={styles.body} /> : null}
             <Card>
               {hub.goalName ? (
                 <>
-                  <Text style={styles.cardTitle}>{hub.goalName}</Text>
-                  <Text style={styles.body}>{strings.goalRatio(hub.accumulated, hub.cost)}</Text>
-                  <Text style={styles.body}>{strings.goalRemaining(hub.remaining)}</Text>
+                  <CoinText text={hub.goalName} style={styles.cardTitle} />
+                  <CoinText coin text={strings.goalRatio(hub.accumulated, hub.cost)} style={styles.body} />
+                  <CoinText coin text={strings.goalRemaining(hub.remaining)} style={styles.body} />
                 </>
               ) : (
-                <Text style={styles.cardTitle}>{strings.goalEmptyPrompt}</Text>
+                <CoinText text={strings.goalEmptyPrompt} style={styles.cardTitle} />
               )}
             </Card>
             <PrimaryButton label={strings.tabResults} onPress={() => navigation.navigate("Results")} />
@@ -394,7 +395,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.s,
   },
   tab: {
-    alignItems: "center",
+    alignItems: "stretch",
     flex: 1,
     gap: 4,
     justifyContent: "center",
@@ -402,12 +403,12 @@ const styles = StyleSheet.create({
   },
   token: {
     borderRadius: 14,
+    overflow: "hidden",
     paddingBottom: 4,
-    width: "100%",
   },
   tokenPressed: {
     paddingBottom: 0,
-    transform: [{ translateY: 4 }],
+    paddingTop: 4,
   },
   tokenOn: {
     backgroundColor: colors.raisedEdge,
@@ -424,6 +425,7 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: type.body,
+    textAlign: "center",
   },
   tabLabelOn: {
     fontWeight: "700",
