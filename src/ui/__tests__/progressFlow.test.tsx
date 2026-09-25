@@ -56,13 +56,13 @@ describe("Прогресс", () => {
       effects: [{ coins: 8 }],
       spawnTask: "budget_fix_backpack",
     });
-    expect(ports.game.claimTaskReward(profileId, day.dayId, "budget_first_plan", true)).toBe(10);
-    expect(ports.game.claimTaskReward(profileId, day.dayId, "budget_fix_backpack", true)).toBe(10);
+    expect(ports.game.claimTaskReward(profileId, day.dayId, "budget_what", 10)).toBe(10);
+    expect(ports.game.claimTaskReward(profileId, day.dayId, "budget_fix_backpack", 10)).toBe(10);
     closeScoredDay(ports, profileId);
 
     const { user } = await renderApp(ports);
     await user.press(screen.getByRole("button", { name: "Прогресс" }));
-    expect(screen.getByText("Задание: Первый план +10")).toBeOnTheScreen();
+    expect(screen.getByText("Задание: Что такое бюджет? +10")).toBeOnTheScreen();
     expect(screen.getByText("Задание +8")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Итоги" }));
@@ -81,7 +81,7 @@ describe("Прогресс", () => {
     expect(screen.getByText("Этап Друг")).toBeOnTheScreen();
     expect(screen.getByText("Питомец доверяет тебе: теперь ты Друг!")).toBeOnTheScreen();
     expect(screen.getByText("Игровых дней: 1")).toBeOnTheScreen();
-    expect(screen.getByText("Задания 1/6")).toBeOnTheScreen();
+    expect(screen.getByText("Задания 1/9")).toBeOnTheScreen();
     expect(screen.getByText("Целей: 0")).toBeOnTheScreen();
   });
 });

@@ -21,7 +21,7 @@ function playSomeEconomy(ports: ReturnType<typeof createFakePorts>, profileId: s
   const day = ports.game.dayState(profileId);
   ports.game.purchase(profileId, day.dayId, lunch);
   ports.game.transferToSavings(profileId, day.dayId, 15);
-  ports.game.claimTaskReward(profileId, day.dayId, "budget_first_plan", true);
+  ports.game.claimTaskReward(profileId, day.dayId, "budget_what", 10);
 }
 
 describe("Взрослый раздел contents and persistence", () => {
@@ -33,11 +33,11 @@ describe("Взрослый раздел contents and persistence", () => {
 
     expect(screen.getByLabelText("Баланс 103")).toBeOnTheScreen();
     await passAdultGate(user);
-    expect(screen.getByText("Бюджет: одно задание сделано")).toBeOnTheScreen();
+    expect(screen.getByText("Бюджет: сделано 1 из 2")).toBeOnTheScreen();
     expect(screen.getByText("Копилки: ещё впереди")).toBeOnTheScreen();
     expect(screen.getByText("Платежи: ещё впереди")).toBeOnTheScreen();
     expect(screen.getByText("Игровых дней пока нет — это нормально.")).toBeOnTheScreen();
-    expect(screen.getByText("Задания 1/6")).toBeOnTheScreen();
+    expect(screen.getByText("Задания 1/9")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Сбросить прогресс" }));
     expect(screen.getByText("Прогресс сбросится, имена и вид питомца останутся.")).toBeOnTheScreen();
@@ -65,7 +65,7 @@ describe("Взрослый раздел contents and persistence", () => {
     expect(screen.getByText("15 / 90")).toBeOnTheScreen();
     expect(screen.getByText("Забота 60")).toBeOnTheScreen();
     expect(ports.game.listTaskProgress(childId)).toEqual([
-      { taskKey: "budget_first_plan", status: "completed", rewardPaid: true },
+      { taskKey: "budget_what", status: "completed", rewardPaid: true, bestReward: 10 },
     ]);
 
     await view.unmount();
@@ -78,7 +78,7 @@ describe("Взрослый раздел contents and persistence", () => {
     expect(screen.getByText("Забота 60")).toBeOnTheScreen();
     expect(screen.getByLabelText(/Питомец Пух/)).toBeOnTheScreen();
     expect(ports.game.listTaskProgress(childId)).toEqual([
-      { taskKey: "budget_first_plan", status: "completed", rewardPaid: true },
+      { taskKey: "budget_what", status: "completed", rewardPaid: true, bestReward: 10 },
     ]);
   });
 

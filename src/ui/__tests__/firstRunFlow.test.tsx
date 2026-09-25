@@ -248,7 +248,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
     expect(screen.getByText("0 / 90")).toBeOnTheScreen();
     expect(screen.getByText("осталось 90")).toBeOnTheScreen();
-    expect(screen.getByText("Первый план")).toBeOnTheScreen();
+    expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
     expect(screen.getByText("Составь план дня")).toBeOnTheScreen();
     expect(screen.getByLabelText(/Питомец Пух.*Вид 2.*спокойный/)).toBeOnTheScreen();
     expect(ports.meta.get("howToPlayDone")).toBe("1");
@@ -263,12 +263,12 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByText("Сначала составь план дня")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Задания" }));
-    expect(screen.getByText("Бюджет")).toBeOnTheScreen();
+    expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
     expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
     await user.press(screen.getByRole("button", { name: "Играть" }));
-    expect(screen.getByText("С чего начнёшь?")).toBeOnTheScreen();
+    expect(screen.getByText(/Бюджет — это план твоих денег/)).toBeOnTheScreen();
     expect(screen.queryByLabelText("Баланс 120")).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Назад" }));
 

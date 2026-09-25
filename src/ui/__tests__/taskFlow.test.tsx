@@ -2,91 +2,144 @@ import { render, screen, userEvent } from "@testing-library/react-native";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
 
+type User = ReturnType<typeof userEvent.setup>;
+
 async function renderApp(ports = createFakePorts()) {
   const user = userEvent.setup();
   await render(<FinPetApp ports={ports} />);
   return { user, ports };
 }
 
-async function playFirstPlanGoodPath(user: ReturnType<typeof userEvent.setup>) {
-  await user.press(screen.getByRole("button", { name: "Купить обед (10)" }));
-  expect(screen.getByRole("status", { name: "✅ Верно" })).toBeOnTheScreen();
-  expect(screen.getByText("Обязательные расходы — самое важное. Сначала нужды, потом мечты.")).toBeOnTheScreen();
+/** «Нужно или хочется?» baskets in content order. */
+const NEED_OR_WANT = ["Нужно", "Хочется", "Нужно", "Хочется", "Нужно", "Хочется", "Нужно", "Хочется"];
+
+async function playBudgetWhat(user: User, { mistakes = 0 }: { mistakes?: number } = {}) {
+  expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
+  expect(screen.getByText(/Бюджет — это план твоих денег/)).toBeOnTheScreen();
   await user.press(screen.getByRole("button", { name: "Дальше" }));
-  await user.press(screen.getByRole("button", { name: "5 монет" }));
-  expect(screen.getByRole("status", { name: "✅ Верно" })).toBeOnTheScreen();
+  expect(screen.getByText(/Пух получает монеты за задания/)).toBeOnTheScreen();
+  await user.press(screen.getByRole("button", { name: "Дальше" }));
+  await user.press(screen.getByRole("button", { name: "Начать игру" }));
+  for (const [index, bin] of NEED_OR_WANT.entries()) {
+    if (index < mistakes) {
+      const wrong = bin === "Нужно" ? "Хочется" : "Нужно";
+      await user.press(screen.getByRole("button", { name: wrong }));
+      expect(screen.getByRole("status", { name: "⚠️ Попробуй ещё" })).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Дальше" }));
+    }
+    expect(screen.getByText(`${index + 1} из ${NEED_OR_WANT.length}`)).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: bin }));
+    expect(screen.getByRole("status", { name: "✅ Верно" })).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+  }
+  expect(screen.getByText("У питомца Пух всего 25 монет. Что купить в первую очередь?")).toBeOnTheScreen();
+  await user.press(screen.getByRole("button", { name: "Обед и тетради" }));
   await user.press(screen.getByRole("button", { name: "Дальше" }));
 }
 
-describe("Задания", () => {
+describe("Карта заданий", () => {
   it(
-    "unlocks only Первый план on day 1, pays +10 once, and treats replay as practice",
+    "opens only «Что такое бюджет?», pays by score, then opens the next lessons and pays only a better replay",
     async () => {
       const ports = createFakePorts();
       seedReturningChild(ports);
       const { user } = await renderApp(ports);
 
       await user.press(screen.getByRole("button", { name: "Задания" }));
-      expect(screen.getByText("Бюджет")).toBeOnTheScreen();
-      expect(screen.getByText("Копилки")).toBeOnTheScreen();
-      expect(screen.getByText("Платежи")).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: "Первый план" })).toBeOnTheScreen();
-      expect(screen.queryByRole("button", { name: "Сломался рюкзак" })).not.toBeOnTheScreen();
-      expect(screen.getByText("Сломался рюкзак")).toBeOnTheScreen();
-      expect(screen.getAllByText("Откроется: завтра")).toHaveLength(5);
-      expect(screen.queryByText("Почини рюкзак")).not.toBeOnTheScreen();
+      expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Что такое бюджет?, открыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Планирование бюджета, закрыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Что такое сбережения, закрыто" })).toBeOnTheScreen();
+      expect(screen.getByText("Награда: до 10 монет")).toBeOnTheScreen();
+      expect(screen.getByText("Сложность: ★☆☆")).toBeOnTheScreen();
 
-      await user.press(screen.getByRole("button", { name: "Первый план" }));
-      expect(screen.getByText("Сегодня школьная ярмарка! У питомца нет обеда, а ты хочешь мороженое. У тебя 20 монет.")).toBeOnTheScreen();
-      expect(screen.getByText("С чего начнёшь?")).toBeOnTheScreen();
-      expect(screen.queryByRole("button", { name: "Настройки" })).not.toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Платежи, закрыто" }));
+      expect(screen.getByText("Откроется после «Что такое бюджет?»")).toBeOnTheScreen();
+      expect(screen.queryByRole("button", { name: "Начать" })).not.toBeOnTheScreen();
 
-      await playFirstPlanGoodPath(user);
+      await user.press(screen.getByRole("button", { name: "Что такое бюджет?, открыто" }));
+      await user.press(screen.getByRole("button", { name: "Начать" }));
+      await playBudgetWhat(user, { mistakes: 2 });
 
-      expect(screen.getByText("+10 монет")).toBeOnTheScreen();
-      expect(screen.getByText("Баланс +10")).toBeOnTheScreen();
-      expect(screen.queryByRole("button", { name: "Настройки" })).not.toBeOnTheScreen();
+      // 7 of 9 right on the first try → round(10 × 7/9) = 8.
+      expect(screen.getByText("Верно с первого раза: 7 из 9")).toBeOnTheScreen();
+      expect(screen.getByText("+8 монет")).toBeOnTheScreen();
+      expect(screen.getByText("За лучший ответ можно получить ещё 2")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Понятно" }));
-      await user.press(screen.getByRole("button", { name: "В список заданий" }));
+      await user.press(screen.getByRole("button", { name: "На карту" }));
 
-      expect(screen.getByText("Готово")).toBeOnTheScreen();
-      await user.press(screen.getByRole("button", { name: "Первый план" }));
-      await playFirstPlanGoodPath(user);
-      expect(screen.queryByText("+10 монет")).not.toBeOnTheScreen();
-      expect(screen.queryByText("Баланс +10")).not.toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Что такое бюджет?, пройдено" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Планирование бюджета, открыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Что такое сбережения, открыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Платежи, открыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Где живут накопления?, закрыто" })).toBeOnTheScreen();
+      expect(screen.getAllByRole("button", { name: "Новый урок, скоро" })).toHaveLength(3);
+      expect(screen.getByText("Лучший результат: 8 из 10 монет")).toBeOnTheScreen();
+
+      await user.press(screen.getByRole("button", { name: "Пройти ещё раз" }));
+      await playBudgetWhat(user);
+      expect(screen.getByText("Верно с первого раза: 9 из 9")).toBeOnTheScreen();
+      expect(screen.getByText("+2 монеты")).toBeOnTheScreen();
+      expect(screen.getByText("Ты собрал все монеты за это задание")).toBeOnTheScreen();
     },
-    15000,
+    30000,
   );
 
-  it("retries the same node after a bad option and does not pay", async () => {
-    const ports = createFakePorts();
-    seedReturningChild(ports);
-    const { user } = await renderApp(ports);
-
-    await user.press(screen.getByRole("button", { name: "Задания" }));
-    await user.press(screen.getByRole("button", { name: "Первый план" }));
-    await user.press(screen.getByRole("button", { name: "Сначала мороженое (7)" }));
-    expect(screen.getByRole("status", { name: "⚠️ Попробуй ещё" })).toBeOnTheScreen();
-    expect(screen.getByText("На обед больше не хватает. Желаемое подождёт, а питомец — нет.")).toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Дальше" }));
-    expect(screen.getByText("С чего начнёшь?")).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "Купить обед (10)" })).toBeOnTheScreen();
-    expect(screen.queryByText("+10 монет")).not.toBeOnTheScreen();
-  });
-
-  it("spawns Почини рюкзак from the backpack safe-error", async () => {
+  it("retries a wrong quiz answer and scores only the first try", async () => {
     const ports = createFakePorts();
     seedReturningChild(ports, { isDemo: true, name: "Демо", petName: "Демо" });
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Задания" }));
-    await user.press(screen.getByRole("button", { name: "Сломался рюкзак" }));
-    await user.press(screen.getByRole("button", { name: "Сначала яйцо" }));
+    await user.press(screen.getByRole("button", { name: "Что такое сбережения, открыто" }));
+    await user.press(screen.getByRole("button", { name: "Начать" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.press(screen.getByRole("button", { name: "Проверить себя" }));
+
+    expect(screen.getByText(/У питомца Демо есть 50 монет/)).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Потратить все 50 монет" }));
     expect(screen.getByRole("status", { name: "⚠️ Попробуй ещё" })).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.press(screen.getByRole("button", { name: "Отложить часть монет" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.press(screen.getByRole("button", { name: "Накопится 50 монет" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.press(screen.getByRole("button", { name: "Верно" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.press(screen.getByRole("button", { name: "30 монет" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+
+    // 3 of 4 on the first try → round(10 × 3/4) = 8.
+    expect(screen.getByText("Верно с первого раза: 3 из 4")).toBeOnTheScreen();
+    expect(screen.getByText("+8 монет")).toBeOnTheScreen();
+  });
+
+  it("spawns Почини рюкзак from the plan-vs-fact safe error", async () => {
+    const ports = createFakePorts();
+    seedReturningChild(ports, { isDemo: true, name: "Демо", petName: "Демо" });
+    const { user } = await renderApp(ports);
+
+    await user.press(screen.getByRole("button", { name: "Задания" }));
+    await user.press(screen.getByRole("button", { name: "Планирование бюджета, открыто" }));
+    await user.press(screen.getByRole("button", { name: "Начать" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.press(screen.getByRole("button", { name: "Начать игру" }));
+    await user.press(screen.getByRole("button", { name: "Нужное 20 · Хочется 10 · Копилка 10" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.press(screen.getByRole("button", { name: "Желаемые и копилка" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.press(screen.getByRole("button", { name: "Лишние покупки съели монеты для копилки" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.press(screen.getByRole("button", { name: "Всё равно купить мороженое" }));
     expect(screen.getByText("Новое задание появилось в списке!")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Дальше" }));
-    expect(screen.queryByText("+10 монет")).not.toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "В список заданий" }));
+    await user.press(screen.getByRole("button", { name: "Сначала распределить монеты, потом идти в магазин" }));
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await user.press(screen.getByRole("button", { name: "На карту" }));
+
+    expect(screen.getByText("Исправить ошибку")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Почини рюкзак" })).toBeOnTheScreen();
   });
 });

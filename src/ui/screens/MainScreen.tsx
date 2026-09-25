@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ECONOMY } from "../../core/config";
+import { BANK, ECONOMY } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
 import { Card } from "../components/Card";
@@ -35,6 +35,8 @@ type HubModel = {
   accumulated: number;
   cost: number;
   remaining: number;
+  /** Банк tile appears after the lesson about banks (Демо-режим: always). */
+  bankOpen: boolean;
 };
 
 const HUB_PET_SIZE = 200;
@@ -51,11 +53,15 @@ export default function MainScreen({ navigation }: Props) {
       const profileId = meta.get(META_KEYS.activeProfileId);
       if (!profileId) return;
       const opened = game.openDay(profileId);
+      // A вклад whose term ended comes back as the day opens.
+      const bank = opened.status === "opened" ? game.collectDeposits(profileId, opened.dayId) : null;
       const profile = game.getProfile(profileId);
+      const progress = game.listTaskProgress(profileId);
+      const bankOpen =
+        profile.isDemo || progress.some((row) => row.taskKey === BANK.unlockTaskId && row.status === "completed");
       const savings = game.savingsState(profileId);
       const day = game.dayState(profileId);
-      const dayN = opened.status === "opened" ? opened.n : day.n;
-      const task = preferredHubTask(content.tasks, dayN, profile.isDemo, game.listTaskProgress(profileId));
+      const task = preferredHubTask(content.tasks, profile.isDemo, progress);
       const activeGoal = savings.activeGoal;
       const goalItem = activeGoal
         ? content.catalog.find((item) => item.id === activeGoal.key && item.kind === "optional")
@@ -73,15 +79,24 @@ export default function MainScreen({ navigation }: Props) {
         accumulated: cost - remaining,
         cost,
         remaining,
+        bankOpen,
       });
       setHubMessage(null);
+      const bankPaid = bank && bank.paid > 0 ? bank : null;
       if (opened.status === "opened" && opened.allowanceCredited) {
         const tutorial = meta.get(META_KEYS.howToPlayDone) !== "1";
         setFeedback({
-          deltas: { balance: ECONOMY.allowance },
+          deltas: { balance: ECONOMY.allowance + (bankPaid?.paid ?? 0) },
           chip: strings.allowanceDayChip,
+          cause: bankPaid ? strings.feedbackBankReturned(bankPaid.paid, bankPaid.interest) : undefined,
           tutorial,
           confirm: tutorial ? "next" : "gotIt",
+        });
+      } else if (bankPaid) {
+        setFeedback({
+          deltas: { balance: bankPaid.paid },
+          cause: strings.feedbackBankReturned(bankPaid.paid, bankPaid.interest),
+          confirm: "gotIt",
         });
       }
     }, [content, game, meta]),
@@ -101,7 +116,7 @@ export default function MainScreen({ navigation }: Props) {
   }
 
   const waiting = !hub.day.open;
-  const go = (route: "Plan" | "Shop" | "Savings" | "TaskList" | "Progress" | "AdultGate") => {
+  const go = (route: "Plan" | "Shop" | "Savings" | "Bank" | "TaskList" | "Progress" | "AdultGate") => {
     if (tour.active) {
       if (tour.beatId && hubTapRoute(tour.beatId) === route) {
         navigation.navigate(route);
@@ -197,6 +212,15 @@ export default function MainScreen({ navigation }: Props) {
             style={styles.tileFill}
           />
         </TourAnchor>
+        {hub.bankOpen ? (
+          <NavTile
+            pictogram={strings.navBankPictogram}
+            word={strings.navBank}
+            hint={waiting ? strings.waitingEconomyHint : undefined}
+            disabled={waiting || tour.active}
+            onPress={() => go("Bank")}
+          />
+        ) : null}
         <NavTile
           pictogram={strings.navTasksPictogram}
           word={strings.navTasks}

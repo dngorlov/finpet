@@ -92,11 +92,30 @@ export const strings = {
   taskTopicBudgetIcon: "📋",
   taskTopicSavingsIcon: "🐷",
   taskTopicPaymentsIcon: "🪙",
-  taskLockedTomorrow: "Откроется: завтра",
-  taskRewardBadge: "+10",
-  taskRewardCoins: "+10 монет",
-  taskCompleted: "Готово",
-  taskBackToList: "В список заданий",
+  mapTitle: "Карта заданий",
+  mapHint: "Нажми на точку, чтобы узнать о задании.",
+  missionStart: "Начать",
+  missionReplay: "Пройти ещё раз",
+  missionDistrict: (district: string) => `Район: ${district}`,
+  missionDifficulty: (n: number) => `Сложность: ${"★".repeat(n)}${"☆".repeat(Math.max(0, 3 - n))}`,
+  missionRewardMax: (max: number) => `Награда: до ${max} монет`,
+  missionRewardBest: (best: number, max: number) => `Лучший результат: ${best} из ${max} монет`,
+  missionRewardLeft: (left: number) =>
+    left > 0 ? `За лучший ответ можно получить ещё ${left}` : "Ты собрал все монеты за это задание",
+  missionLockedAfter: (title: string) => `Откроется после «${title}»`,
+  missionPinA11y: (title: string, state: "locked" | "open" | "done" | "soon") =>
+    `${title}, ${state === "locked" ? "закрыто" : state === "done" ? "пройдено" : state === "soon" ? "скоро" : "открыто"}`,
+  missionSoon: "Урок скоро появится.",
+  missionGames: "Мини-игры",
+  missionPlayGame: (title: string) => `Играть: ${title}`,
+  missionCorrections: "Исправить ошибку",
+  taskCardNext: "Дальше",
+  taskSortPrompt: "Куда это отнести?",
+  taskSortProgress: (n: number, total: number) => `${n} из ${total}`,
+  taskScore: (points: string, total: number) => `Верно с первого раза: ${points} из ${total}`,
+  taskEarned: (n: number) => `+${n} ${coinsWord(n)}`,
+  taskNoTopUp: "Новых монет нет — это не лучше прошлого результата.",
+  taskBackToMap: "На карту",
   taskSpawned: "Новое задание появилось в списке!",
   verdictLabel: (verdict: "good" | "warn" | "bad") => {
     if (verdict === "good") return "✅ Верно";
@@ -180,6 +199,8 @@ export const strings = {
   journalPurchase: (name: string) => `Покупка: ${name}`,
   journalSavingsIn: "Перевод в копилку",
   journalSavingsOut: "Из копилки",
+  journalBankIn: "Вклад в банк",
+  journalBankOut: "Вклад вернулся",
   journalTaskReward: (title: string) => `Задание: ${title}`,
   journalTaskScene: "Задание",
   journalAmount: (n: number) => `${n > 0 ? "+" : ""}${n}`,
@@ -266,6 +287,7 @@ export const strings = {
   navTasksPictogram: "🎯",
   navProgressPictogram: "📚",
   navAdultPictogram: "👤",
+  navBankPictogram: "🏦",
   poseIdle: POSE_NAMES.idle,
   poseHappy: POSE_NAMES.happy,
   poseSad: POSE_NAMES.sad,
@@ -286,6 +308,28 @@ export const strings = {
   navTasks: "Задания",
   navProgress: "Прогресс",
   navAdult: "Взрослый раздел",
+  navBank: "Банк",
+  bankTitle: "Банк",
+  bankIntro: "Вклад: кладёшь монеты на срок, а банк возвращает их с процентами. Забрать раньше нельзя.",
+  bankOfferLabel: (days: number, rate: number) => `${days} ${daysWord(days)} · +${rate}%`,
+  bankAmount: "Сумма",
+  bankPreview: (amount: number, payout: number, days: number) =>
+    `Положишь ${amount} — через ${days} ${daysWord(days)} вернётся ${payout}.`,
+  bankMin: (min: number) => `Вклад — от ${min} монет.`,
+  bankOpen: "Открыть вклад",
+  bankConfirmTitle: "Открыть вклад?",
+  bankConfirmBody: (amount: number, day: number) =>
+    `${amount} монет уйдут из Баланса и вернутся с процентами в Игровой день ${day}. Раньше забрать нельзя.`,
+  bankOpened: "Вклад открыт",
+  bankActive: "Мои вклады",
+  bankEmpty: "Пока вкладов нет.",
+  bankDepositLine: (amount: number, rate: number, payout: number) => `${amount} монет · +${rate}% → ${payout}`,
+  bankDaysLeft: (n: number) => (n <= 0 ? "Вернётся сегодня" : `Вернётся через ${n} ${daysWord(n)}`),
+  bankPaid: "Вернулся",
+  bankLocked: "Банк откроется после урока «Где живут накопления?».",
+  feedbackCauseBankIn: "Потому что ты открыл вклад в банке.",
+  feedbackNextBankIn: "Что дальше: монеты вернутся с процентами в конце срока.",
+  feedbackBankReturned: (paid: number, interest: number) => `Вклад вернулся: +${paid} (из них ${interest} — проценты).`,
   adultGatePrompt: (a: number, b: number) => `Сколько будет ${a} × ${b}?`,
   adultGateAnswer: "Ответ",
   adultGateEnter: "Войти",
@@ -297,10 +341,10 @@ export const strings = {
   demoBanner: "Демо: дни идут подряд",
   demoReset: "Сбросить демо",
   adultDaysEmpty: "Игровых дней пока нет — это нормально.",
-  adultTopicLine: (topic: string, done: number) => {
-    if (done >= 2) return `${topic}: оба задания сделаны`;
-    if (done === 1) return `${topic}: одно задание сделано`;
-    return `${topic}: ещё впереди`;
+  adultTopicLine: (topic: string, done: number, total: number) => {
+    if (done === 0) return `${topic}: ещё впереди`;
+    if (done >= total) return `${topic}: все задания сделаны`;
+    return `${topic}: сделано ${done} из ${total}`;
   },
   resetProgress: "Сбросить прогресс",
   resetProgressBody: "Прогресс сбросится, имена и вид питомца останутся.",
@@ -326,4 +370,14 @@ function daysWord(n: number): string {
   if (mod10 === 1) return "день";
   if (mod10 >= 2 && mod10 <= 4) return "дня";
   return "дней";
+}
+
+/** «1 монета / 3 монеты / 5 монет». */
+function coinsWord(n: number): string {
+  const mod100 = n % 100;
+  const mod10 = n % 10;
+  if (mod100 >= 11 && mod100 <= 14) return "монет";
+  if (mod10 === 1) return "монета";
+  if (mod10 >= 2 && mod10 <= 4) return "монеты";
+  return "монет";
 }

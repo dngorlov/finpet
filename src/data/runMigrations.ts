@@ -27,13 +27,47 @@ export function runMigrations(
     if (migration.version <= current) {
       continue;
     }
-    driver.execSync(
-      [
-        "BEGIN TRANSACTION;",
-        migration.up,
-        `PRAGMA user_version = ${migration.version};`,
-        "COMMIT;",
-      ].join("\n"),
-    );
+    applyOne(driver, migration);
+  }
+}
+
+const OPEN_TRANSACTION = /within a transaction/i;
+
+function script(migration: Migration): string {
+  return [
+    "BEGIN TRANSACTION;",
+    migration.up,
+    `PRAGMA user_version = ${migration.version};`,
+    "COMMIT;",
+  ].join("\n");
+}
+
+/** Best effort: there may be no transaction to roll back. */
+function rollback(driver: MigrationDriver): void {
+  try {
+    driver.execSync("ROLLBACK;");
+  } catch {
+    // nothing was open
+  }
+}
+
+/**
+ * Runs one migration atomically. A statement that fails half-way would leave
+ * BEGIN open on the (cached) native connection, and every later boot then dies
+ * with «cannot start a transaction within a transaction» instead of the real
+ * error — so roll back on failure, recover once from a transaction left open by
+ * an earlier crash, and rethrow the real cause with the version number.
+ */
+function applyOne(driver: MigrationDriver, migration: Migration, retried = false): void {
+  try {
+    driver.execSync(script(migration));
+  } catch (error) {
+    rollback(driver);
+    const message = error instanceof Error ? error.message : String(error);
+    if (!retried && OPEN_TRANSACTION.test(message)) {
+      applyOne(driver, migration, true);
+      return;
+    }
+    throw new Error(`Миграция ${migration.version} не применилась: ${message}`);
   }
 }

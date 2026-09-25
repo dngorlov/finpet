@@ -7,6 +7,7 @@ export type RootStackParamList = {
   Plan: undefined;
   Shop: undefined;
   Savings: undefined;
+  Bank: undefined;
   Progress: undefined;
   Settings: undefined;
   DaySummary: undefined;
@@ -14,6 +15,6 @@ export type RootStackParamList = {
   Demo: undefined;
   TaskList: undefined;
   TaskRun: { taskId: string };
-  TaskResult: { taskId: string; reward: number; sceneCoins: number };
+  TaskResult: { taskId: string; reward: number; earned: number; points: number; sceneCoins: number };
   Stub: { destination: StubDestination };
 };

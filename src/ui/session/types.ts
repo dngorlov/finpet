@@ -2,7 +2,10 @@ import type { CatalogItem, DayBills, PlanBuckets } from "../../core/economy";
 import type { TaskStepResult } from "../../core/tasks";
 import type { GameContent } from "../../data/content";
 import type {
+  CollectDepositsResult,
   ConfirmPlanResult,
+  DepositView,
+  OpenDepositResult,
   CreateProfileInput,
   DayState,
   DaySummaryView,
@@ -17,6 +20,7 @@ import type {
   WithdrawResult,
 } from "../../data/repositories/gameRepository";
 
+export type { CollectDepositsResult, DepositView, OpenDepositResult };
 export type { DayState, DaySummaryView, GoalOption, JournalEntry, ProfileView, SavingsView, TaskProgressView };
 
 /** UI-facing slice of the game repository — the persistence seam tests fake. */
@@ -29,6 +33,9 @@ export type SessionGame = {
   dayState(profileId: string): DayState;
   lastClosedDay(profileId: string): DaySummaryView | null;
   listTaskProgress(profileId: string): TaskProgressView[];
+  listDeposits(profileId: string): DepositView[];
+  openDeposit(profileId: string, dayId: string, offerId: string, amount: number): OpenDepositResult;
+  collectDeposits(profileId: string, dayId: string): CollectDepositsResult;
   saveDraftPlan(profileId: string, dayId: string, buckets: PlanBuckets): void;
   confirmPlan(profileId: string, dayId: string, minMandatory?: number): ConfirmPlanResult;
   purchase(profileId: string, dayId: string, item: CatalogItem): PurchaseResult;
@@ -42,7 +49,7 @@ export type SessionGame = {
   purchasedItemIds(profileId: string, dayId: string): string[];
   boughtAsActiveGoalCount(profileId: string): number;
   applyTaskStep(profileId: string, dayId: string, result: TaskStepResult): void;
-  claimTaskReward(profileId: string, dayId: string, taskId: string, correct: boolean): number;
+  claimTaskReward(profileId: string, dayId: string, taskId: string, earned: number): number;
   closeDay(profileId: string, catalog: readonly CatalogItem[], bills?: readonly DayBills[]): DaySummaryView;
 };
 
