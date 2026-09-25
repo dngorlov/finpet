@@ -5,7 +5,8 @@ import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
 import { passAdultGate } from "../testSupport/flowHelpers";
 
 const content = loadContent();
-const cinema = content.catalog.find((item) => item.id === "cinema")!;
+const candy = content.catalog.find((item) => item.id === "candy")!;
+const iceCream = content.catalog.find((item) => item.id === "ice-cream")!;
 
 async function renderApp(ports = createFakePorts()) {
   const user = userEvent.setup();
@@ -37,29 +38,24 @@ describe("Задания combined loop", () => {
       await user.press(screen.getByRole("button", { name: "Карта" }));
       expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
       expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
-      expect(screen.getAllByRole("button", { name: /, закрыто$/ })).toHaveLength(5);
+      expect(screen.getAllByRole("button", { name: /, закрыто$/ })).toHaveLength(3);
       expect(screen.getAllByRole("button", { name: /, скоро$/ })).toHaveLength(3);
       expect(screen.queryByText("Почини рюкзак")).not.toBeOnTheScreen();
       await backToMain(user);
 
       const day = ports.game.dayState(profileId);
-      for (let i = 0; i < 6; i += 1) ports.game.purchase(profileId, day.dayId, cinema);
+      while (ports.game.getProfile(profileId).balance >= iceCream.price) {
+        ports.game.purchase(profileId, day.dayId, candy);
+      }
 
       await user.press(screen.getByRole("button", { name: "Магазин" }));
       await user.press(screen.getByRole("button", { name: "Желаемое" }));
-      await user.press(screen.getByRole("button", { name: /^Игрушка/ }));
+      await user.press(screen.getByRole("button", { name: /^Мороженое/ }));
       expect(screen.queryByRole("button", { name: "Купить" })).not.toBeOnTheScreen();
       expect(screen.getByText(/Не хватает/)).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Выполнить задание" }));
       expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Дом" }));
-      await user.press(screen.getByRole("button", { name: "Магазин" }));
-      await user.press(screen.getByRole("button", { name: "Желаемое" }));
-      await user.press(screen.getByRole("button", { name: /^Игрушка/ }));
-      await user.press(screen.getByRole("button", { name: "Сделать целью" }));
-      expect(screen.getByText(/Цель станет Игрушка/)).toBeOnTheScreen();
-      await user.press(screen.getByRole("button", { name: "Закрыть" }));
-      await user.press(screen.getByRole("button", { name: "Назад" }));
 
       await passAdultGate(user);
       await user.press(screen.getByRole("button", { name: "Демо-режим" }));
@@ -67,7 +63,7 @@ describe("Задания combined loop", () => {
       await user.press(screen.getByRole("button", { name: "Понятно" }));
 
       await user.press(screen.getByRole("button", { name: "Карта" }));
-      expect(screen.getAllByRole("button", { name: /, закрыто$/ })).toHaveLength(5);
+      expect(screen.getAllByRole("button", { name: /, закрыто$/ })).toHaveLength(3);
       expect(screen.getAllByRole("button", { name: /, скоро$/ })).toHaveLength(3);
       expect(screen.getByRole("button", { name: "Что такое бюджет?, открыто" })).toBeOnTheScreen();
     },

@@ -66,11 +66,6 @@ export default function FirstRunScreen({ navigation }: Props) {
 
   const completeFirstRun = () => {
     if (saving) return;
-    const skateboard = content.catalog.find((item) => item.id === "skateboard");
-    if (!skateboard) {
-      setSaveError(strings.firstRunSaveFailed);
-      return;
-    }
     setSaving(true);
     setSaveError(null);
     try {
@@ -82,8 +77,7 @@ export default function FirstRunScreen({ navigation }: Props) {
         color: draft.color,
         accessory: draft.accessory,
         contentVersion: content.contentVersion,
-        goals: [{ key: skateboard.id, cost: skateboard.price }],
-        activeGoalKey: skateboard.id,
+        goals: [],
       });
       navigation.reset({ index: 0, routes: [{ name: "Main" }] });
     } catch {

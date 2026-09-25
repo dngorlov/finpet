@@ -158,6 +158,10 @@ export const strings = {
   goalPickerTitle: "Выбери цель",
   goalDrop: "Без цели",
   goalEmptyPrompt: "Выбери цель",
+  currentTaskSetGoal: "Текущая задача: выбрать цель",
+  currentTaskPlan: "Текущая задача: спланировать день",
+  currentTaskShop: "Текущая задача: купить нужное в Магазине",
+  currentTaskLesson: (title: string) => `Текущая задача: урок «${title}»`,
   pickNewGoal: "Выбрать новую цель",
 
   savingsPot: (n: number) => `В копилке ${n}`,

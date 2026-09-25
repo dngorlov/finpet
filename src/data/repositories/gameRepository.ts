@@ -21,9 +21,9 @@ import { applyGoalProgress, checkWithdrawal, estimateDaysToGoal, potFromTransfer
 import {
   dayScore,
   explainStageChange,
+  nextStage,
   STAGE_CODES,
   stageFromCode,
-  stageFromScores,
   type Stage,
 } from "../../core/stages";
 import { endsGameDay, rewardTopUp, type TaskContent, type TaskStepResult } from "../../core/tasks";
@@ -44,10 +44,12 @@ export interface CreateProfileInput {
   isDemo?: boolean;
   contentVersion: number;
   goals: readonly { key: string; cost: number }[];
-  activeGoalKey: string;
+  activeGoalKey?: string;
 }
 
-export type PurchaseResult = { status: "ok" } | { status: "blocked"; missing: number };
+export type PurchaseResult =
+  | { status: "ok"; stageExplanation?: string | null }
+  | { status: "blocked"; missing: number };
 export type OpenDayResult =
   | { status: "opened"; dayId: string; n: number; allowanceCredited: boolean }
   | { status: "blocked" };
@@ -419,22 +421,11 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     };
   }
 
-  function orderedScores(conn: GameDb, profileId: string) {
-    const days = conn.select().from(tables.days).where(eq(tables.days.profileId, profileId)).all();
-    const scores = conn.select().from(tables.dayScores).where(eq(tables.dayScores.profileId, profileId)).all();
-    const nById = new Map(days.map((day) => [day.id, day.n]));
-    return scores
-      .map((row) => ({ ...row, n: nById.get(row.dayId) ?? 0 }))
-      .sort((a, b) => a.n - b.n);
-  }
-
   function readDaySummary(conn: GameDb, profileId: string, dayId: string): DaySummaryView | null {
     const day = conn.select().from(tables.days).where(eq(tables.days.id, dayId)).get();
     const scoreRow = conn.select().from(tables.dayScores).where(eq(tables.dayScores.dayId, dayId)).get();
     if (!day || !scoreRow) return null;
-    const upto = orderedScores(conn, profileId).filter((row) => row.n <= day.n);
-    const previousStage = stageFromScores(upto.slice(0, -1).map((row) => row.score));
-    const stage = stageFromScores(upto.map((row) => row.score));
+    const stage = stageFromCode(pet(conn, profileId).stage);
     const events = conn
       .select()
       .from(tables.meterEvents)
@@ -462,8 +453,8 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         overspend: sum("mood", "day_close_overspend"),
       },
       stage,
-      previousStage,
-      stageExplanation: explainStageChange(previousStage, stage),
+      previousStage: stage,
+      stageExplanation: null,
     };
   }
 
@@ -492,7 +483,9 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         stage: STAGE_CODES.novice,
       })
       .run();
-    const seeded = input.goals.find((goal) => goal.key === input.activeGoalKey);
+    const seeded = input.activeGoalKey
+      ? input.goals.find((goal) => goal.key === input.activeGoalKey)
+      : undefined;
     if (seeded) {
       writeActiveGoal(conn, id, seeded.key, seeded.cost);
     }
@@ -550,9 +543,6 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     if (deltas.care) applyMeter(tx, profileId, day.id, "care", deltas.care, "day_close_food");
     if (deltas.missedNeed) applyMeter(tx, profileId, day.id, "mood", deltas.missedNeed, "day_close_need");
     if (deltas.overspend) applyMeter(tx, profileId, day.id, "mood", deltas.overspend, "day_close_overspend");
-    const previous = tx.select().from(tables.dayScores).where(eq(tables.dayScores.profileId, profileId)).all();
-    const scores = [...previous.map((row) => row.score), score];
-    const to = stageFromScores(scores);
     tx.insert(tables.dayScores)
       .values({
         id: newId("score"),
@@ -564,7 +554,6 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         score,
       })
       .run();
-    tx.update(tables.petState).set({ stage: STAGE_CODES[to] }).where(eq(tables.petState.profileId, profileId)).run();
     tx.update(tables.days).set({ closedAt: nowMs() }).where(eq(tables.days.id, day.id)).run();
     const summary = readDaySummary(tx, profileId, day.id);
     if (!summary) throw new Error("Нет итогов закрытого дня");
@@ -826,13 +815,16 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       });
     },
 
-    setActiveGoal(profileId: string, item: CatalogItem | string): void {
+    setActiveGoal(profileId: string, item: (CatalogItem & { stage?: Stage }) | string): void {
       db.transaction((tx) => {
         profile(tx, profileId);
         const catalogItem = typeof item === "string" ? null : item;
         const key = typeof item === "string" ? item : item.id;
         if (catalogItem?.kind === "mandatory") {
           throw new Error("Обязательное не может быть Целью");
+        }
+        if (catalogItem?.stage && catalogItem.stage !== stageFromCode(pet(tx, profileId).stage)) {
+          throw new Error("Цель другого Этапа");
         }
         if (catalogItem?.once && itemPurchased(tx, profileId, catalogItem.id)) {
           throw new Error("Этот товар уже куплен");
@@ -910,7 +902,15 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           applyMeter(tx, profileId, dayId, effect.meter, effect.delta, `purchase:${item.id}`);
         }
         clearGoals(tx, profileId);
-        return { status: "ok" as const };
+        const current = stageFromCode(pet(tx, profileId).stage);
+        const to = nextStage(current);
+        if (to !== current) {
+          tx.update(tables.petState)
+            .set({ stage: STAGE_CODES[to] })
+            .where(eq(tables.petState.profileId, profileId))
+            .run();
+        }
+        return { status: "ok" as const, stageExplanation: explainStageChange(current, to) };
       });
     },
 

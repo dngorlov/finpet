@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Stage } from "../core/stages";
 import catalogJson from "../../assets/content/catalog.json";
 import introJson from "../../assets/content/intro.json";
 import tasksJson from "../../assets/content/tasks.json";
@@ -25,6 +26,16 @@ const catalogItemSchema = z.object({
   once: z.boolean().optional().default(false),
 });
 
+const goalItemSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  icon: z.string().min(1),
+  stage: z.enum(["novice", "pro", "millionaire"]),
+  price: z.number().int().positive(),
+  effect: meterEffectSchema,
+  description: z.string().min(1),
+});
+
 const dayBillsSchema = z.object({
   items: z.array(z.string().min(1)).min(1),
   note: z.string().min(1).optional(),
@@ -33,12 +44,14 @@ const dayBillsSchema = z.object({
 const catalogFileSchema = z
   .object({
     contentVersion: z.literal(CONTENT_VERSION),
-    items: z.array(catalogItemSchema).length(11),
+    items: z.array(catalogItemSchema).min(1),
+    goals: z.array(goalItemSchema).length(9),
     /** Счета cycle: day n uses bills[(n - 1) % length]. */
     bills: z.array(dayBillsSchema).min(1),
   })
   .superRefine((file, ctx) => {
     const mandatory = new Set(file.items.filter((item) => item.kind === "mandatory").map((item) => item.id));
+    const shopIds = new Set(file.items.map((item) => item.id));
     file.bills.forEach((day, dayIndex) => {
       day.items.forEach((id, itemIndex) => {
         if (!mandatory.has(id)) {
@@ -50,14 +63,24 @@ const catalogFileSchema = z
         }
       });
     });
+    for (const stage of ["novice", "pro", "millionaire"] as const) {
+      const count = file.goals.filter((goal) => goal.stage === stage).length;
+      if (count !== 3) {
+        ctx.addIssue({
+          code: "custom",
+          message: `У Этапа ${stage} должно быть 3 Цели, сейчас ${count}`,
+        });
+      }
+    }
+    for (const goal of file.goals) {
+      if (shopIds.has(goal.id)) {
+        ctx.addIssue({
+          code: "custom",
+          message: `Цель «${goal.id}» не продаётся в Магазине`,
+        });
+      }
+    }
   });
-
-const goalSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  cost: z.number().int().positive(),
-  description: z.string().min(1),
-});
 
 const termSchema = z.object({
   id: z.string().min(1),
@@ -215,7 +238,7 @@ const tasksFileSchema = z
 
 export type CatalogItemContent = z.infer<typeof catalogItemSchema>;
 export type DayBillsContent = z.infer<typeof dayBillsSchema>;
-export type GoalContent = z.infer<typeof goalSchema>;
+export type GoalContent = z.infer<typeof goalItemSchema> & { stage: Stage };
 export type TermContent = z.infer<typeof termSchema>;
 export type IntroCardContent = z.infer<typeof introCardSchema>;
 export type TaskFileContent = z.infer<typeof taskSchema>;
@@ -232,7 +255,7 @@ export interface GameContent {
   tasks: TaskFileContent[];
 }
 
-/** Loads and validates catalog, terms, opening cards, and tasks. Цели are derived from optional catalog rows. */
+/** Loads and validates catalog, terms, opening cards, and tasks. Цели are not Магазин rows. */
 export function loadContent(): GameContent {
   const catalog = catalogFileSchema.parse(catalogJson);
   const terms = termsFileSchema.parse(termsJson);
@@ -243,14 +266,7 @@ export function loadContent(): GameContent {
     contentVersion: CONTENT_VERSION,
     catalog: catalog.items,
     bills: catalog.bills,
-    goals: catalog.items
-      .filter((item) => item.kind === "optional")
-      .map((item) => ({
-        id: item.id,
-        name: item.name,
-        cost: item.price,
-        description: item.description,
-      })),
+    goals: catalog.goals,
     terms: terms.terms,
     intro: intro.cards,
     tasks: tasks.tasks,

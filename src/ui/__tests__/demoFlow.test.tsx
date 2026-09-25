@@ -2,7 +2,7 @@ import { render, screen, userEvent } from "@testing-library/react-native";
 import type { CatalogItem } from "../../core/economy";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
-import { demoMissions, openMoney, openTab, passAdultGate } from "../testSupport/flowHelpers";
+import { openMoney, openTab, passAdultGate } from "../testSupport/flowHelpers";
 
 const lunch: CatalogItem = {
   id: "lunch",
@@ -33,10 +33,12 @@ async function confirmDemo(user: ReturnType<typeof userEvent.setup>) {
 }
 
 function expectSameChain() {
-  expect(screen.getByRole("button", { name: `${demoMissions[0]}, открыто` })).toBeOnTheScreen();
-  for (const title of demoMissions.slice(1)) {
-    expect(screen.getByRole("button", { name: `${title}, закрыто` })).toBeOnTheScreen();
-  }
+  expect(screen.getByRole("button", { name: "Что такое бюджет?, открыто" })).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "Планирование бюджета, открыто" })).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "Что такое сбережения, открыто" })).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "Где живут накопления?, закрыто" })).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "Платежи, закрыто" })).toBeOnTheScreen();
+  expect(screen.getByRole("button", { name: "Покупки, закрыто" })).toBeOnTheScreen();
   expect(screen.queryByText("Почини рюкзак")).not.toBeOnTheScreen();
 }
 

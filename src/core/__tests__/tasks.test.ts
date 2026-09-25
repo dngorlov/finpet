@@ -116,6 +116,21 @@ describe("mission unlock chain", () => {
   it("uses the same chain whether or not the profile is Демо-режим", () => {
     expect(open([])).toEqual(["budget_1"]);
   });
+
+  it("opens the Копилка and План lessons from the start, and still gates the other topics on «Что такое бюджет?»", () => {
+    const real = [
+      fixture({ id: "budget_what", topic: "budget", order: 1 }),
+      fixture({ id: "budget_plan", topic: "budget", order: 2 }),
+      fixture({ id: "savings_what", topic: "savings", order: 1 }),
+      fixture({ id: "payments_pay", topic: "payments", order: 1 }),
+    ];
+    expect(unlockedTasks(real, new Set()).map((task) => task.id)).toEqual([
+      "budget_what",
+      "budget_plan",
+      "savings_what",
+    ]);
+    expect(unlockedTasks(real, new Set(["budget_what"])).map((task) => task.id)).toContain("payments_pay");
+  });
 });
 
 describe("mini-games inside a lesson sheet and «скоро» pins", () => {

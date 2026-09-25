@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, View } from "react-native";
-import type { CatalogItemContent } from "../../data/content";
+import type { CatalogItemContent, GoalContent } from "../../data/content";
 import type { JournalEntry } from "../../data/repositories/gameRepository";
 import { META_KEYS } from "../../data/metaKeys";
 import { useSession } from "../session/SessionProvider";
@@ -45,7 +45,7 @@ export function GoalPicker({
   onChanged?: () => void;
 }) {
   const { game, meta, content } = useSession();
-  const [pending, setPending] = useState<CatalogItemContent | null>(null);
+  const [pending, setPending] = useState<GoalContent | null>(null);
 
   const profileId = meta.get(META_KEYS.activeProfileId);
   const savings = profileId ? game.savingsState(profileId) : null;
@@ -54,36 +54,36 @@ export function GoalPicker({
 
   const items = useMemo(() => {
     if (!profileId) return [];
+    const stage = game.getProfile(profileId).stage;
     const day = game.dayState(profileId);
-    const owned = ownedOnceItemIds(
-      game.listJournal(profileId),
-      content.catalog,
-      game.purchasedItemIds(profileId, day.dayId),
-    );
-    return settableOptionalItems(content.catalog, owned);
-  }, [content.catalog, game, profileId, visible]);
+    const owned = new Set<string>([
+      ...game.listJournal(profileId).map((row) => row.itemId).filter((id): id is string => Boolean(id)),
+      ...game.purchasedItemIds(profileId, day.dayId),
+    ]);
+    return content.goals.filter((goal) => goal.stage === stage && !owned.has(goal.id));
+  }, [content.goals, game, profileId, visible]);
 
   const close = () => {
     setPending(null);
     onClose();
   };
 
-  const apply = (item: CatalogItemContent) => {
+  const apply = (item: GoalContent) => {
     if (!profileId) return;
     game.setActiveGoal(profileId, {
       id: item.id,
-      kind: item.kind,
+      kind: "optional",
       price: item.price,
       effect: item.effect,
-      also: item.also,
-      once: item.once,
+      once: true,
+      stage: item.stage,
     });
     setPending(null);
     onChanged?.();
     onClose();
   };
 
-  const choose = (item: CatalogItemContent) => {
+  const choose = (item: GoalContent) => {
     if (!profileId) return;
     if (activeKey && activeKey !== item.id) {
       setPending(item);

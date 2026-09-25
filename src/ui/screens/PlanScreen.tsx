@@ -21,7 +21,7 @@ const EMPTY: PlanBuckets = { mandatory: 0, optional: 0, savings: 0 };
 
 export default function PlanScreen() {
   const { game, meta, content } = useSession();
-  const { touchChrome } = usePlayChrome();
+  const { touchChrome, focus } = usePlayChrome();
   const [day, setDay] = useState<DayState | null>(null);
   const [buckets, setBuckets] = useState<PlanBuckets>(EMPTY);
   const [lastClosed, setLastClosed] = useState<DaySummaryView | null>(null);
@@ -108,10 +108,10 @@ export default function PlanScreen() {
         confirmed ? null : askingConfirm ? (
           <>
             <TextButton label={strings.close} onPress={() => setAskingConfirm(false)} />
-            <PrimaryButton label={strings.confirmPlan} onPress={confirm} />
+            <PrimaryButton highlighted={focus?.kind === "plan"} label={strings.confirmPlan} onPress={confirm} />
           </>
         ) : (
-          <PrimaryButton label={strings.confirmPlan} disabled={!check.ok} onPress={askConfirm} />
+          <PrimaryButton highlighted={focus?.kind === "plan"} label={strings.confirmPlan} disabled={!check.ok} onPress={askConfirm} />
         )
       }
     >

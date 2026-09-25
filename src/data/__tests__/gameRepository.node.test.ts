@@ -324,21 +324,30 @@ function playScoredDay(game: ReturnType<typeof seed>["game"], profileId: string)
 }
 
 describe("stages", () => {
-  it("scores +2/+1/+1, rolls the last 3 days, crosses 3 then 9, and explains each change", () => {
+  it("does not move Этап when a day closes", () => {
     const { game, profileId } = seed();
-
     const close1 = playScoredDay(game, profileId);
     expect(close1.score).toBe(4);
-    expect(close1.stage).toBe("friend");
-    expect(close1.stageExplanation).toMatch(/Друг/);
+    expect(close1.stage).toBe("novice");
+    expect(close1.stageExplanation).toBeNull();
+    expect(game.getProfile(profileId).stage).toBe("novice");
+  });
 
-    const close2 = playScoredDay(game, profileId);
-    expect(close2.stage).toBe("friend");
-    expect(close2.stageExplanation).toBeNull();
-
-    const close3 = playScoredDay(game, profileId);
-    expect(close3.stage).toBe("master");
-    expect(close3.stageExplanation).toMatch(/Мастер/);
+  it("moves Этап one step when the Цель is bought from Копилка", () => {
+    const { game, profileId } = seed();
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+    game.transferToSavings(profileId, opened.dayId, 90);
+    const bought = game.purchaseFromSavings(profileId, opened.dayId, {
+      id: "skateboard",
+      kind: "optional",
+      price: 90,
+      effect: { meter: "mood", delta: 12 },
+      once: true,
+    });
+    expect(bought).toMatchObject({ status: "ok", stageExplanation: "Теперь ты Про!" });
+    expect(game.getProfile(profileId).stage).toBe("pro");
+    expect(game.savingsState(profileId).activeGoal).toBeNull();
   });
 });
 
@@ -628,10 +637,10 @@ describe("day and journal reads", () => {
       plan: { mandatory: 12, optional: 5, savings: 15 },
       actual: { mandatory: 12, optional: 5, savings: 15 },
       meterDeltas: { care: 0, mood: 0 },
-      stage: "friend",
+      stage: "novice",
       previousStage: "novice",
+      stageExplanation: null,
     });
-    expect(closed.stageExplanation).toMatch(/Друг/);
     expect(game.lastClosedDay(profileId)).toEqual(closed);
     expect(game.dayState(profileId)).toMatchObject({
       open: false,
@@ -766,7 +775,7 @@ describe("shop-item Цели", () => {
     });
     expect(() => game.purchaseFromSavings(profileId, dayId, candy)).toThrow(/цел/i);
     expect(game.transferToSavings(profileId, dayId, 50)).toMatchObject({ status: "ok", achieved: true });
-    expect(game.purchaseFromSavings(profileId, dayId, skateboard)).toEqual({ status: "ok" });
+    expect(game.purchaseFromSavings(profileId, dayId, skateboard)).toMatchObject({ status: "ok" });
 
     expect(game.getProfile(profileId)).toMatchObject({
       balance: balanceBefore - 100,
@@ -825,7 +834,7 @@ describe("shop-item Цели", () => {
     expect(game.purchase(profileId, dayId, lunch)).toEqual({ status: "ok" });
     expect(game.purchase(profileId, dayId, candy)).toEqual({ status: "ok" });
     expect(game.transferToSavings(profileId, dayId, 90)).toMatchObject({ status: "ok", achieved: true });
-    expect(game.purchaseFromSavings(profileId, dayId, skateboard)).toEqual({ status: "ok" });
+    expect(game.purchaseFromSavings(profileId, dayId, skateboard)).toMatchObject({ status: "ok" });
 
     expect(game.dayState(profileId).actual).toEqual({ mandatory: 12, optional: 5, savings: 90 });
 

@@ -29,14 +29,6 @@ export const METERS = {
   overspendMoodPenalty: 5,
 } as const;
 
-export const STAGES = {
-  /** Rolling window of closed days the stage is computed over (§2.2). */
-  window: 3,
-  /** Thresholds on the rolling sum: <3 Новичок, 3–8 Друг, ≥9 Мастер. */
-  friendAt: 3,
-  masterAt: 9,
-} as const;
-
 export const SAVINGS = {
   /** How many recent deposits feed the rolling average for the date estimate (§2.1). */
   estimateWindow: 5,
@@ -47,6 +39,12 @@ export const SAVINGS = {
  * lesson about banks; coins leave Баланс on confirm and come back with
  * interest when the term (in Игровые дни) ends. No early withdrawal.
  */
+/** Lessons that open money tools. Демо-режим shows the tools without them. */
+export const FEATURES = {
+  savingsTaskId: "savings_what",
+  planTaskId: "budget_plan",
+} as const;
+
 export const BANK = {
   /** Finishing this Задание shows the Банк tile (Демо-режим: always). */
   unlockTaskId: "savings_where",

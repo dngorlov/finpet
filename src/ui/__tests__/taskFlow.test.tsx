@@ -75,8 +75,8 @@ describe("Карта заданий", () => {
       await user.press(screen.getByRole("button", { name: "Карта" }));
       expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Что такое бюджет?, открыто" })).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: "Планирование бюджета, закрыто" })).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: "Что такое сбережения, закрыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Планирование бюджета, открыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Что такое сбережения, открыто" })).toBeOnTheScreen();
       expect(screen.getByText("Награда: до 10 монет")).toBeOnTheScreen();
       expect(screen.getByLabelText("Сложность: 1 из 3")).toBeOnTheScreen();
 

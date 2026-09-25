@@ -49,16 +49,16 @@ The recurring income credited once when an Игровой день begins. Coins
 _Avoid_: ежедневный доход, логин-бонус
 
 **План (Plan)**:
-The day's promised split of available coins into Обязательные, Желаемые, and Копилка — a promise, not a coin movement. A Закрыто План lets the Игровой день end with no promise; an open one still waits for confirmation.
+The day's promised split of available coins into Обязательные, Желаемые, and Копилка — a promise, not a coin movement. It stays Закрыто until the Урок «Планирование бюджета» is completed; a closed one lets the Игровой день end with no promise, and an open one still waits for confirmation. When the shelf has no Желаемые, that bucket stays at 0 and is not offered.
 _Avoid_: бюджет, бронь, список покупок
 
 **Итоги дня (Day summary)**:
-The screen shown when an Игровой день ends: that day's plan versus actual, score, and meter and Этап changes with explanations. The result of the Урок that ended the day leads here. Leaving it begins the next Игровой день, and until then this is the only screen.
-_Avoid_: отчёт, дневник, прогресс
+The screen shown when an Игровой день ends: that day's plan versus actual, and meter changes with explanations. The result of the Урок that ended the day leads here. Leaving it begins the next Игровой день, and until then this is the only screen.
+_Avoid_: отчёт, дневник, прогресс, очки
 
 **Итоги (Results)**:
-The reopenable record of the last closed Игровой день — its score, plan versus actual, and meter and Этап changes — plus the counts of days played, Задания done, and Цели bought.
-_Avoid_: Прогресс, отчёт, итоги дня
+The reopenable record of the last closed Игровой день — its plan versus actual and meter changes — plus the counts of days played, Задания done, and Цели bought.
+_Avoid_: Прогресс, отчёт, итоги дня, очки
 
 **Обязательные расходы (Mandatory expenses)**:
 Purchases the pet needs (food, school supplies, transport, medicine). Skipping today's Обед hurts Сытость. Skipping any other of today's Счета hurts Настроение once. Neither happens while Магазин is Закрыто.
@@ -68,7 +68,7 @@ The mandatory items due on a given Game Day, from a fixed content cycle. The П�
 _Avoid_: список обязательных, долги, нужное, необходимое
 
 **Желаемые расходы (Optional expenses)**:
-Non-essential purchases that lift Настроение. Some (today: Скейтборд, Телескоп, Велосипед) can only be bought once and then leave Магазин.
+Non-essential purchases that lift Настроение. The shelf is Конфета and Мороженое. Spending more than the План promised drops Настроение once. A Цель is not a Желаемое.
 _Avoid_: приятное, хотелки
 
 **Три решения (The three decision types)**:
@@ -80,7 +80,7 @@ The catalog of Обязательные and Желаемые the child can buy t
 _Avoid_: витрина, инвентарь
 
 **Копилка (Savings)**:
-The pot of coins set aside from Баланс toward the Цель. Coins leave it only by confirmed withdrawal or by buying that Цель. While Копилка is Закрыто, a План's deposit stays at 0.
+The pot of coins set aside from Баланс toward the Цель. It stays Закрыто until the Урок «Что такое сбережения» is completed. Coins leave it only by confirmed withdrawal or by buying that Цель, and while it is closed a План's deposit stays at 0.
 _Avoid_: накопления, депозит, вклад
 
 **Банк (Bank)** / **Вклад (Deposit)**:
@@ -88,8 +88,8 @@ Separate from Копилка and opened after the lesson «Где живут н�
 _Avoid_: депозит, счёт, копилка (for the bank)
 
 **Цель (Goal)**:
-The one Желаемое from Магазин that Копилка is accumulating toward. There is at most one at a time; Обязательные cannot be a Цель.
-_Avoid_: ачивка, мечта, произвольная цель
+The one thing Копилка is accumulating toward, chosen from the three options of the child's current Этап — Новичок: Смарт-часы, Скейтборд, LEGO; Про: Телефон, Самокат, Набор для рисования; Миллионер: Компьютер, Велосипед, Гитара. It is not sold in Магазин; there is at most one at a time, and buying it advances Этап.
+_Avoid_: ачивка, мечта, произвольная цель, Желаемое
 
 ### Pet
 
@@ -118,12 +118,12 @@ The pet meter fed by buying Обед.
 _Avoid_: здоровье, забота, голод
 
 **Настроение (Mood)**:
-The pet meter fed by Желаемые расходы, by Обязательные other than Обед, and by Обед.
+The pet meter fed by Желаемые расходы, by Обязательные other than Обед, by Обед, and by buying the Цель.
 _Avoid_: счастье, радость
 
 **Этап (Stage)**:
-The pet's development level — Новичок, Друг, Мастер — recalculated from recent closed days the child could score. A day with no reachable score points stays outside that reckoning.
-_Avoid_: уровень, эволюция
+The pet's development level — Новичок, then Про, then Миллионер. It advances one step when the child buys the Цель, and in no other way.
+_Avoid_: уровень, эволюция, Друг, Мастер, очки
 
 ### Learning
 
@@ -143,8 +143,12 @@ _Avoid_: теория, лекция, тест
 A financial-literacy mission — an Урок, a mini-game that belongs to an Урок, or a follow-up spawned to correct a mistake — where every answer gets a short explanation. Coins scale with first-try answers; a replay pays only the improvement.
 _Avoid_: квест, тест
 
+**Текущая задача (Current task)**:
+The single next action suggested under the meters. It points at a Задание, at today's Счета, at confirming the План, or at choosing a Цель.
+_Avoid_: Задание, квест, подсказка, туториал
+
 **Карта заданий (Mission map)**:
-The map of Moscow districts where each Урок is a pin. The short name is Карта. Only the first budget Урок is open at first; finishing it opens the first Урок of every other topic and the next budget one; after that each topic goes in order. The Игровой день never locks a pin. A replay, a mini-game, or a correction does not end the day.
+The map of Moscow districts where each Урок is a pin. The short name is Карта. «Что такое бюджет?», «Что такое сбережения», and «Планирование бюджета» are open at first; finishing «Что такое бюджет?» opens the first Урок of every topic that is still closed; after that each topic goes in order. The Игровой день never locks a pin. A replay, a mini-game, or a correction does not end the day.
 _Avoid_: список заданий, уровни
 
 **Журнал (History)**:

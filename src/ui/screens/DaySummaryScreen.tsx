@@ -1,12 +1,10 @@
 import { useCallback } from "react";
-import { BackHandler, StyleSheet, Text, View } from "react-native";
+import { BackHandler, StyleSheet, Text } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { STAGE_NAMES } from "../../core/stages";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DaySummaryView } from "../../data/repositories/gameRepository";
 import { BackButton } from "../components/BackButton";
-import { GlyphLabel, Pictogram } from "../components/Pictogram";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -20,15 +18,6 @@ import { dayCloseLines, strings } from "../strings";
 import { colors, spacing, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DaySummary">;
-
-function ScoreRow({ word, points, earned }: { word: string; points: number; earned: boolean }) {
-  return (
-    <View style={styles.row}>
-      <Pictogram glyph={earned ? strings.scoreYesIcon : strings.scoreNoIcon} />
-      <Text style={styles.body}>{strings.scoreFact(word, points)}</Text>
-    </View>
-  );
-}
 
 function meterReason(summary: DaySummaryView): string[] {
   return dayCloseLines(summary.meterDeltas, true);
@@ -92,27 +81,12 @@ export default function DaySummaryScreen({ navigation }: Props) {
         <Text style={styles.body}>{strings.planVsActual(summary.plan.savings, summary.actual.savings)}</Text>
       </Card>
       <Card>
-        <ScoreRow word={strings.scoreMandatory} points={summary.facts.mandatoryCovered ? 2 : 0} earned={summary.facts.mandatoryCovered} />
-        <ScoreRow word={strings.scoreWithinPlan} points={summary.facts.withinPlan ? 1 : 0} earned={summary.facts.withinPlan} />
-        <ScoreRow word={strings.scoreDeposit} points={summary.facts.deposited ? 1 : 0} earned={summary.facts.deposited} />
-      </Card>
-      <Card>
         {reasons.map((line) => (
           <Text key={line} style={styles.body}>
             {line}
           </Text>
         ))}
       </Card>
-      {summary.stageExplanation ? (
-        <Card>
-          <GlyphLabel
-            glyph={strings.stageIcon}
-            label={`${strings.stageWord} ${STAGE_NAMES[summary.stage]}`}
-            labelStyle={styles.section}
-          />
-          <Text style={styles.body}>{summary.stageExplanation}</Text>
-        </Card>
-      ) : null}
       {summary.facts.mandatoryCovered ? null : <Text style={styles.body}>{strings.nextDayPlanNeeds}</Text>}
     </Screen>
   );

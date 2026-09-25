@@ -49,8 +49,7 @@ describe("Взрослый раздел contents and persistence", () => {
 
     expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
     expect(screen.getByLabelText(/Питомец Пух/)).toBeOnTheScreen();
-    expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
-    expect(screen.getByText("0 / 90")).toBeOnTheScreen();
+    expect(screen.getByText("Выбери цель")).toBeOnTheScreen();
     expect(ports.game.listTaskProgress(ports.meta.get("activeProfileId")!)).toEqual([]);
   });
 

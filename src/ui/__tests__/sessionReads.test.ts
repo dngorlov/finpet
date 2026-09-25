@@ -50,10 +50,10 @@ describe("fake SessionGame M4 reads", () => {
       score: 4,
       facts: { mandatoryCovered: true, withinPlan: true, deposited: true },
       meterDeltas: { care: 0, mood: 0 },
-      stage: "friend",
+      stage: "novice",
       previousStage: "novice",
     });
-    expect(closed.stageExplanation).toMatch(/Друг/);
+    expect(closed.stageExplanation).toBeNull();
     expect(ports.game.lastClosedDay(profileId)).toEqual(closed);
     expect(ports.game.dayState(profileId)).toMatchObject({ open: false, n: 1, dayId: closed.dayId });
     expect(ports.game.listTaskProgress(profileId)).toEqual(

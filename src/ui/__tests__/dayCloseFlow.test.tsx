@@ -18,7 +18,7 @@ describe("Итоги дня", () => {
     "closes a confirmed day, opens the next one, and keeps the closed day in Итоги",
     async () => {
       const ports = createFakePorts();
-      seedReturningChild(ports);
+      seedReturningChild(ports, { unlockMoney: true });
       const { user } = await renderApp(ports);
 
       await confirmTinyPlan(user);
@@ -36,9 +36,6 @@ describe("Итоги дня", () => {
       await user.press(screen.getByRole("button", { name: "Итоги" }));
       expect(screen.getByText("план 21 · потрачено 0")).toBeOnTheScreen();
       expect(screen.getAllByText("план 1 · потрачено 0")).toHaveLength(2);
-      expect(screen.getByText("Обязательные 0")).toBeOnTheScreen();
-      expect(screen.getByText("По плану 0")).toBeOnTheScreen();
-      expect(screen.getByText("Копилка 0")).toBeOnTheScreen();
       expect(screen.getByText("Сытость -15: пропущен обед")).toBeOnTheScreen();
       expect(screen.getByText("Настроение -15: пропущены обязательные расходы")).toBeOnTheScreen();
       expect(screen.queryByText(/доверяет/)).not.toBeOnTheScreen();
@@ -63,7 +60,7 @@ describe("Итоги дня", () => {
     15000,
   );
 
-  it("shows Этап copy and +2/+1/+1 after a scored close", async () => {
+  it("keeps Этап and hides the day score after a day that used to score", async () => {
     const ports = createFakePorts();
     const profileId = seedReturningChild(ports);
     const day = ports.game.dayState(profileId);
@@ -82,12 +79,9 @@ describe("Итоги дня", () => {
     expect(screen.getByText("план 45 · потрачено 45")).toBeOnTheScreen();
     expect(screen.getByText("план 0 · потрачено 0")).toBeOnTheScreen();
     expect(screen.getByText("план 15 · потрачено 15")).toBeOnTheScreen();
-    expect(screen.getByText("Обязательные +2")).toBeOnTheScreen();
-    expect(screen.getByText("По плану +1")).toBeOnTheScreen();
-    expect(screen.getByText("Копилка +1")).toBeOnTheScreen();
     expect(screen.getByText("Сытость и настроение без изменений")).toBeOnTheScreen();
-    expect(screen.getByText("Питомец доверяет тебе: теперь ты Друг!")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Этап Друг")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
+    expect(screen.queryByText(/Про!/)).not.toBeOnTheScreen();
   });
 
   it("uses Следующий день on a demo profile so the next Игровой день can open", async () => {

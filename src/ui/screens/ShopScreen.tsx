@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -31,8 +31,7 @@ type Phase =
   | { name: "list" }
   | { name: "item"; item: CatalogItemContent }
   | { name: "confirm"; item: CatalogItemContent }
-  | { name: "confirmActiveGoalBuy"; item: CatalogItemContent }
-  | { name: "confirmReplaceGoal"; item: CatalogItemContent };
+  | { name: "confirmActiveGoalBuy"; item: CatalogItemContent };
 
 function engineItem(item: CatalogItemContent) {
   return { id: item.id, kind: item.kind, price: item.price, effect: item.effect, also: item.also, once: item.once };
@@ -169,7 +168,7 @@ function StateChip({ label, icon }: { label: string; icon?: string }) {
 
 export default function ShopScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
-  const { setTab: setPlayTab } = usePlayChrome();
+  const { setTab: setPlayTab, focus } = usePlayChrome();
   const openMap = () => {
     setPlayTab("map");
     navigation.navigate("Main");
@@ -185,6 +184,10 @@ export default function ShopScreen({ navigation }: Props) {
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [offerPickGoal, setOfferPickGoal] = useState(false);
+
+  useEffect(() => {
+    if (focus?.kind === "shop-bills") setTab("mandatory");
+  }, [focus]);
 
   const load = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
@@ -271,27 +274,6 @@ export default function ShopScreen({ navigation }: Props) {
     });
   };
 
-  const makeGoal = (item: CatalogItemContent) => {
-    const profileId = meta.get(META_KEYS.activeProfileId);
-    if (!profileId) return;
-    const current = game.savingsState(profileId).activeGoal;
-    if (current && current.key !== item.id) {
-      setPhase({ name: "confirmReplaceGoal", item });
-      return;
-    }
-    game.setActiveGoal(profileId, engineItem(item));
-    load();
-    setPhase({ name: "list" });
-  };
-
-  const confirmMakeGoal = (item: CatalogItemContent) => {
-    const profileId = meta.get(META_KEYS.activeProfileId);
-    if (!profileId) return;
-    game.setActiveGoal(profileId, engineItem(item));
-    load();
-    setPhase({ name: "list" });
-  };
-
   const requestBuy = (item: CatalogItemContent) => {
     if (activeKey === item.id) {
       setPhase({ name: "confirmActiveGoalBuy", item });
@@ -308,9 +290,6 @@ export default function ShopScreen({ navigation }: Props) {
       return (
         <>
           <TextButton label={strings.shopPostpone} onPress={backToList} />
-          {item.kind === "optional" && !isActive ? (
-            <TextButton label={strings.shopMakeGoal} onPress={() => makeGoal(item)} />
-          ) : null}
           {canPayPot ? <TextButton label={strings.shopBuy} onPress={() => requestBuy(item)} /> : null}
           {canPayPot ? (
             <PrimaryButton label={strings.shopBuyFromSavings} onPress={() => buyFromSavings(item)} />
@@ -322,8 +301,6 @@ export default function ShopScreen({ navigation }: Props) {
     }
     const gold = canPayPot ? (
       <PrimaryButton label={strings.shopBuyFromSavings} onPress={() => buyFromSavings(item)} />
-    ) : item.kind === "optional" && !isActive ? (
-      <PrimaryButton label={strings.shopMakeGoal} onPress={() => makeGoal(item)} />
     ) : isActive ? (
       <PrimaryButton label={strings.gotIt} onPress={backToList} />
     ) : (
@@ -346,14 +323,6 @@ export default function ShopScreen({ navigation }: Props) {
         <>
           <TextButton label={strings.shopPostpone} onPress={backToList} />
           <PrimaryButton label={strings.shopBuy} onPress={() => buy(phase.item)} />
-        </>
-      );
-    }
-    if (phase.name === "confirmReplaceGoal") {
-      return (
-        <>
-          <TextButton label={strings.close} onPress={backToList} />
-          <PrimaryButton label={strings.shopMakeGoal} onPress={() => confirmMakeGoal(phase.item)} />
         </>
       );
     }
@@ -411,16 +380,18 @@ export default function ShopScreen({ navigation }: Props) {
               goal: activeKey === item.id,
               bought: bought.includes(item.id),
             };
+            const marked = focus?.kind === "shop-bills" && flags.due && !flags.bought;
             return (
               <Pressable
                 key={item.id}
                 role="button"
                 aria-label={rowAnnouncement(item, balance, flags)}
+                aria-selected={marked}
                 onPress={() => {
                   setWaiting(false);
                   setPhase({ name: "item", item });
                 }}
-                style={styles.itemHit}
+                style={[styles.itemHit, marked ? styles.itemMarked : null]}
               >
                 <Card>
                   <ItemHead item={item} shortfall={shortfall} />
@@ -480,11 +451,6 @@ export default function ShopScreen({ navigation }: Props) {
               {leftoverAfterBuy < 0 ? <Text style={styles.body}>{strings.planOverWarn}</Text> : null}
             </>
           ) : null}
-        </Card>
-      ) : null}
-      {phase.name === "confirmReplaceGoal" ? (
-        <Card>
-          <Text style={styles.section}>{strings.shopConfirmReplaceGoal(phase.item.name, pot)}</Text>
         </Card>
       ) : null}
       {feedback ? (
@@ -574,5 +540,9 @@ const styles = StyleSheet.create({
   },
   itemHit: {
     minHeight: minTarget,
+  },
+  itemMarked: {
+    backgroundColor: colors.highlight,
+    borderRadius: radius.card,
   },
 });

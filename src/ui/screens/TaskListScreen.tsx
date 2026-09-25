@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,6 +18,7 @@ import { ScreenTitle } from "../components/ScreenTitle";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import type { RootStackParamList } from "../navigation/types";
+import { usePlayChrome } from "../navigation/playChrome";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, minTarget, type } from "../theme";
@@ -52,6 +53,7 @@ type PinState = "locked" | "open" | "done" | "soon";
 export default function TaskListScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { game, meta, content } = useSession();
+  const { focus } = usePlayChrome();
   const [progress, setProgress] = useState<TaskProgressView[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mapWidth, setMapWidth] = useState(0);
@@ -70,6 +72,10 @@ export default function TaskListScreen() {
       );
     }, [content.tasks, game, meta]),
   );
+
+  useEffect(() => {
+    if (focus?.kind === "lesson") setSelectedId(focus.taskId);
+  }, [focus]);
 
   const byKey = new Map(progress.map((row) => [row.taskKey, row]));
   const completed = completedTaskIds(progress);
@@ -200,6 +206,7 @@ export default function TaskListScreen() {
             best: byKey.get(game.id)?.bestReward ?? 0,
           }))}
           onPlay={(taskId) => navigation.navigate("TaskRun", { taskId })}
+          highlighted={focus?.kind === "lesson" && focus.taskId === selected.id && stateOf(selected) === "open"}
         />
       ) : null}
       {corrections.length > 0 ? (
@@ -242,6 +249,7 @@ function MissionSheet({
   blocker,
   games,
   onPlay,
+  highlighted,
 }: {
   task: TaskContent;
   state: PinState;
@@ -249,6 +257,7 @@ function MissionSheet({
   blocker: TaskContent | null;
   games: { task: TaskContent; state: PinState; best: number }[];
   onPlay: (taskId: string) => void;
+  highlighted?: boolean;
 }) {
   const topic = TOPIC_COPY[task.topic];
   return (
@@ -274,6 +283,7 @@ function MissionSheet({
         </Text>
       ) : (
         <PrimaryButton
+          highlighted={highlighted}
           label={
             state === "done" ? strings.missionReplay : strings.missionStart
           }

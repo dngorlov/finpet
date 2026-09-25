@@ -11,7 +11,7 @@ async function renderApp(ports = createFakePorts()) {
 describe("plan from Main", () => {
   it("lets a returning child confirm a План, then locks it and marks the hub ready", async () => {
     const ports = createFakePorts();
-    seedReturningChild(ports);
+    seedReturningChild(ports, { unlockMoney: true });
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Деньги" }));
@@ -75,7 +75,7 @@ describe("plan from Main", () => {
 
   it("blocks confirm when the План exceeds Баланс and keeps the draft editable", async () => {
     const ports = createFakePorts();
-    const profileId = seedReturningChild(ports);
+    const profileId = seedReturningChild(ports, { unlockMoney: true });
     const day = ports.game.dayState(profileId);
     ports.game.saveDraftPlan(profileId, day.dayId, { mandatory: 80, optional: 80, savings: 80 });
     const { user } = await renderApp(ports);
@@ -96,7 +96,7 @@ describe("plan from Main", () => {
 
   it("keeps Обязательные at today's Счета: a draft below them cannot be confirmed", async () => {
     const ports = createFakePorts();
-    const profileId = seedReturningChild(ports);
+    const profileId = seedReturningChild(ports, { unlockMoney: true });
     const day = ports.game.dayState(profileId);
     ports.game.saveDraftPlan(profileId, day.dayId, { mandatory: 5, optional: 0, savings: 0 });
     const { user } = await renderApp(ports);

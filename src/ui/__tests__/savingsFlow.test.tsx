@@ -12,7 +12,7 @@ async function renderApp(ports = createFakePorts()) {
 describe("Копилка", () => {
   it("deposits toward the active Цель and leaves an empty estimate until the first transfer", async () => {
     const ports = createFakePorts();
-    seedReturningChild(ports);
+    seedReturningChild(ports, { unlockMoney: true });
     const { user } = await renderApp(ports);
 
     await openMoney(user, "Копилка");
@@ -42,7 +42,7 @@ describe("Копилка", () => {
 
   it("withdraws through a preview and a second confirm", async () => {
     const ports = createFakePorts();
-    const profileId = seedReturningChild(ports);
+    const profileId = seedReturningChild(ports, { unlockMoney: true });
     const day = ports.game.dayState(profileId);
     ports.game.transferToSavings(profileId, day.dayId, 15);
     const { user } = await renderApp(ports);
@@ -63,7 +63,7 @@ describe("Копилка", () => {
 
   it("celebrates funding without mood and lets Купить из копилки or Позже", async () => {
     const ports = createFakePorts();
-    const profileId = seedReturningChild(ports);
+    const profileId = seedReturningChild(ports, { unlockMoney: true });
     const day = ports.game.dayState(profileId);
     ports.game.transferToSavings(profileId, day.dayId, 89);
     const { user } = await renderApp(ports);
@@ -88,15 +88,17 @@ describe("Копилка", () => {
     await user.press(screen.getByRole("button", { name: "Купить из копилки" }));
     expect(screen.getByText("Настроение +12")).toBeOnTheScreen();
     expect(screen.getByText("Копилка -90")).toBeOnTheScreen();
+    expect(screen.getByText("Теперь ты Про!")).toBeOnTheScreen();
     expect(screen.queryByText(/Баланс/)).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
 
     expect(screen.getByRole("button", { name: "Выбрать новую цель" })).toBeOnTheScreen();
     expect(screen.getByText("В копилке 0")).toBeOnTheScreen();
+    expect(ports.game.boughtAsActiveGoalCount(profileId)).toBe(1);
     await user.press(screen.getByRole("button", { name: "Выбрать новую цель" }));
-    expect(screen.getByRole("button", { name: "Телескоп" })).toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Телескоп" }));
-    expect(screen.getByText("Телескоп")).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Самокат" })).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Самокат" }));
+    expect(screen.getByText("Самокат")).toBeOnTheScreen();
     expect(screen.getByText("160 монет")).toBeOnTheScreen();
   });
 });

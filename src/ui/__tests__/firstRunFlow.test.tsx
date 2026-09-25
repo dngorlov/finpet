@@ -218,19 +218,17 @@ describe("first-run flow (Appendix A 1–4)", () => {
 
     expect(screen.getByText("Новичок")).toBeOnTheScreen();
     expectMainChrome();
-    expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
-    expect(screen.getByText("0 / 90")).toBeOnTheScreen();
-    expect(screen.getByText("осталось 90")).toBeOnTheScreen();
+    expect(screen.getByText("Выбери цель")).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Текущая задача: купить нужное в Магазине" })).toBeOnTheScreen();
     expect(screen.queryByText("Что такое бюджет?")).not.toBeOnTheScreen();
     expect(screen.getByLabelText(/Питомец Пух.*Вид 2.*спокойный/)).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Деньги" }));
-    expect(screen.getAllByText("Копилка").length).toBeGreaterThan(0);
     await user.press(screen.getByRole("button", { name: "Раздел денег" }));
-    expect(screen.getByRole("button", { name: "Копилка" })).toBeSelected();
-    const planRow = screen.getByRole("button", { name: "План" });
-    expect(planRow).not.toBeSelected();
-    await user.press(planRow);
+    expect(screen.getByRole("button", { name: "Журнал" })).toBeSelected();
+    expect(screen.queryByRole("button", { name: "Копилка" })).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "План" })).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Банк" })).not.toBeOnTheScreen();
     expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Назад" })).not.toBeOnTheScreen();
     expect(screen.queryByText(/вчера \d+/)).not.toBeOnTheScreen();

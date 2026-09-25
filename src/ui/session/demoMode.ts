@@ -5,8 +5,6 @@ import { strings } from "../strings";
 import type { SessionGame, SessionMeta } from "./types";
 
 function demoInput(content: GameContent): CreateProfileInput {
-  const skateboard = content.catalog.find((item) => item.id === "skateboard");
-  if (!skateboard) throw new Error("Нет целей в контенте");
   return {
     name: strings.demoName,
     petName: strings.demoName,
@@ -15,8 +13,7 @@ function demoInput(content: GameContent): CreateProfileInput {
     accessory: "a1",
     isDemo: true,
     contentVersion: content.contentVersion,
-    goals: [{ key: skateboard.id, cost: skateboard.price }],
-    activeGoalKey: skateboard.id,
+    goals: [],
   };
 }
 

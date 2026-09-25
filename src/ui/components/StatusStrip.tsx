@@ -1,27 +1,66 @@
+import { useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { usePlayChrome } from "../navigation/playChrome";
+import { usePlayChrome, type TaskFocus } from "../navigation/playChrome";
 import type { RootStackParamList } from "../navigation/types";
 import { STAGE_CODES, STAGE_NAMES, type Stage } from "../../core/stages";
 import { META_KEYS } from "../../data/metaKeys";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
+import { currentTaskLabel, resolveCurrentTask } from "../tasks/resolveCurrentTask";
 import { colors, font, minTarget, radius, spacing, type } from "../theme";
 import { MeterBar } from "./MeterBar";
 import { Pictogram } from "./Pictogram";
 
-const STAGE_ORDER: Stage[] = ["novice", "friend", "master"];
+const STAGE_ORDER: Stage[] = ["novice", "pro", "millionaire"];
 const EDGE = 4;
+
+function openTask(
+  task: NonNullable<ReturnType<typeof resolveCurrentTask>>,
+  chrome: {
+    navigation: NativeStackNavigationProp<RootStackParamList>;
+    setTab: (tab: "home" | "map" | "money") => void;
+    setMoney: (section: "savings" | "plan" | "journal" | "bank") => void;
+    setFocus: (focus: TaskFocus) => void;
+  },
+) {
+  if (task.kind === "buy-bills") {
+    chrome.setFocus({ kind: "shop-bills" });
+    chrome.navigation.navigate("Shop");
+    return;
+  }
+  if (task.kind === "lesson") {
+    chrome.setTab("map");
+    chrome.setFocus({ kind: "lesson", taskId: task.taskId });
+    chrome.navigation.navigate("Main");
+    return;
+  }
+  chrome.setTab("money");
+  chrome.setMoney(task.kind === "confirm-plan" ? "plan" : "savings");
+  chrome.setFocus(task.kind === "confirm-plan" ? { kind: "plan" } : { kind: "goal" });
+  chrome.navigation.navigate("Main");
+}
 
 export function StatusStrip() {
   const focused = useIsFocused();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { revision } = usePlayChrome();
-  const { game, meta } = useSession();
+  const { revision, setTab, setMoney, focus, setFocus } = usePlayChrome();
+  const { game, meta, content } = useSession();
   const profileId = meta.get(META_KEYS.activeProfileId);
   void revision;
   const profile = profileId ? game.getProfile(profileId) : null;
+  const task = profileId && profile ? resolveCurrentTask(game, content, profileId) : null;
+
+  useEffect(() => {
+    if (!focus) return;
+    const matches =
+      (task?.kind === "set-goal" && focus.kind === "goal") ||
+      (task?.kind === "confirm-plan" && focus.kind === "plan") ||
+      (task?.kind === "buy-bills" && focus.kind === "shop-bills") ||
+      (task?.kind === "lesson" && focus.kind === "lesson" && focus.taskId === task.taskId);
+    if (!matches) setFocus(null);
+  }, [focus, setFocus, task]);
 
   if (!focused || !profile) return null;
 
@@ -66,6 +105,16 @@ export function StatusStrip() {
         <MeterBar compact icon={strings.careIcon} label={strings.care} value={profile.care} />
         <MeterBar compact icon={strings.moodIcon} label={strings.mood} value={profile.mood} />
       </View>
+      {task ? (
+        <Pressable
+          role="button"
+          aria-label={currentTaskLabel(task, content)}
+          onPress={() => openTask(task, { navigation, setTab, setMoney, setFocus })}
+          style={styles.task}
+        >
+          <Text style={styles.taskLabel}>{currentTaskLabel(task, content)}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -85,6 +134,18 @@ const styles = StyleSheet.create({
   meters: {
     flexDirection: "row",
     gap: spacing.m,
+  },
+  task: {
+    backgroundColor: colors.highlight,
+    borderRadius: radius.card,
+    minHeight: minTarget,
+    justifyContent: "center",
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+  },
+  taskLabel: {
+    color: colors.text,
+    fontSize: type.body,
   },
   balance: {
     alignItems: "center",

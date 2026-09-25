@@ -13,7 +13,7 @@ import {
 } from "../../core/economy";
 import { checkDeposit, depositInterest, depositPayout, findOffer, maturesOnDay } from "../../core/bank";
 import { applyGoalProgress, checkWithdrawal, estimateDaysToGoal, potFromTransfers } from "../../core/savings";
-import { dayScore, explainStageChange, stageFromScores } from "../../core/stages";
+import { dayScore, explainStageChange, nextStage, type Stage } from "../../core/stages";
 import { endsGameDay, rewardTopUp, type TaskStepResult } from "../../core/tasks";
 import { loadContent } from "../../data/content";
 import { META_KEYS } from "../../data/metaKeys";
@@ -176,7 +176,9 @@ export function createFakePorts(): SessionPorts {
       dayId: `${id}#1`,
       dayN: 1,
       goals: (() => {
-        const seeded = input.goals.find((goal) => goal.key === input.activeGoalKey);
+        const seeded = input.activeGoalKey
+          ? input.goals.find((goal) => goal.key === input.activeGoalKey)
+          : undefined;
         return seeded
           ? [{ key: seeded.key, cost: seeded.cost, status: "active" as const, isActive: true, fundedCelebrated: false }]
           : [];
@@ -361,7 +363,10 @@ export function createFakePorts(): SessionPorts {
           goalId: item.id,
         });
         row.goals = [];
-        return { status: "ok" as const };
+        const from = row.stage;
+        const to = nextStage(from);
+        row.stage = to;
+        return { status: "ok" as const, stageExplanation: explainStageChange(from, to) };
       },
       transferToSavings(profileId, dayId, amount) {
         const row = requireRow(profiles, profileId);
@@ -404,11 +409,12 @@ export function createFakePorts(): SessionPorts {
         });
         return { ok: true as const, potAfter: check.potAfter };
       },
-      setActiveGoal(profileId, item: CatalogItem | string) {
+      setActiveGoal(profileId, item: (CatalogItem & { stage?: Stage }) | string) {
         const row = requireRow(profiles, profileId);
         const catalogItem = typeof item === "string" ? null : item;
         const key = typeof item === "string" ? item : item.id;
         if (catalogItem?.kind === "mandatory") throw new Error("Обязательное не может быть Целью");
+        if (catalogItem?.stage && catalogItem.stage !== row.stage) throw new Error("Цель другого Этапа");
         if (catalogItem?.once && ownsItem(row, catalogItem.id)) throw new Error("Этот товар уже куплен");
         const existing = row.goals.find((goal) => goal.key === key);
         const cost = catalogItem?.price ?? existing?.cost;
@@ -418,6 +424,11 @@ export function createFakePorts(): SessionPorts {
       clearActiveGoal(profileId) {
         const row = requireRow(profiles, profileId);
         row.goals = [];
+      },
+      noteTaskCompleted(profileId: string, taskId: string) {
+        const row = requireRow(profiles, profileId);
+        if (row.tasks.some((task) => task.taskKey === taskId)) return;
+        row.tasks.push({ taskKey: taskId, status: "completed", rewardPaid: false, bestReward: 0 });
       },
       listGoals(profileId) {
         return requireRow(profiles, profileId).goals.map((g) => ({ ...g }));
@@ -570,10 +581,7 @@ export function createFakePorts(): SessionPorts {
         });
         if (meterDeltas.care) row.care = applyMeterDelta(row.care, meterDeltas.care);
         if (meterDeltas.mood) row.mood = applyMeterDelta(row.mood, meterDeltas.mood);
-        const previousStage = row.stage;
         row.scores.push(score);
-        const stage = stageFromScores(row.scores);
-        row.stage = stage;
         row.dayOpen = false;
         const summary: DaySummaryView = {
           dayId: row.dayId,
@@ -583,9 +591,9 @@ export function createFakePorts(): SessionPorts {
           plan: { ...row.buckets },
           actual: actuals(row),
           meterDeltas,
-          stage,
-          previousStage,
-          stageExplanation: explainStageChange(previousStage, stage),
+          stage: row.stage,
+          previousStage: row.stage,
+          stageExplanation: null,
         };
         row.lastClosed = summary;
         return summary;
@@ -594,10 +602,14 @@ export function createFakePorts(): SessionPorts {
   };
 }
 
-export function seedReturningChild(ports: SessionPorts, input?: Partial<CreateProfileInput>): string {
+export function seedReturningChild(
+  ports: SessionPorts,
+  input?: Partial<CreateProfileInput> & { unlockMoney?: boolean },
+): string {
   const content = ports.content;
-  const skateboard = content.catalog.find((item) => item.id === "skateboard");
+  const skateboard = content.goals.find((goal) => goal.id === "skateboard");
   if (!skateboard) throw new Error("Нет целей в контенте");
+  const { unlockMoney = false, ...profile } = input ?? {};
   const id = ports.game.createProfile({
     name: "Миша",
     petName: "Пух",
@@ -607,9 +619,13 @@ export function seedReturningChild(ports: SessionPorts, input?: Partial<CreatePr
     contentVersion: content.contentVersion,
     goals: [{ key: skateboard.id, cost: skateboard.price }],
     activeGoalKey: skateboard.id,
-    ...input,
+    ...profile,
   });
   ports.game.openDay(id);
+  if (unlockMoney) {
+    ports.game.noteTaskCompleted?.(id, "savings_what");
+    ports.game.noteTaskCompleted?.(id, "budget_plan");
+  }
   ports.meta.set(META_KEYS.activeProfileId, id);
   ports.meta.set(META_KEYS.onboardingDone, "1");
   return id;

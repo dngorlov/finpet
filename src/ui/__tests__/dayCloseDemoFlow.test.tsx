@@ -7,7 +7,7 @@ import {
   seedReturningChild,
 } from "../testSupport/fakePorts";
 import { loadContent } from "../../data/content";
-import { confirmTinyPlan, demoMissions, openMoney, openTab, passAdultGate } from "../testSupport/flowHelpers";
+import { confirmTinyPlan, openMoney, openTab, passAdultGate } from "../testSupport/flowHelpers";
 
 const content = loadContent();
 
@@ -35,7 +35,7 @@ describe("Итоги дня + Демо-режим combined loop", () => {
     "closes a confirmed day, waits on Main, then walks five demo days, reset, and exit",
     async () => {
       const ports = createFakePorts();
-      const childId = seedReturningChild(ports);
+      const childId = seedReturningChild(ports, { unlockMoney: true });
       const childDay = ports.game.dayState(childId);
       expect(ports.game.claimTaskReward(childId, childDay.dayId, "budget_what", 10)).toBe(10);
       const { user } = await renderApp(ports);
@@ -53,9 +53,6 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       await user.press(screen.getByRole("button", { name: "Итоги" }));
       expect(screen.getByText("план 21 · потрачено 0")).toBeOnTheScreen();
       expect(screen.getAllByText("план 1 · потрачено 0")).toHaveLength(2);
-      expect(screen.getByText("Обязательные 0")).toBeOnTheScreen();
-      expect(screen.getByText("По плану 0")).toBeOnTheScreen();
-      expect(screen.getByText("Копилка 0")).toBeOnTheScreen();
       expect(screen.getByText("Сытость -15: пропущен обед")).toBeOnTheScreen();
       expect(screen.getByText("Настроение -15: пропущены обязательные расходы")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
@@ -82,10 +79,12 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       expect(screen.queryByText("Охота за ценником")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Карта" }));
       expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: `${demoMissions[0]}, открыто` })).toBeOnTheScreen();
-      for (const title of demoMissions.slice(1)) {
-        expect(screen.getByRole("button", { name: `${title}, закрыто` })).toBeOnTheScreen();
-      }
+      expect(screen.getByRole("button", { name: "Что такое бюджет?, открыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Планирование бюджета, открыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Что такое сбережения, открыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Где живут накопления?, закрыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Платежи, закрыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Покупки, закрыто" })).toBeOnTheScreen();
       await openTab(user, "Дом");
 
       await closeDemoDayAndAdvance(user, ports);
@@ -121,10 +120,12 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       expect(screen.queryByText("Охота за ценником")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Карта" }));
       expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: `${demoMissions[0]}, открыто` })).toBeOnTheScreen();
-      for (const title of demoMissions.slice(1)) {
-        expect(screen.getByRole("button", { name: `${title}, закрыто` })).toBeOnTheScreen();
-      }
+      expect(screen.getByRole("button", { name: "Что такое бюджет?, открыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Планирование бюджета, открыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Что такое сбережения, открыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Где живут накопления?, закрыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Платежи, закрыто" })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Покупки, закрыто" })).toBeOnTheScreen();
       await openTab(user, "Дом");
 
       await openMoney(user, "Журнал");

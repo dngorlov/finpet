@@ -6,7 +6,7 @@ import { playableTasks } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DaySummaryView, JournalEntry, TaskProgressView } from "../../data/repositories/gameRepository";
 import { Badge } from "../components/Badge";
-import { GlyphLabel, Pictogram } from "../components/Pictogram";
+import { GlyphLabel } from "../components/Pictogram";
 import { Card } from "../components/Card";
 import { useSession } from "../session/SessionProvider";
 import { dayCloseLines, strings } from "../strings";
@@ -68,10 +68,18 @@ export function JournalPanel() {
     }
     return [...map.entries()].sort((a, b) => b[0] - a[0]);
   }, [rows]);
-  const itemName = (id: string | null) => content.catalog.find((item) => item.id === id)?.name ?? id ?? "";
+  const itemName = (id: string | null) =>
+    content.catalog.find((item) => item.id === id)?.name ??
+    content.goals.find((goal) => goal.id === id)?.name ??
+    id ??
+    "";
   const journalAmount = (entry: JournalEntry) => {
     if (entry.kind === "purchase" && entry.amount === 0 && entry.itemId) {
-      return -(content.catalog.find((item) => item.id === entry.itemId)?.price ?? 0);
+      const price =
+        content.catalog.find((item) => item.id === entry.itemId)?.price ??
+        content.goals.find((goal) => goal.id === entry.itemId)?.price ??
+        0;
+      return -price;
     }
     return entry.amount;
   };
@@ -113,13 +121,6 @@ export function ResultsBody() {
     <>
       <Card>
         <Text style={styles.section}>{strings.resultsLastDay(lastClosed.n)}</Text>
-        <Text style={styles.body}>{strings.resultsScore(lastClosed.score)}</Text>
-        <FactLine
-          icon={lastClosed.facts.mandatoryCovered ? strings.scoreYesIcon : strings.needsMissedIcon}
-          label={strings.resultsScoreMandatory(lastClosed.facts.mandatoryCovered)}
-        />
-        <FactLine icon={strings.navPlanPictogram} label={strings.resultsScoreWithinPlan(lastClosed.facts.withinPlan)} />
-        <FactLine icon={strings.savingsIcon} label={strings.scoreDeposited(lastClosed.facts.deposited)} />
         <BucketLine
           pictogram={strings.navPlanPictogram}
           label={strings.bucketMandatory}
@@ -144,7 +145,6 @@ export function ResultsBody() {
           </Text>
         ))}
         <Badge icon={strings.stageIcon} word={strings.stageWord} value={STAGE_NAMES[lastClosed.stage]} />
-        {lastClosed.stageExplanation ? <Text style={styles.body}>{lastClosed.stageExplanation}</Text> : null}
       </Card>
       <Card>
         <Text style={styles.section}>{strings.resultsOverall}</Text>
@@ -153,15 +153,6 @@ export function ResultsBody() {
         <Text style={styles.body}>{strings.resultsGoalsAchieved(goalCount)}</Text>
       </Card>
     </>
-  );
-}
-
-function FactLine({ icon, label }: { icon: string; label: string }) {
-  return (
-    <View accessible aria-label={label} style={styles.fact}>
-      <Pictogram glyph={icon} />
-      <Text style={styles.body}>{label}</Text>
-    </View>
   );
 }
 

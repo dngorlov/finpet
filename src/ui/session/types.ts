@@ -1,4 +1,5 @@
 import type { CatalogItem, DayBills, PlanBuckets } from "../../core/economy";
+import type { Stage } from "../../core/stages";
 import type { TaskStepResult } from "../../core/tasks";
 import type { GameContent } from "../../data/content";
 import type {
@@ -34,6 +35,8 @@ export type SessionGame = {
   dayState(profileId: string): DayState;
   lastClosedDay(profileId: string): DaySummaryView | null;
   listTaskProgress(profileId: string): TaskProgressView[];
+  /** Test fake only: mark a lesson done without ending the Игровой день. */
+  noteTaskCompleted?(profileId: string, taskId: string): void;
   listDeposits(profileId: string): DepositView[];
   openDeposit(profileId: string, dayId: string, offerId: string, amount: number): OpenDepositResult;
   collectDeposits(profileId: string, dayId: string): CollectDepositsResult;
@@ -43,7 +46,7 @@ export type SessionGame = {
   purchaseFromSavings(profileId: string, dayId: string, item: CatalogItem): PurchaseResult;
   transferToSavings(profileId: string, dayId: string, amount: number): TransferResult;
   withdrawFromSavings(profileId: string, dayId: string, amount: number): WithdrawResult;
-  setActiveGoal(profileId: string, item: CatalogItem | string): void;
+  setActiveGoal(profileId: string, item: (CatalogItem & { stage?: Stage }) | string): void;
   clearActiveGoal(profileId: string): void;
   listGoals(profileId: string): GoalOption[];
   listJournal(profileId: string): JournalEntry[];

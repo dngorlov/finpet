@@ -8,15 +8,17 @@ const EDGE = 4;
 export function PrimaryButton({
   label,
   disabled,
+  highlighted,
   onPress,
   ...rest
-}: { label: string } & PressableProps) {
+}: { label: string; highlighted?: boolean } & PressableProps) {
   return (
     <Pressable
       {...rest}
       role="button"
       aria-label={label}
       aria-disabled={Boolean(disabled)}
+      aria-selected={highlighted ? true : undefined}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
@@ -25,7 +27,13 @@ export function PrimaryButton({
         !disabled && pressed ? styles.shellPressed : null,
       ]}
     >
-      <View style={[styles.face, disabled ? styles.faceDisabled : styles.faceRaised]}>
+      <View
+        style={[
+          styles.face,
+          disabled ? styles.faceDisabled : styles.faceRaised,
+          highlighted ? styles.faceMarked : null,
+        ]}
+      >
         <PixelIcon name={buttonIcon(label)} color={disabled ? colors.subtle : colors.onRaised} />
         <Text style={[styles.label, disabled ? styles.labelDisabled : null]}>{label}</Text>
       </View>
@@ -60,6 +68,9 @@ const styles = StyleSheet.create({
   },
   faceRaised: {
     backgroundColor: colors.raisedFace,
+  },
+  faceMarked: {
+    backgroundColor: colors.highlight,
   },
   faceDisabled: {
     backgroundColor: colors.disabledFace,

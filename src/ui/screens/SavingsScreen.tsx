@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import type { CatalogItemContent } from "../../data/content";
+import type { CatalogItemContent, GoalContent } from "../../data/content";
 import { applyGoalProgress, estimateDaysToGoal } from "../../core/savings";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, SavingsView } from "../../data/repositories/gameRepository";
@@ -28,13 +28,21 @@ type Phase =
   | { name: "withdrawPreview"; amount: number; potAfter: number; days: number | null }
   | { name: "celebration" };
 
-function engineItem(item: CatalogItemContent) {
-  return { id: item.id, kind: item.kind, price: item.price, effect: item.effect, also: item.also, once: item.once };
+function engineItem(item: Pick<CatalogItemContent, "id" | "kind" | "price" | "effect" | "also" | "once"> & { stage?: GoalContent["stage"] }) {
+  return {
+    id: item.id,
+    kind: item.kind,
+    price: item.price,
+    effect: item.effect,
+    also: item.also,
+    once: item.once,
+    stage: item.stage,
+  };
 }
 
 export default function SavingsScreen() {
   const { game, meta, content } = useSession();
-  const { touchChrome } = usePlayChrome();
+  const { touchChrome, focus } = usePlayChrome();
   const [savings, setSavings] = useState<SavingsView | null>(null);
   const [day, setDay] = useState<DayState | null>(null);
   const [balance, setBalance] = useState(0);
@@ -56,10 +64,13 @@ export default function SavingsScreen() {
     useCallback(() => {
       load();
       setPhase({ name: "home" });
-      setPickerOpen(false);
       setOfferPickGoal(false);
     }, [load]),
   );
+
+  useEffect(() => {
+    if (focus?.kind === "goal") setPickerOpen(true);
+  }, [focus]);
 
   if (!savings) {
     return (
@@ -87,8 +98,17 @@ export default function SavingsScreen() {
       .map((row) => Math.abs(row.amount));
   };
 
-  const activeItem = savings.activeGoal
-    ? content.catalog.find((item) => item.id === savings.activeGoal!.key) ?? null
+  const goal = savings.activeGoal ? content.goals.find((item) => item.id === savings.activeGoal!.key) : undefined;
+  const activeItem = goal
+    ? {
+        id: goal.id,
+        name: goal.name,
+        kind: "optional" as const,
+        price: goal.price,
+        effect: goal.effect,
+        once: true,
+        stage: goal.stage,
+      }
     : null;
   const activeName = activeItem?.name ?? null;
   const accumulated = savings.activeGoal ? savings.activeGoal.cost - savings.activeGoal.remaining : 0;
@@ -146,7 +166,7 @@ export default function SavingsScreen() {
         savings: -activeItem.price,
         ...meterDeltaMap(activeItem),
       },
-      cause: strings.feedbackCausePurchase,
+      cause: result.stageExplanation ?? strings.feedbackCausePurchase,
       nextStep: strings.feedbackNextGoal,
     });
   };

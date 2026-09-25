@@ -48,61 +48,96 @@
       "description": "Сладкое для настроения"
     },
     {
-      "id": "stickers",
-      "name": "Стикеры",
-      "icon": "🌟",
+      "id": "ice-cream",
+      "name": "Мороженое",
+      "icon": "🍦",
       "kind": "optional",
-      "price": 7,
+      "price": 8,
       "effect": { "meter": "mood", "delta": 6 },
-      "description": "Наклейки в альбом"
-    },
+      "description": "Холодное в жаркий день"
+    }
+  ],
+  "goals": [
     {
-      "id": "cinema",
-      "name": "Кино",
-      "icon": "🎬",
-      "kind": "optional",
-      "price": 20,
-      "effect": { "meter": "mood", "delta": 12 },
-      "description": "Поход в кино с питомцем"
-    },
-    {
-      "id": "toy",
-      "name": "Игрушка",
-      "icon": "🧸",
-      "kind": "optional",
-      "price": 25,
+      "id": "lego",
+      "name": "LEGO",
+      "icon": "🧱",
+      "stage": "novice",
+      "price": 60,
       "effect": { "meter": "mood", "delta": 10 },
-      "description": "Большая игрушка — стоит дорого"
+      "description": "Собрать что-то своё"
+    },
+    {
+      "id": "smartwatch",
+      "name": "Смарт-часы",
+      "icon": "⌚",
+      "stage": "novice",
+      "price": 75,
+      "effect": { "meter": "mood", "delta": 12 },
+      "description": "Часы, которые считают шаги"
     },
     {
       "id": "skateboard",
       "name": "Скейтборд",
       "icon": "🛹",
-      "kind": "optional",
+      "stage": "novice",
       "price": 90,
       "effect": { "meter": "mood", "delta": 12 },
-      "description": "Кататься во дворе после школы",
-      "once": true
+      "description": "Кататься во дворе после школы"
     },
     {
-      "id": "telescope",
-      "name": "Телескоп",
-      "icon": "🔭",
-      "kind": "optional",
+      "id": "art-set",
+      "name": "Набор для рисования",
+      "icon": "🎨",
+      "stage": "pro",
+      "price": 120,
+      "effect": { "meter": "mood", "delta": 12 },
+      "description": "Краски и бумага для своих картин"
+    },
+    {
+      "id": "scooter",
+      "name": "Самокат",
+      "icon": "🛴",
+      "stage": "pro",
       "price": 160,
+      "effect": { "meter": "mood", "delta": 14 },
+      "description": "Доехать до парка самому"
+    },
+    {
+      "id": "phone",
+      "name": "Телефон",
+      "icon": "📱",
+      "stage": "pro",
+      "price": 200,
       "effect": { "meter": "mood", "delta": 15 },
-      "description": "Смотреть на звёзды вечером",
-      "once": true
+      "description": "Звонить своим, когда нужно"
+    },
+    {
+      "id": "guitar",
+      "name": "Гитара",
+      "icon": "🎸",
+      "stage": "millionaire",
+      "price": 220,
+      "effect": { "meter": "mood", "delta": 16 },
+      "description": "Играть свои песни"
     },
     {
       "id": "bike",
       "name": "Велосипед",
       "icon": "🚲",
-      "kind": "optional",
+      "stage": "millionaire",
       "price": 240,
       "effect": { "meter": "mood", "delta": 18 },
-      "description": "Длинные поездки в парк",
-      "once": true
+      "description": "Длинные поездки в парк"
+    },
+    {
+      "id": "computer",
+      "name": "Компьютер",
+      "icon": "💻",
+      "stage": "millionaire",
+      "price": 360,
+      "effect": { "meter": "mood", "delta": 18 },
+      "description": "Учиться и играть дома"
     }
   ],
   "bills": [

@@ -1,45 +1,22 @@
-import { dayScore, explainStageChange, stageFromScores } from "../stages";
+import { explainStageChange, nextStage, stageFromCode } from "../stages";
 
-describe("dayScore", () => {
-  it("is +2 all mandatory bought, +1 spend within plan, +1 deposit made", () => {
-    expect(
-      dayScore({ mandatoryCovered: true, withinPlan: true, deposited: true }),
-    ).toBe(4);
-    expect(
-      dayScore({ mandatoryCovered: true, withinPlan: false, deposited: false }),
-    ).toBe(2);
-    expect(
-      dayScore({ mandatoryCovered: false, withinPlan: true, deposited: true }),
-    ).toBe(2);
-    expect(
-      dayScore({ mandatoryCovered: false, withinPlan: false, deposited: false }),
-    ).toBe(0);
-  });
-});
-
-describe("stageFromScores", () => {
-  it("is Новичок while the last-3 rolling sum is below 3", () => {
-    expect(stageFromScores([])).toBe("novice");
-    expect(stageFromScores([2, 0])).toBe("novice");
+describe("Этап", () => {
+  it("moves one step when the Цель is bought, and stays at Миллионер", () => {
+    expect(nextStage("novice")).toBe("pro");
+    expect(nextStage("pro")).toBe("millionaire");
+    expect(nextStage("millionaire")).toBe("millionaire");
   });
 
-  it("is Друг at 3–8 over the last 3 closed days", () => {
-    expect(stageFromScores([1, 1, 1])).toBe("friend");
-    expect(stageFromScores([4, 4, 0])).toBe("friend");
-    expect(stageFromScores([4, 4, 4, 0])).toBe("friend");
-  });
-
-  it("is Мастер at 9 or more over the last 3 closed days", () => {
-    expect(stageFromScores([4, 4, 1])).toBe("master");
-    expect(stageFromScores([0, 0, 0, 4, 4, 4])).toBe("master");
-  });
-});
-
-describe("explainStageChange", () => {
-  it("emits a kid-worded explanation only when the stage actually changes", () => {
+  it("names the new Этап, and says nothing when it did not move", () => {
     expect(explainStageChange("novice", "novice")).toBeNull();
-    expect(explainStageChange("novice", "friend")).toMatch(/Друг/);
-    expect(explainStageChange("friend", "master")).toMatch(/Мастер/);
-    expect(explainStageChange("friend", "novice")).toMatch(/Новичок/);
+    expect(explainStageChange("novice", "pro")).toBe("Теперь ты Про!");
+    expect(explainStageChange("pro", "millionaire")).toBe("Теперь ты Миллионер!");
+    expect(explainStageChange("millionaire", "millionaire")).toBeNull();
+  });
+
+  it("reads the stored code", () => {
+    expect(stageFromCode(0)).toBe("novice");
+    expect(stageFromCode(1)).toBe("pro");
+    expect(stageFromCode(2)).toBe("millionaire");
   });
 });

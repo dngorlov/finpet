@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { BackHandler, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { BANK, ECONOMY } from "../../core/config";
+import { BANK, ECONOMY, FEATURES } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
 import { Card } from "../components/Card";
@@ -18,6 +18,7 @@ import type { RootStackParamList } from "../navigation/types";
 import { PetView } from "../pet/PetView";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
+import { completedTaskIds } from "../tasks/model";
 import { colors, minTarget, spacing, type } from "../theme";
 import BankScreen from "./BankScreen";
 import { JournalPanel } from "./progressPanels";
@@ -36,6 +37,8 @@ type HubModel = {
   accumulated: number;
   cost: number;
   remaining: number;
+  savingsOpen: boolean;
+  planOpen: boolean;
   bankOpen: boolean;
 };
 
@@ -62,14 +65,14 @@ export default function MainScreen({ navigation }: Props) {
     const bank = opened.status === "opened" ? game.collectDeposits(profileId, opened.dayId) : null;
     const profile = game.getProfile(profileId);
     const progress = game.listTaskProgress(profileId);
-    const bankOpen =
-      profile.isDemo || progress.some((row) => row.taskKey === BANK.unlockTaskId && row.status === "completed");
+    const completed = completedTaskIds(progress);
+    const savingsOpen = profile.isDemo || completed.has(FEATURES.savingsTaskId);
+    const planOpen = profile.isDemo || completed.has(FEATURES.planTaskId);
+    const bankOpen = profile.isDemo || completed.has(BANK.unlockTaskId);
     const savings = game.savingsState(profileId);
     const day = game.dayState(profileId);
     const activeGoal = savings.activeGoal;
-    const goalItem = activeGoal
-      ? content.catalog.find((item) => item.id === activeGoal.key && item.kind === "optional")
-      : undefined;
+    const goalItem = activeGoal ? content.goals.find((item) => item.id === activeGoal.key) : undefined;
     const cost = activeGoal?.cost ?? 0;
     const remaining = activeGoal?.remaining ?? 0;
     const creditedNow = opened.status === "opened" && opened.allowanceCredited;
@@ -82,6 +85,8 @@ export default function MainScreen({ navigation }: Props) {
       accumulated: cost - remaining,
       cost,
       remaining,
+      savingsOpen,
+      planOpen,
       bankOpen,
     }));
     const bankPaid = bank && bank.paid > 0 ? bank : null;
@@ -125,7 +130,13 @@ export default function MainScreen({ navigation }: Props) {
   );
 
   useEffect(() => {
-    if (money === "bank" && hub && !hub.bankOpen) setMoney("savings");
+    if (!hub) return;
+    const visible =
+      (money === "savings" && hub.savingsOpen) ||
+      (money === "plan" && hub.planOpen) ||
+      money === "journal" ||
+      (money === "bank" && hub.bankOpen);
+    if (!visible) setMoney("journal");
   }, [hub, money, setMoney]);
 
   if (!hub) {
@@ -140,7 +151,12 @@ export default function MainScreen({ navigation }: Props) {
   }
 
   const waiting = !hub.day.open;
-  const options = MONEY_OPTIONS.filter((option) => option.id !== "bank" || hub.bankOpen);
+  const options = MONEY_OPTIONS.filter((option) => {
+    if (option.id === "savings") return hub.savingsOpen;
+    if (option.id === "plan") return hub.planOpen;
+    if (option.id === "bank") return hub.bankOpen;
+    return true;
+  });
   const current = options.find((option) => option.id === money) ?? options[0];
 
   return (

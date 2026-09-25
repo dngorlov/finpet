@@ -16,8 +16,6 @@ function identityInput(
   content: GameContent,
   profile: { name: string; petName: string; species: string; color: string; accessory: string },
 ): CreateProfileInput {
-  const skateboard = content.catalog.find((item) => item.id === "skateboard");
-  if (!skateboard) throw new Error("Нет целей в контенте");
   return {
     name: profile.name,
     petName: profile.petName,
@@ -25,8 +23,7 @@ function identityInput(
     color: profile.color,
     accessory: profile.accessory,
     contentVersion: content.contentVersion,
-    goals: [{ key: skateboard.id, cost: skateboard.price }],
-    activeGoalKey: skateboard.id,
+    goals: [],
   };
 }
 

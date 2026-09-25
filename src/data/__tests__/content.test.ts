@@ -27,10 +27,17 @@ describe("loadContent", () => {
     expect(content.intro.every((card) => card.body.startsWith("Описание"))).toBe(true);
   });
 
-  it("ships eleven catalog items including three one-shot Желаемые", () => {
+  it("ships the shelf and nine Цели that are not sold there", () => {
     const byId = Object.fromEntries(content.catalog.map((item) => [item.id, item]));
 
-    expect(content.catalog).toHaveLength(11);
+    expect(content.catalog.map((item) => item.id)).toEqual([
+      "lunch",
+      "school",
+      "transport",
+      "medicine",
+      "candy",
+      "ice-cream",
+    ]);
     expect(byId.lunch).toMatchObject({
       name: "Обед",
       kind: "mandatory",
@@ -38,39 +45,30 @@ describe("loadContent", () => {
       effect: { meter: "care", delta: 10 },
       also: { meter: "mood", delta: 5 },
     });
-    expect(byId.school).toMatchObject({ kind: "mandatory", price: 10, effect: { meter: "mood", delta: 5 } });
-    expect(byId.transport).toMatchObject({ kind: "mandatory", price: 8, effect: { meter: "mood", delta: 5 } });
-    expect(byId.medicine).toMatchObject({ kind: "mandatory", price: 15, effect: { meter: "mood", delta: 20 } });
     expect(byId.candy).toMatchObject({
       kind: "optional",
       price: 5,
       effect: { meter: "mood", delta: 5 },
-      once: false,
     });
-    expect(byId.stickers).toMatchObject({ kind: "optional", price: 7, effect: { meter: "mood", delta: 6 }, once: false });
-    expect(byId.cinema).toMatchObject({ kind: "optional", price: 20, effect: { meter: "mood", delta: 12 }, once: false });
-    expect(byId.toy).toMatchObject({ kind: "optional", price: 25, effect: { meter: "mood", delta: 10 }, once: false });
-    expect(byId.skateboard).toMatchObject({
-      name: "Скейтборд",
+    expect(byId["ice-cream"]).toMatchObject({
+      name: "Мороженое",
       kind: "optional",
-      price: 90,
-      effect: { meter: "mood", delta: 12 },
-      once: true,
+      price: 8,
+      effect: { meter: "mood", delta: 6 },
     });
-    expect(byId.telescope).toMatchObject({
-      name: "Телескоп",
-      kind: "optional",
-      price: 160,
-      effect: { meter: "mood", delta: 15 },
-      once: true,
-    });
-    expect(byId.bike).toMatchObject({
-      name: "Велосипед",
-      kind: "optional",
-      price: 240,
-      effect: { meter: "mood", delta: 18 },
-      once: true,
-    });
+    expect(content.goals.map((goal) => [goal.stage, goal.name, goal.price])).toEqual([
+      ["novice", "LEGO", 60],
+      ["novice", "Смарт-часы", 75],
+      ["novice", "Скейтборд", 90],
+      ["pro", "Набор для рисования", 120],
+      ["pro", "Самокат", 160],
+      ["pro", "Телефон", 200],
+      ["millionaire", "Гитара", 220],
+      ["millionaire", "Велосипед", 240],
+      ["millionaire", "Компьютер", 360],
+    ]);
+    const shopIds = new Set(content.catalog.map((item) => item.id));
+    for (const goal of content.goals) expect(shopIds.has(goal.id)).toBe(false);
   });
 
   it("ships a Счета cycle of mandatory items with a medicine day", () => {
@@ -114,18 +112,18 @@ describe("loadContent", () => {
       id: "goal",
       term: "Цель",
       definition:
-        "Одно желаемое из магазина, на которое копилка копит. Одновременно бывает только одна. Обязательные не могут быть целью.",
+        "Одна вещь, на которую копилка копит. Её выбирают из трёх для своего этапа. В магазине её нет.",
     });
     expect(content.terms.find((t) => t.id === "optional")).toEqual({
       id: "optional",
       term: "Желаемые расходы",
       definition:
-        "Покупки не из обязательных: они поднимают настроение. Некоторые можно купить только один раз.",
+        "Покупки не из обязательных: они поднимают настроение. Сейчас это конфета и мороженое.",
     });
     expect(content.terms.find((t) => t.id === "mood")).toEqual({
       id: "mood",
       term: "Настроение",
-      definition: "Как радуется питомец. Растёт от обеда, от других обязательных покупок и от желаемых.",
+      definition: "Как радуется питомец. Растёт от обеда, от других обязательных покупок, от желаемых и когда покупаешь цель.",
     });
   });
 

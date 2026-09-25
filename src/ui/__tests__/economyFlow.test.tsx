@@ -5,7 +5,8 @@ import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
 import { confirmTinyPlan, openMoney, openTab } from "../testSupport/flowHelpers";
 
 const content = loadContent();
-const cinema = content.catalog.find((item) => item.id === "cinema")!;
+const candy = content.catalog.find((item) => item.id === "candy")!;
+const iceCream = content.catalog.find((item) => item.id === "ice-cream")!;
 
 async function renderApp(ports = createFakePorts()) {
   const user = userEvent.setup();
@@ -18,7 +19,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     "plans, buys, blocks a short purchase, saves, and records the Журнал",
     async () => {
     const ports = createFakePorts();
-    const profileId = seedReturningChild(ports);
+    const profileId = seedReturningChild(ports, { unlockMoney: true });
     const { user } = await renderApp(ports);
 
     await openMoney(user, "План");
@@ -44,14 +45,13 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
     const day = ports.game.dayState(profileId);
-    ports.game.purchase(profileId, day.dayId, cinema);
-    ports.game.purchase(profileId, day.dayId, cinema);
-    ports.game.purchase(profileId, day.dayId, cinema);
-    ports.game.purchase(profileId, day.dayId, cinema);
+    while (ports.game.getProfile(profileId).balance >= iceCream.price) {
+      ports.game.purchase(profileId, day.dayId, candy);
+    }
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
-    await user.press(screen.getByRole("button", { name: /^Игрушка/ }));
+    await user.press(screen.getByRole("button", { name: /^Мороженое/ }));
     expect(screen.queryByRole("button", { name: "Купить" })).not.toBeOnTheScreen();
     expect(screen.getByText(/Не хватает/)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Дождаться пособия" }));
@@ -59,13 +59,6 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     await user.press(screen.getByRole("button", { name: "Выполнить задание" }));
     expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Дом" }));
-    await user.press(screen.getByRole("button", { name: "Магазин" }));
-    await user.press(screen.getByRole("button", { name: "Желаемое" }));
-    await user.press(screen.getByRole("button", { name: /^Игрушка/ }));
-    await user.press(screen.getByRole("button", { name: "Сделать целью" }));
-    expect(screen.getByText(/Цель станет Игрушка/)).toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Закрыть" }));
-    await user.press(screen.getByRole("button", { name: "Назад" }));
 
     await openMoney(user, "Копилка");
     await user.press(screen.getByRole("button", { name: "Положить" }));
@@ -76,7 +69,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
 
     await openMoney(user, "Журнал");
     expect(screen.getByText("Покупка: Обед -12")).toBeOnTheScreen();
-    expect(screen.getByText("Покупка: Конфета -5")).toBeOnTheScreen();
+    expect(screen.getAllByText("Покупка: Конфета -5").length).toBeGreaterThan(0);
     expect(screen.getByText("Перевод в копилку -1")).toBeOnTheScreen();
     expect(screen.getByText("Пособие +20")).toBeOnTheScreen();
     await openTab(user, "Дом");
@@ -89,7 +82,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     "shows leftover on Магазин and Копилка after confirm, and still buys a Желаемое past the bucket",
     async () => {
       const ports = createFakePorts();
-      seedReturningChild(ports);
+      seedReturningChild(ports, { unlockMoney: true });
       const { user } = await renderApp(ports);
 
       await user.press(screen.getByRole("button", { name: "Магазин" }));

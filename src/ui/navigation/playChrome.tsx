@@ -3,11 +3,21 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 export type PlayTab = "home" | "map" | "money";
 export type MoneySection = "savings" | "plan" | "journal" | "bank";
 
+/** Where a tap on Текущая задача should land, and which control to mark. */
+export type TaskFocus =
+  | null
+  | { kind: "shop-bills" }
+  | { kind: "lesson"; taskId: string }
+  | { kind: "goal" }
+  | { kind: "plan" };
+
 type PlayChromeValue = {
   tab: PlayTab;
   setTab: (tab: PlayTab) => void;
   money: MoneySection;
   setMoney: (section: MoneySection) => void;
+  focus: TaskFocus;
+  setFocus: (focus: TaskFocus) => void;
   /** Bumped after a money action so the shell's status strip re-reads the profile. */
   revision: number;
   touchChrome: () => void;
@@ -19,11 +29,12 @@ const PlayChromeContext = createContext<PlayChromeValue | null>(null);
 export function PlayChromeProvider({ children }: { children: ReactNode }) {
   const [tab, setTab] = useState<PlayTab>("home");
   const [money, setMoney] = useState<MoneySection>("savings");
+  const [focus, setFocus] = useState<TaskFocus>(null);
   const [revision, setRevision] = useState(0);
   const touchChrome = useCallback(() => setRevision((n) => n + 1), []);
   const value = useMemo(
-    () => ({ tab, setTab, money, setMoney, revision, touchChrome }),
-    [tab, money, revision, touchChrome],
+    () => ({ tab, setTab, money, setMoney, focus, setFocus, revision, touchChrome }),
+    [tab, money, focus, revision, touchChrome],
   );
   return <PlayChromeContext.Provider value={value}>{children}</PlayChromeContext.Provider>;
 }
