@@ -4,7 +4,6 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
 import { STAGE_CODES, STAGE_NAMES, type Stage } from "../../core/stages";
 import { META_KEYS } from "../../data/metaKeys";
-import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, minTarget, radius, spacing, type } from "../theme";
@@ -15,13 +14,12 @@ const EDGE = 4;
 
 export function StatusStrip() {
   const focused = useIsFocused();
-  const tour = useHowToPlayTour();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { game, meta } = useSession();
   const profileId = meta.get(META_KEYS.activeProfileId);
   const profile = profileId ? game.getProfile(profileId) : null;
 
-  if (!focused || tour.active || !profile) return null;
+  if (!focused || !profile) return null;
 
   const stageName = STAGE_NAMES[profile.stage];
   const reached = STAGE_CODES[profile.stage];

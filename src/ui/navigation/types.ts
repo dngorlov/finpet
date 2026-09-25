@@ -2,7 +2,6 @@ export type StubDestination = "plan" | "shop" | "savings";
 
 export type RootStackParamList = {
   FirstRun: undefined;
-  StartingBudget: undefined;
   Main: undefined;
   Plan: undefined;
   Shop: undefined;

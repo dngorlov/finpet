@@ -8,7 +8,6 @@ import ProgressScreen from "../screens/ProgressScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import ShopScreen from "../screens/ShopScreen";
 import SavingsScreen from "../screens/SavingsScreen";
-import StartingBudgetScreen from "../screens/StartingBudgetScreen";
 import AdultGateScreen from "../screens/AdultGateScreen";
 import DemoScreen from "../screens/DemoScreen";
 import StubScreen from "../screens/StubScreen";
@@ -27,7 +26,6 @@ export function RootNavigator() {
   return (
     <Stack.Navigator initialRouteName={hasProfile ? "Main" : "FirstRun"} screenOptions={{ headerShown: false }}>
       <Stack.Screen name="FirstRun" component={FirstRunScreen} />
-      <Stack.Screen name="StartingBudget" component={StartingBudgetScreen} />
       <Stack.Screen name="Main" component={MainScreen} />
       <Stack.Screen name="Plan" component={PlanScreen} />
       <Stack.Screen name="Shop" component={ShopScreen} />

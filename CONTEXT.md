@@ -7,8 +7,8 @@ A single-context project: an offline Android game that teaches kids 7–11 basic
 ### Profiles & modes
 
 **Первый запуск (First run)**:
-The one-time journey in which a child creates a Профиль ребёнка and learns how to begin playing.
-_Avoid_: онбординг (ambiguous: may mean only the «Как играть» cards)
+The one-time journey in which a child creates a Профиль ребёнка.
+_Avoid_: онбординг, туториал, обучение
 
 **Профиль ребёнка (Child profile)**:
 A local game identity: the child's Питомец (its name and appearance). No account, no personal data.
@@ -49,7 +49,7 @@ The recurring income credited once per Game Day just for showing up.
 _Avoid_: ежедневный доход, логин-бонус
 
 **План (Plan)**:
-The day's promised split of available coins into Обязательные, Желаемые, and Копилка — a promise, not a coin movement.
+The day's promised split of available coins into Обязательные, Желаемые, and Копилка — a promise, not a coin movement. A Закрыто План lets the Игровой день end with no promise; an open one still waits for confirmation.
 _Avoid_: бюджет, бронь, список покупок
 
 **Итоги дня (Day summary)**:
@@ -57,12 +57,11 @@ The end-of-day screen: plan vs. actual, the day's score, and meter/Этап chan
 _Avoid_: отчёт, дневник
 
 **Обязательные расходы (Mandatory expenses)**:
-Purchases the pet needs (food, school supplies, transport, medicine); skipping today's Счета hurts Забота.
+Purchases the pet needs (food, school supplies, transport, medicine). Skipping today's Счета hurts Забота, unless Магазин is Закрыто.
 
 **Счета (Day bills)**:
-The mandatory items due on a given Game Day, from a fixed content cycle; the План's Обязательные cannot be set below them.
-_Avoid_: список обязательных, долги
-_Avoid_: нужное, необходимое
+The mandatory items due on a given Game Day, from a fixed content cycle. The План's Обязательные cannot be set below them, unless Магазин is Закрыто.
+_Avoid_: список обязательных, долги, нужное, необходимое
 
 **Желаемые расходы (Optional expenses)**:
 Non-essential purchases that lift Настроение. Some (today: Скейтборд, Телескоп, Велосипед) can only be bought once and then leave Магазин.
@@ -77,7 +76,7 @@ The catalog of Обязательные and Желаемые the child can buy t
 _Avoid_: витрина, инвентарь
 
 **Копилка (Savings)**:
-The pot of coins set aside from Баланс toward the Цель. Coins leave it only by confirmed withdrawal or by buying that Цель.
+The pot of coins set aside from Баланс toward the Цель. Coins leave it only by confirmed withdrawal or by buying that Цель. While Копилка is Закрыто, a План's deposit stays at 0.
 _Avoid_: накопления, депозит, вклад
 
 **Цель (Goal)**:
@@ -111,21 +110,21 @@ The pet meter fed by Желаемые расходы.
 _Avoid_: счастье, радость
 
 **Этап (Stage)**:
-The pet's development level — Новичок, Друг, Мастер — recalculated from decisions across recent Game Days.
+The pet's development level — Новичок, Друг, Мастер — recalculated from recent closed days the child could score. A day with no reachable score points stays outside that reckoning.
 _Avoid_: уровень, эволюция
 
 ### Learning
 
-**Как играть (How to play)**:
-A brief, replayable walkthrough of the hub and the План, Магазин, and Копилка screens: the rest of the screen is dimmed, one control is spotlighted, and a short tooltip next to it explains it. Hub destinations open by tapping that control. It does not spend coins, lock a plan, or run a Задание. The Питомец does not speak these steps.
-_Avoid_: онбординг, Помощник
+**Закрыто (Locked)**:
+План, Магазин, Копилка, or Задания withheld on the child's profile until later play opens it. Withholding covers every entrance and creates no obligation; Демо-режим never withholds them, and opening Прогресс does not open them.
+_Avoid_: уровень, туториал, квест
 
 **Помощник (Helper)**:
 An optional, kid-visible chat assistant on the main screen that answers money questions in kid language. Never required for the game loop.
 _Avoid_: чат-бот, ИИ-друг
 
 **Задание (Task)**:
-A financial-literacy scenario with choices and consequences; every action gets a short explanation.
+A financial-literacy scenario with choices and consequences; every action gets a short explanation. Inside an open Задания, a task may still wait for a later Игровой день.
 _Avoid_: урок, квест, тест
 
 **Журнал (History)**:
@@ -133,5 +132,5 @@ The in-app record of income, purchases and savings transfers for the current Gam
 _Avoid_: лог, отчёт
 
 **Словарик (Glossary)**:
-The short help section explaining key terms in kid language; also where «Как играть» can be replayed.
-_Avoid_: справка, FAQ
+The short help section explaining key terms in kid language.
+_Avoid_: справка, FAQ, Как играть

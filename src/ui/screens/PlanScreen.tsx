@@ -12,8 +12,6 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { StatusStrip } from "../components/StatusStrip";
 import { TextButton } from "../components/TextButton";
-import { TourAnchor } from "../howToPlay/TourAnchor";
-import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
@@ -26,7 +24,6 @@ const EMPTY: PlanBuckets = { mandatory: 0, optional: 0, savings: 0 };
 
 export default function PlanScreen(_props: Props) {
   const { game, meta, content } = useSession();
-  const tour = useHowToPlayTour();
   const [day, setDay] = useState<DayState | null>(null);
   const [buckets, setBuckets] = useState<PlanBuckets>(EMPTY);
   const [lastClosed, setLastClosed] = useState<DaySummaryView | null>(null);
@@ -74,7 +71,7 @@ export default function PlanScreen(_props: Props) {
   const goalDays = goal ? daysToGoalAt(goal.remaining, buckets.savings) : null;
   const persist = (next: PlanBuckets) => {
     const profileId = meta.get(META_KEYS.activeProfileId);
-    if (!profileId || confirmed || tour.active) return;
+    if (!profileId || confirmed) return;
     setBuckets(next);
     game.saveDraftPlan(profileId, day.dayId, next);
   };
@@ -82,16 +79,11 @@ export default function PlanScreen(_props: Props) {
   const askConfirm = () => {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId || !check.ok || confirmed) return;
-    if (tour.active) {
-      setAskingConfirm(true);
-      return;
-    }
     game.saveDraftPlan(profileId, day.dayId, buckets);
     setAskingConfirm(true);
   };
 
   const confirm = () => {
-    if (tour.active) return;
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
     const result = game.confirmPlan(profileId, day.dayId, floor);
@@ -110,14 +102,14 @@ export default function PlanScreen(_props: Props) {
         confirmed ? null : askingConfirm ? (
           <>
             <TextButton label={strings.close} onPress={() => setAskingConfirm(false)} />
-            <PrimaryButton label={strings.confirmPlan} disabled={tour.active} onPress={confirm} />
+            <PrimaryButton label={strings.confirmPlan} onPress={confirm} />
           </>
         ) : (
-          <PrimaryButton label={strings.confirmPlan} disabled={!check.ok || tour.active} onPress={askConfirm} />
+          <PrimaryButton label={strings.confirmPlan} disabled={!check.ok} onPress={askConfirm} />
         )
       }
     >
-      {tour.active ? null : <BackButton />}
+      <BackButton />
       <Text style={styles.title}>{strings.navPlan}</Text>
       {confirmed || income <= 0 ? null : <Text style={styles.body}>{strings.planIncomeToday(income)}</Text>}
       <Text style={styles.body}>{strings.planAvailable(day.available)}</Text>
@@ -131,15 +123,12 @@ export default function PlanScreen(_props: Props) {
         </Card>
       )}
       {confirmed ? (
-        <TourAnchor id="plan-buckets">
           <Card>
             <BucketActual label={strings.bucketMandatory} pictogram={strings.navPlanPictogram} plan={day.plan.buckets.mandatory} actual={day.actual.mandatory} />
             <BucketActual label={strings.bucketOptional} pictogram={strings.navShopPictogram} plan={day.plan.buckets.optional} actual={day.actual.optional} />
             <BucketActual label={strings.bucketSavings} pictogram={strings.navSavingsPictogram} plan={day.plan.buckets.savings} actual={day.actual.savings} />
           </Card>
-        </TourAnchor>
       ) : (
-        <TourAnchor id="plan-buckets">
           <Card>
             {/* Order = order of decisions: Счета → себе на Цель → желаемое на остаток. */}
             <DraftBucket
@@ -178,7 +167,6 @@ export default function PlanScreen(_props: Props) {
               onChange={(optional) => persist({ ...buckets, optional })}
             />
           </Card>
-        </TourAnchor>
       )}
       {confirmed ? null : <Text style={styles.body}>{strings.planRemainder(check.remainder)}</Text>}
       {confirmed || check.ok ? null : <Text style={styles.body}>{strings.planOverBudget}</Text>}

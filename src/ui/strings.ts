@@ -30,7 +30,6 @@ export const strings = {
   appName: "ФинПет",
   versionLine: (version: string, build: number) => `версия ${version} (${build})`,
 
-  skip: "Пропустить",
   next: "Дальше",
   play: "Играть!",
   playTask: "Играть",
@@ -38,9 +37,6 @@ export const strings = {
   done: "Готово",
   close: "Закрыть",
   back: "Назад",
-  howToPlay: "Как играть",
-  howToPlayTap: "Нажми",
-  howToPlayTapCursor: "👆",
   settings: "Настройки",
   settingsIcon: "⚙",
   deleteProfile: "Удалить профиль",
@@ -223,8 +219,6 @@ export const strings = {
   planVsActual: (plan: number, actual: number) => `план ${plan} · потрачено ${actual}`,
 
   firstRunPet: "Питомец",
-  howToPlayStep: (step: number, total: number) => `Шаг ${step} из ${total}`,
-  petSays: (petName: string, message: string) => `Питомец ${petName} говорит: ${message}`,
   namePrompt: "Меня зовут",
   nameBlank: "____",
   namePen: "✏️",
@@ -239,9 +233,6 @@ export const strings = {
   speciesName: (key: string) => SPECIES_NAMES[key] ?? key,
   colorName: (key: string) => COLOR_NAMES[key] ?? key,
   accessoryName: (key: string) => ACCESSORY_NAMES[key] ?? key,
-
-  startingBudgetTitle: "Тебе дали 100 монет на старт!",
-  startingBudgetBody: "Это твой бюджет. Планируй, копи, заботься о питомце",
 
   care: "Забота",
   careIcon: "🐾",

@@ -57,5 +57,4 @@ export function deleteChildAndDemo(game: SessionGame, meta: SessionMeta): void {
   meta.remove(META_KEYS.childProfileId);
   meta.remove(META_KEYS.demoProfileId);
   meta.remove(META_KEYS.onboardingDone);
-  meta.remove(META_KEYS.howToPlayDone);
 }

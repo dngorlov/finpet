@@ -76,7 +76,7 @@ export default function FirstRunScreen({ navigation }: Props) {
         goals: [{ key: skateboard.id, cost: skateboard.price }],
         activeGoalKey: skateboard.id,
       });
-      navigation.reset({ index: 0, routes: [{ name: "StartingBudget" }] });
+      navigation.reset({ index: 0, routes: [{ name: "Main" }] });
     } catch {
       setSaveError(strings.firstRunSaveFailed);
       setSaving(false);

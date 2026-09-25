@@ -10,7 +10,7 @@
 - Onboarding: brief intro to the game's purpose + the three decision types (spend on required item / spend on desired item / postpone)
 - Guest mode, no mandatory registration; child profile = game name + selected character
 - The intro hint is returnable at any time
-- **Resolved:** Первый запуск is ordered Питомец → Имя. The child first chooses the pet's Вид, Окрас, and Аксессуар, then names only the Питомец on «Имя» (compact in-cloud chip). Valid Имя «Дальше» writes the Профиль ребёнка (leftover `name` equals `petName`) and opens Стартовый бюджет. After tutorial Пособие (centered, dimmed, chip «Начало игрового дня», «Дальше»), «Как играть» is a skippable dim/spotlight walkthrough of the live hub (План, Магазин, Копилка, Задание): tooltip next to the control, tap-to-open hub tiles, overlay «Назад» / «Пропустить» and destination «Дальше», no coin spend, no locked plan, no Задание run. The same overlay re-opens from Словарик without writing profile data. Profile = the pet (name + appearance); no account; Первый запуск does not collect a name for the ребёнок. (ROADMAP §2.5, §4.2)
+- **Resolved:** Первый запуск is ordered Питомец → Имя. The child first chooses the pet's Вид, Окрас, and Аксессуар, then names only the Питомец on «Имя» (compact in-cloud chip). Valid Имя «Дальше» writes the Профиль ребёнка (leftover `name` equals `petName`) and opens Main. The first Пособие card is the ordinary one (chip «Начало игрового дня», «Понятно», no dim). There is no «Как играть» walkthrough and no replay from Словарик. Profile = the pet (name + appearance); no account; Первый запуск does not collect a name for the ребёнок. (ROADMAP §2.5, §4.2)
 
 ## 2. Pet Creation
 - Pet appearance customization
@@ -28,7 +28,7 @@
 - Income from completing tasks and/or a clear recurring income (doc's example: daily login)
 - Every accrual shows source + amount; balance never changes without an explanation to the user
 - Starting budget granted at profile setup (game loop step 4)
-- **Resolved:** currency = монеты. Стартовый бюджет **100** granted at profile creation with an explanation screen. Пособие **+20** per Игровой день (recurring income; raised from 10 on 2026-09-22 so Счета and a Цель both fit the 5-day demo). Task reward **+10**, first correct completion of each Задание only. Every movement goes through a feedback card (source + amount). (ROADMAP §2.1, §4.2)
+- **Resolved:** currency = монеты. Стартовый бюджет **100** granted at profile creation. The grant has no explanation screen. Пособие **+20** per Игровой день (recurring income; raised from 10 on 2026-09-22 so Счета and a Цель both fit the 5-day demo). Task reward **+10**, first correct completion of each Задание only. Every movement goes through a feedback card (source + amount). (ROADMAP §2.1, §4.2)
 
 ## 5. Budget Planning
 - Before each game period: distribute available amount across **≥3 areas** — mandatory expenses, optional expenses, savings
@@ -93,8 +93,8 @@
 
 ## 14. End-to-End Game Loop (acceptance flow — Appendix A)
 Steps 1–10 form the loop; 11–12 verify persistence and the adult section:
-1. First launch + customize pet → 2. Name the Питомец on «Имя», creating the local profile → 3. Starting budget, Main, tutorial Пособие, then the tooltip «Как играть» walkthrough → 4. Current goal, available tasks → 5. Distribute funds (mandatory/optional/savings) → 6. Complete a task, earn currency (with result explanation) → 7. Make ≥1 mandatory + ≥1 optional purchase (must include an attempted insufficient-funds purchase) → 8. Select a goal, replenish savings → 9. Feedback on balance, plan completion, pet status → 10. Transition to next period; progress/stage changes after a series of decisions → 11. Close & relaunch (progress confirmed saved) → 12. Enter adult section, reset/delete test profile
-- **Resolved:** the concrete sequence is specified screen-by-screen in ROADMAP §4 (design flow: screen map, per-screen specs, and the key flows including the day loop, insufficient-funds staging, correction path, demo walkthrough, and relaunch persistence). Appendix A step 2 is the pet-only «Имя» phase that writes the profile. Step 3 is Стартовый бюджет, then the tooltip «Как играть» tour after tutorial Пособие. Acceptance = milestone ACs (ROADMAP §7) + the scripted manual cases (ROADMAP §8). (ROADMAP §4, §7, §8)
+1. First launch + customize pet → 2. Name the Питомец on «Имя», creating the local profile → 3. Main and the ordinary Пособие card → 4. Current goal, available tasks → 5. Distribute funds (mandatory/optional/savings) → 6. Complete a task, earn currency (with result explanation) → 7. Make ≥1 mandatory + ≥1 optional purchase (must include an attempted insufficient-funds purchase) → 8. Select a goal, replenish savings → 9. Feedback on balance, plan completion, pet status → 10. Transition to next period; progress/stage changes after a series of decisions → 11. Close & relaunch (progress confirmed saved) → 12. Enter adult section, reset/delete test profile
+- **Resolved:** the concrete sequence is specified screen-by-screen in ROADMAP §4 (design flow: screen map, per-screen specs, and the key flows including the day loop, insufficient-funds staging, correction path, demo walkthrough, and relaunch persistence). Appendix A step 2 is the pet-only «Имя» phase that writes the profile. Step 3 is Main with the ordinary Пособие card. There is no «Как играть» tour. Acceptance = milestone ACs (ROADMAP §7) + the scripted manual cases (ROADMAP §8). (ROADMAP §4, §7, §8)
 
 ---
 

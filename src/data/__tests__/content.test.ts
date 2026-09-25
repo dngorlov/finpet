@@ -62,7 +62,7 @@ describe("loadContent", () => {
     expect(content.bills.some((day) => day.items.includes("medicine") && day.note)).toBe(true);
   });
 
-  it("ships the eleven Словарик terms including План and seven Как играть steps", () => {
+  it("ships the eleven Словарик terms including План", () => {
     expect(content.terms.map((t) => t.term)).toEqual([
       "Баланс",
       "Копилка",
@@ -106,18 +106,6 @@ describe("loadContent", () => {
       term: "Настроение",
       definition: "Как радуется питомец. Растёт от желаемых покупок.",
     });
-    expect(content.hints.map((hint) => hint.id)).toEqual([
-      "main-plan",
-      "plan-buckets",
-      "main-shop",
-      "shop-lunch",
-      "main-savings",
-      "savings-deposit",
-      "main-task",
-    ]);
-    expect(content.hints.find((hint) => hint.id === "plan-buckets")?.body).toBe(
-      "Раздели монеты на три кучки. Это обещание, не покупка.",
-    );
   });
 
   it("ships six playable task scripts plus the backpack correction, every option explained", () => {

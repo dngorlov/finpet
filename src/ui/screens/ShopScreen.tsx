@@ -15,8 +15,6 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { StatusStrip } from "../components/StatusStrip";
 import { TextButton } from "../components/TextButton";
-import { TourAnchor } from "../howToPlay/TourAnchor";
-import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
@@ -40,7 +38,6 @@ function engineItem(item: CatalogItemContent) {
 
 export default function ShopScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
-  const tour = useHowToPlayTour();
   const [tab, setTab] = useState<Tab>("mandatory");
   const [day, setDay] = useState<DayState | null>(null);
   const [balance, setBalance] = useState(0);
@@ -87,7 +84,6 @@ export default function ShopScreen({ navigation }: Props) {
       : null;
 
   const buy = (item: CatalogItemContent) => {
-    if (tour.active) return;
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
     const day = game.dayState(profileId);
@@ -118,7 +114,6 @@ export default function ShopScreen({ navigation }: Props) {
   };
 
   const buyFromSavings = (item: CatalogItemContent) => {
-    if (tour.active) return;
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
     const day = game.dayState(profileId);
@@ -142,7 +137,6 @@ export default function ShopScreen({ navigation }: Props) {
   };
 
   const makeGoal = (item: CatalogItemContent) => {
-    if (tour.active) return;
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
     const current = game.savingsState(profileId).activeGoal;
@@ -156,7 +150,6 @@ export default function ShopScreen({ navigation }: Props) {
   };
 
   const confirmMakeGoal = (item: CatalogItemContent) => {
-    if (tour.active) return;
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
     game.setActiveGoal(profileId, engineItem(item));
@@ -182,20 +175,17 @@ export default function ShopScreen({ navigation }: Props) {
           {phase.item.kind === "optional" && !isActive ? (
             <TextButton
               label={strings.shopMakeGoal}
-              disabled={tour.active}
               onPress={() => makeGoal(phase.item)}
             />
           ) : null}
           {canBuyFromPot ? (
             <PrimaryButton
               label={strings.shopBuyFromSavings}
-              disabled={tour.active}
               onPress={() => buyFromSavings(phase.item)}
             />
           ) : null}
           <PrimaryButton
             label={strings.shopBuy}
-            disabled={tour.active}
             onPress={() => requestBuy(phase.item)}
           />
         </>
@@ -205,7 +195,7 @@ export default function ShopScreen({ navigation }: Props) {
       return (
         <>
           <TextButton label={strings.shopPostpone} onPress={() => setPhase({ name: "list" })} />
-          <PrimaryButton label={strings.shopBuy} disabled={tour.active} onPress={() => buy(phase.item)} />
+          <PrimaryButton label={strings.shopBuy} onPress={() => buy(phase.item)} />
         </>
       );
     }
@@ -215,7 +205,6 @@ export default function ShopScreen({ navigation }: Props) {
           <TextButton label={strings.close} onPress={() => setPhase({ name: "list" })} />
           <PrimaryButton
             label={strings.shopMakeGoal}
-            disabled={tour.active}
             onPress={() => confirmMakeGoal(phase.item)}
           />
         </>
@@ -226,7 +215,6 @@ export default function ShopScreen({ navigation }: Props) {
         phase.item.kind === "optional" ? (
           <PrimaryButton
             label={strings.shopMakeGoal}
-            disabled={tour.active}
             onPress={() => makeGoal(phase.item)}
           />
         ) : (
@@ -238,7 +226,6 @@ export default function ShopScreen({ navigation }: Props) {
           <TextButton
             label={strings.shopDoTask}
             onPress={() => {
-              if (tour.active) return;
               navigation.navigate("TaskList");
             }}
           />
@@ -253,7 +240,6 @@ export default function ShopScreen({ navigation }: Props) {
           <TextButton
             label={strings.shopDoTask}
             onPress={() => {
-              if (tour.active) return;
               navigation.navigate("TaskList");
             }}
           />
@@ -277,7 +263,7 @@ export default function ShopScreen({ navigation }: Props) {
 
   return (
     <Screen header={<StatusStrip />} footer={footer}>
-      {tour.active ? null : <BackButton />}
+      <BackButton />
       <Text style={styles.title}>{strings.navShop}</Text>
       {phase.name === "list" ? (
         <>
@@ -287,7 +273,6 @@ export default function ShopScreen({ navigation }: Props) {
               pictogram={strings.navPlanPictogram}
               selected={tab === "mandatory"}
               onPress={() => {
-                if (tour.active) return;
                 setTab("mandatory");
               }}
             />
@@ -296,7 +281,6 @@ export default function ShopScreen({ navigation }: Props) {
               pictogram={strings.navShopPictogram}
               selected={tab === "optional"}
               onPress={() => {
-                if (tour.active) return;
                 setTab("optional");
               }}
             />
@@ -316,7 +300,6 @@ export default function ShopScreen({ navigation }: Props) {
                 role="button"
                 aria-label={item.name}
                 onPress={() => {
-                  if (tour.active) return;
                   setPhase({ name: "item", item });
                 }}
                 style={styles.itemHit}
@@ -343,13 +326,7 @@ export default function ShopScreen({ navigation }: Props) {
                 </Card>
               </Pressable>
             );
-            return item.id === "lunch" ? (
-              <TourAnchor key={item.id} id="shop-lunch">
-                {row}
-              </TourAnchor>
-            ) : (
-              <View key={item.id}>{row}</View>
-            );
+            return <View key={item.id}>{row}</View>;
           })}
         </>
       ) : null}

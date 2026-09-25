@@ -1,6 +1,5 @@
 import { z } from "zod";
 import catalogJson from "../../assets/content/catalog.json";
-import hintJson from "../../assets/content/hint.json";
 import tasksJson from "../../assets/content/tasks.json";
 import termsJson from "../../assets/content/terms.json";
 
@@ -66,17 +65,6 @@ const termsFileSchema = z.object({
   terms: z.array(termSchema).length(11),
 });
 
-const hintCardSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-  body: z.string().min(1),
-});
-
-const hintFileSchema = z.object({
-  contentVersion: z.literal(CONTENT_VERSION),
-  cards: z.array(hintCardSchema).length(7),
-});
-
 const taskEffectObjectSchema = z.object({
   meter: z.enum(["care", "mood"]).optional(),
   delta: z.number().int().optional(),
@@ -118,7 +106,6 @@ export type CatalogItemContent = z.infer<typeof catalogItemSchema>;
 export type DayBillsContent = z.infer<typeof dayBillsSchema>;
 export type GoalContent = z.infer<typeof goalSchema>;
 export type TermContent = z.infer<typeof termSchema>;
-export type HintCardContent = z.infer<typeof hintCardSchema>;
 export type TaskFileContent = z.infer<typeof taskSchema>;
 
 export interface GameContent {
@@ -128,15 +115,13 @@ export interface GameContent {
   bills: DayBillsContent[];
   goals: GoalContent[];
   terms: TermContent[];
-  hints: HintCardContent[];
   tasks: TaskFileContent[];
 }
 
-/** Loads and validates catalog, terms, hints, and tasks. Цели are derived from optional catalog rows. */
+/** Loads and validates catalog, terms, and tasks. Цели are derived from optional catalog rows. */
 export function loadContent(): GameContent {
   const catalog = catalogFileSchema.parse(catalogJson);
   const terms = termsFileSchema.parse(termsJson);
-  const hints = hintFileSchema.parse(hintJson);
   const tasks = tasksFileSchema.parse(tasksJson);
 
   return {
@@ -152,7 +137,6 @@ export function loadContent(): GameContent {
         description: item.description,
       })),
     terms: terms.terms,
-    hints: hints.cards,
     tasks: tasks.tasks,
   };
 }

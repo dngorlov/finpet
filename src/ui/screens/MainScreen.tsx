@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -12,9 +12,6 @@ import { NavTile } from "../components/NavTile";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { StatusStrip } from "../components/StatusStrip";
-import { TourAnchor } from "../howToPlay/TourAnchor";
-import { useHowToPlayTour } from "../howToPlay/HowToPlayTourProvider";
-import { hubTapRoute } from "../howToPlay/beats";
 import type { RootStackParamList } from "../navigation/types";
 import { PetView } from "../pet/PetView";
 import { useSession } from "../session/SessionProvider";
@@ -41,7 +38,6 @@ const HUB_PET_SIZE = 200;
 
 export default function MainScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
-  const tour = useHowToPlayTour();
   const [hub, setHub] = useState<HubModel | null>(null);
   const [hubMessage, setHubMessage] = useState<"needPlan" | null>(null);
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
@@ -76,21 +72,13 @@ export default function MainScreen({ navigation }: Props) {
       });
       setHubMessage(null);
       if (opened.status === "opened" && opened.allowanceCredited) {
-        const tutorial = meta.get(META_KEYS.howToPlayDone) !== "1";
         setFeedback({
           deltas: { balance: ECONOMY.allowance },
           chip: strings.allowanceDayChip,
-          tutorial,
-          confirm: tutorial ? "next" : "gotIt",
         });
       }
     }, [content, game, meta]),
   );
-
-  useEffect(() => {
-    if (!hub || feedback || tour.active || meta.get(META_KEYS.howToPlayDone) === "1") return;
-    tour.start();
-  }, [feedback, hub, meta, tour]);
 
   if (!hub) {
     return (
@@ -102,17 +90,8 @@ export default function MainScreen({ navigation }: Props) {
 
   const waiting = !hub.day.open;
   const go = (route: "Plan" | "Shop" | "Savings" | "TaskList" | "Progress" | "AdultGate") => {
-    if (tour.active) {
-      if (tour.beatId && hubTapRoute(tour.beatId) === route) {
-        navigation.navigate(route);
-        tour.next();
-      }
-      return;
-    }
     navigation.navigate(route);
   };
-  const tileLocked = (beatId: "main-plan" | "main-shop" | "main-savings") =>
-    waiting && !(tour.active && tour.beatId === beatId);
 
   return (
     <Screen header={<StatusStrip />}>
@@ -144,59 +123,56 @@ export default function MainScreen({ navigation }: Props) {
         )}
       </Card>
       {hub.taskTitle ? (
-        <TourAnchor id="main-task">
           <Card>
             <Text style={styles.cardTitle}>{hub.taskTitle}</Text>
             <PrimaryButton
               label={strings.playTask}
-              disabled={tour.active}
               onPress={() => {
-                if (tour.active || !hub.taskId) return;
+                if (!hub.taskId) return;
                 navigation.navigate("TaskRun", { taskId: hub.taskId });
               }}
             />
           </Card>
-        </TourAnchor>
       ) : null}
       <View style={styles.grid}>
-        <TourAnchor id="main-plan" style={styles.tileAnchor}>
+        <View style={styles.tileAnchor}>
           <NavTile
             pictogram={strings.navPlanPictogram}
             word={strings.navPlan}
-            highlighted={!tileLocked("main-plan") && hub.day.plan.status !== "confirmed"}
+            highlighted={!waiting && hub.day.plan.status !== "confirmed"}
             hint={
-              tileLocked("main-plan")
+              waiting
                 ? strings.waitingEconomyHint
                 : hub.day.plan.status === "confirmed"
                   ? strings.planReady
                   : strings.composePlanHint
             }
-            disabled={tileLocked("main-plan")}
+            disabled={waiting}
             onPress={() => go("Plan")}
             style={styles.tileFill}
           />
-        </TourAnchor>
-        <TourAnchor id="main-shop" style={styles.tileAnchor}>
+        </View>
+        <View style={styles.tileAnchor}>
           <NavTile
             pictogram={strings.navShopPictogram}
             word={strings.navShop}
-            hint={tileLocked("main-shop") ? strings.waitingEconomyHint : undefined}
-            disabled={tileLocked("main-shop")}
+            hint={waiting ? strings.waitingEconomyHint : undefined}
+            disabled={waiting}
             onPress={() => go("Shop")}
             style={styles.tileFill}
           />
-        </TourAnchor>
-        <TourAnchor id="main-savings" style={styles.tileAnchor}>
+        </View>
+        <View style={styles.tileAnchor}>
           <NavTile
             pictogram={strings.navSavingsPictogram}
             word={strings.navSavings}
             detail={String(hub.savings.pot)}
-            hint={tileLocked("main-savings") ? strings.waitingEconomyHint : undefined}
-            disabled={tileLocked("main-savings")}
+            hint={waiting ? strings.waitingEconomyHint : undefined}
+            disabled={waiting}
             onPress={() => go("Savings")}
             style={styles.tileFill}
           />
-        </TourAnchor>
+        </View>
         <NavTile
           pictogram={strings.navTasksPictogram}
           word={strings.navTasks}
@@ -218,7 +194,6 @@ export default function MainScreen({ navigation }: Props) {
         <PrimaryButton
           label={strings.finishDay}
           onPress={() => {
-            if (tour.active) return;
             if (hub.day.plan.status !== "confirmed") {
               setHubMessage("needPlan");
               return;

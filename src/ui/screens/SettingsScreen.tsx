@@ -22,7 +22,6 @@ export default function SettingsScreen({ navigation }: Props) {
       game.deleteProfile(profileId);
       meta.remove(META_KEYS.activeProfileId);
       meta.remove(META_KEYS.onboardingDone);
-      meta.remove(META_KEYS.howToPlayDone);
     }
     navigation.reset({ index: 0, routes: [{ name: "FirstRun" }] });
   };

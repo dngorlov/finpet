@@ -15,8 +15,6 @@ export type FeedbackModel = {
   cause?: string;
   nextStep?: string;
   chip?: string;
-  tutorial?: boolean;
-  confirm?: "gotIt" | "next";
 };
 
 function DeltaRow({ icon, label }: { icon: string; label: string }) {
@@ -38,19 +36,10 @@ export function FeedbackCard({
   onDismiss: () => void;
 }) {
   const { deltas } = model;
-  const tutorial = Boolean(model.tutorial);
-  const confirm = model.confirm ?? "gotIt";
 
   return (
-    <Modal
-      animationType="fade"
-      transparent
-      visible
-      onRequestClose={() => {
-        if (!tutorial) onDismiss();
-      }}
-    >
-      <View style={[styles.backdrop, tutorial ? styles.backdropDim : null]}>
+    <Modal animationType="fade" transparent visible onRequestClose={onDismiss}>
+      <View style={styles.backdrop}>
         <View style={styles.sheet}>
           {model.chip ? (
             <View style={styles.chip}>
@@ -72,7 +61,7 @@ export function FeedbackCard({
           {model.cause ? <Text style={styles.body}>{model.cause}</Text> : null}
           {model.nextStep ? <Text style={styles.body}>{model.nextStep}</Text> : null}
           <PrimaryButton
-            label={confirm === "next" ? strings.next : strings.gotIt}
+            label={strings.gotIt}
             onPress={onDismiss}
           />
         </View>
@@ -87,9 +76,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: spacing.l,
-  },
-  backdropDim: {
-    backgroundColor: "rgba(0,0,0,0.55)",
   },
   sheet: {
     alignSelf: "stretch",
