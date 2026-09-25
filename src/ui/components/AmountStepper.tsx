@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { strings } from "../strings";
 import { colors, minTarget, radius, spacing, type } from "../theme";
+import { Pictogram } from "./Pictogram";
 
 const HOLD_DELAY_MS = 400;
 const HOLD_INTERVAL_MS = 120;
@@ -192,9 +193,7 @@ export function AmountStepper({
 
   const heading = (
     <>
-      <Text aria-hidden style={styles.pictogram}>
-        {pictogram}
-      </Text>
+      <Pictogram glyph={pictogram} />
       <Text style={styles.label}>{label}</Text>
     </>
   );
@@ -251,9 +250,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: spacing.s,
-  },
-  pictogram: {
-    fontSize: type.section,
   },
   label: {
     color: colors.text,

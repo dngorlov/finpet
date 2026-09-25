@@ -1,5 +1,6 @@
-import { StyleSheet, Text } from "react-native";
+import { StyleSheet } from "react-native";
 import { BackButton } from "../components/BackButton";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { Screen } from "../components/Screen";
 import { StatusStrip } from "../components/StatusStrip";
 import { strings } from "../strings";
@@ -10,7 +11,7 @@ export default function ResultsScreen() {
   return (
     <Screen header={<StatusStrip />}>
       <BackButton />
-      <Text style={styles.title}>{strings.tabResults}</Text>
+      <ScreenTitle style={styles.title}>{strings.tabResults}</ScreenTitle>
       <ResultsBody />
     </Screen>
   );

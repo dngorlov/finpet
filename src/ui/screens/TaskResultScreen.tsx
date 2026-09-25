@@ -2,6 +2,7 @@ import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BackButton } from "../components/BackButton";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -49,7 +50,7 @@ export default function TaskResultScreen({ navigation, route }: Props) {
       }
     >
       <BackButton />
-      <Text style={styles.title}>{task?.title ?? strings.navTasks}</Text>
+      <ScreenTitle style={styles.title}>{task?.title ?? strings.navTasks}</ScreenTitle>
       {total > 0 ? <Text style={styles.body}>{strings.taskScore(formatPoints(points), total)}</Text> : null}
       {reward > 0 ? <Text style={styles.section}>{strings.taskEarned(reward)}</Text> : null}
       {reward === 0 && earned > 0 ? <Text style={styles.body}>{strings.taskNoTopUp}</Text> : null}

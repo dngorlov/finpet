@@ -24,12 +24,12 @@ async function playBudgetWhat(user: User, { mistakes = 0 }: { mistakes?: number 
     if (index < mistakes) {
       const wrong = bin === "Нужно" ? "Хочется" : "Нужно";
       await user.press(screen.getByRole("button", { name: wrong }));
-      expect(screen.getByRole("status", { name: "⚠️ Попробуй ещё" })).toBeOnTheScreen();
+      expect(screen.getByRole("status", { name: "Попробуй ещё" })).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Дальше" }));
     }
     expect(screen.getByText(`${index + 1} из ${NEED_OR_WANT.length}`)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: bin }));
-    expect(screen.getByRole("status", { name: "✅ Верно" })).toBeOnTheScreen();
+    expect(screen.getByRole("status", { name: "Верно" })).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Дальше" }));
   }
   expect(screen.getByText("У питомца Пух всего 25 монет. Что купить в первую очередь?")).toBeOnTheScreen();
@@ -51,7 +51,7 @@ describe("Карта заданий", () => {
       expect(screen.getByRole("button", { name: "Планирование бюджета, закрыто" })).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Что такое сбережения, закрыто" })).toBeOnTheScreen();
       expect(screen.getByText("Награда: до 10 монет")).toBeOnTheScreen();
-      expect(screen.getByText("Сложность: ★☆☆")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Сложность: 1 из 3")).toBeOnTheScreen();
 
       await user.press(screen.getByRole("button", { name: "Платежи, закрыто" }));
       expect(screen.getByText("Откроется после «Что такое бюджет?»")).toBeOnTheScreen();
@@ -99,7 +99,7 @@ describe("Карта заданий", () => {
 
     expect(screen.getByText(/У питомца Демо есть 50 монет/)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Потратить все 50 монет" }));
-    expect(screen.getByRole("status", { name: "⚠️ Попробуй ещё" })).toBeOnTheScreen();
+    expect(screen.getByRole("status", { name: "Попробуй ещё" })).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Дальше" }));
     await user.press(screen.getByRole("button", { name: "Отложить часть монет" }));
     await user.press(screen.getByRole("button", { name: "Дальше" }));

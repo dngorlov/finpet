@@ -1,3 +1,4 @@
+import { PressStart2P_400Regular, useFonts } from "@expo-google-fonts/press-start-2p";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
@@ -16,6 +17,7 @@ const INITIAL_METRICS = {
 
 export function FinPetApp({ ports }: { ports: SessionPorts }) {
   const [navigationRef] = useState(() => createNavigationContainerRef<RootStackParamList>());
+  useFonts({ PressStart2P_400Regular });
 
   return (
     <SafeAreaProvider initialMetrics={INITIAL_METRICS}>

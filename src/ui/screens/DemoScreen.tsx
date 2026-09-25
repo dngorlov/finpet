@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
 import { BackButton } from "../components/BackButton";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -82,7 +83,7 @@ export default function DemoScreen({ navigation }: Props) {
   return (
     <Screen keyboardShouldPersistTaps="handled">
       <BackButton />
-      <Text style={styles.title}>{strings.navAdult}</Text>
+      <ScreenTitle style={styles.title}>{strings.navAdult}</ScreenTitle>
       {overview ? (
         <Card>
           {overview.topics.map((line) => (

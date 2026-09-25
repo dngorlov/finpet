@@ -6,6 +6,8 @@ import { META_KEYS } from "../../data/metaKeys";
 import type { CatalogItemContent } from "../../data/content";
 import type { DayState, SavingsView } from "../../data/repositories/gameRepository";
 import { Badge } from "../components/Badge";
+import { GlyphLabel } from "../components/Pictogram";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
@@ -266,7 +268,7 @@ export default function ShopScreen({ navigation }: Props) {
   return (
     <Screen header={<StatusStrip />} footer={footer}>
       <BackButton />
-      <Text style={styles.title}>{strings.navShop}</Text>
+      <ScreenTitle style={styles.title}>{strings.navShop}</ScreenTitle>
       {phase.name === "list" ? (
         <>
           <View style={styles.tabs}>
@@ -308,18 +310,20 @@ export default function ShopScreen({ navigation }: Props) {
               >
                 <Card>
                   <Text style={styles.section}>{item.name}</Text>
-                  <Text style={styles.body}>
-                    {item.kind === "mandatory" ? strings.navPlanPictogram : strings.navShopPictogram}{" "}
-                    {strings.shopCategory(item.kind)}
-                  </Text>
+                  <GlyphLabel
+                    glyph={item.kind === "mandatory" ? strings.navPlanPictogram : strings.navShopPictogram}
+                    label={strings.shopCategory(item.kind)}
+                    labelStyle={styles.body}
+                  />
                   <Text style={styles.body}>{strings.shopPrice(item.price)}</Text>
-                  <Text style={styles.body}>
-                    {item.effect.meter === "care" ? strings.careIcon : strings.moodIcon}{" "}
-                    {strings.shopImpact(
+                  <GlyphLabel
+                    glyph={item.effect.meter === "care" ? strings.careIcon : strings.moodIcon}
+                    label={strings.shopImpact(
                       item.effect.meter === "care" ? strings.care : strings.mood,
                       item.effect.delta,
                     )}
-                  </Text>
+                    labelStyle={styles.body}
+                  />
                   <Text style={styles.body}>{strings.shopAfterBuy(balance - item.price)}</Text>
                   {item.once ? <Text style={styles.body}>{strings.shopOnceLabel}</Text> : null}
                   {bought.includes(item.id) ? (

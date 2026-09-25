@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { strings } from "../strings";
+import { Pictogram } from "./Pictogram";
 import { colors, radius, spacing, type } from "../theme";
 
 export function MeterBar({
@@ -18,9 +19,7 @@ export function MeterBar({
   if (compact) {
     return (
       <View accessible aria-label={name} style={styles.compact}>
-        <Text aria-hidden style={styles.compactIcon}>
-          {icon}
-        </Text>
+        <Pictogram glyph={icon} />
         <View style={styles.compactTrack} accessibilityElementsHidden>
           <View style={[styles.compactFill, { width }]} />
         </View>
@@ -30,7 +29,7 @@ export function MeterBar({
   return (
     <View style={styles.wrap}>
       <View style={styles.line}>
-        <Text style={styles.icon}>{icon}</Text>
+        <Pictogram glyph={icon} />
         <Text style={styles.label}>{name}</Text>
       </View>
       <View style={styles.track} accessibilityElementsHidden>
@@ -50,9 +49,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.s,
   },
-  icon: {
-    fontSize: type.body,
-  },
   label: {
     color: colors.text,
     fontSize: type.body,
@@ -67,9 +63,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.fill,
     borderRadius: radius.card,
     height: spacing.l,
-  },
-  compactIcon: {
-    fontSize: type.section,
   },
   compact: {
     alignItems: "center",

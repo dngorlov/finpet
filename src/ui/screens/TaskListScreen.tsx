@@ -13,6 +13,8 @@ import {
 import { META_KEYS } from "../../data/metaKeys";
 import type { TaskProgressView } from "../../data/repositories/gameRepository";
 import { Card } from "../components/Card";
+import { GlyphLabel, Pictogram } from "../components/Pictogram";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import type { RootStackParamList } from "../navigation/types";
@@ -100,7 +102,7 @@ export default function TaskListScreen() {
   return (
     <Screen>
       <View style={styles.titleRow}>
-        <Text style={styles.title}>{strings.mapTitle}</Text>
+        <ScreenTitle style={styles.title}>{strings.mapTitle}</ScreenTitle>
         <Pressable
           role="button"
           aria-label={strings.glossaryTitle}
@@ -174,15 +176,17 @@ export default function TaskListScreen() {
                 { left: pct(x), top: pct(y) },
               ]}
             >
-              <Text style={styles.pinIcon}>
-                {state === "soon"
-                  ? "⏳"
-                  : state === "locked"
-                    ? "🔒"
-                    : state === "done"
-                      ? "✓"
-                      : TOPIC_COPY[task.topic].icon}
-              </Text>
+              <Pictogram
+                glyph={
+                  state === "soon"
+                    ? "⏳"
+                    : state === "locked"
+                      ? "🔒"
+                      : state === "done"
+                        ? "✓"
+                        : TOPIC_COPY[task.topic].icon
+                }
+              />
             </Pressable>
           );
         })}
@@ -223,6 +227,17 @@ export default function TaskListScreen() {
   );
 }
 
+function DifficultyMarks({ level }: { level: number }) {
+  return (
+    <View accessible accessibilityLabel={strings.missionDifficulty(level)} style={styles.difficulty}>
+      <Text style={styles.body}>{strings.missionDifficultyLabel}</Text>
+      {[1, 2, 3].map((star) => (
+        <Pictogram key={star} glyph="★" color={star <= level ? colors.text : colors.subtle} />
+      ))}
+    </View>
+  );
+}
+
 function MissionSheet({
   task,
   state,
@@ -242,15 +257,12 @@ function MissionSheet({
   return (
     <Card>
       <Text style={styles.cardTitle}>{task.title}</Text>
-      <Text style={styles.body}>
-        {topic.icon} {topic.title}
-        {task.pin ? ` · ${strings.missionDistrict(task.pin.district)}` : ""}
-      </Text>
-      {task.difficulty && state !== "soon" ? (
-        <Text style={styles.body}>
-          {strings.missionDifficulty(task.difficulty)}
-        </Text>
-      ) : null}
+      <GlyphLabel
+        glyph={topic.icon}
+        label={`${topic.title}${task.pin ? ` · ${strings.missionDistrict(task.pin.district)}` : ""}`}
+        labelStyle={styles.body}
+      />
+      {task.difficulty && state !== "soon" ? <DifficultyMarks level={task.difficulty} /> : null}
       {task.description ? (
         <Text style={styles.body}>{task.description}</Text>
       ) : null}
@@ -406,10 +418,10 @@ const styles = StyleSheet.create({
     borderColor: colors.raisedEdge,
     transform: [{ scale: 1.15 }],
   },
-  pinIcon: {
-    color: colors.text,
-    fontSize: type.body,
-    fontWeight: "700",
+  difficulty: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
   },
   hit: {
     minHeight: minTarget,

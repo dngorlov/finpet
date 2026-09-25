@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { strings } from "../strings";
+import { Pictogram } from "./Pictogram";
 import { colors, minTarget, radius, spacing, type } from "../theme";
 
 const EDGE = 4;
@@ -47,35 +48,10 @@ export function NavTile({
           disabled ? styles.faceDisabled : null,
         ]}
       >
-        <Text
-          aria-hidden
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          style={styles.pictogram}
-        >
-          {pictogram}
-        </Text>
+        <Pictogram glyph={pictogram} size={48} />
         <Text style={styles.word}>{word}</Text>
-        {highlighted && !disabled ? (
-          <Text
-            aria-hidden
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-            style={styles.check}
-          >
-            {strings.selectedCheck}
-          </Text>
-        ) : null}
-        {disabled ? (
-          <Text
-            aria-hidden
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-            style={styles.pictogram}
-          >
-            {strings.waitingLockIcon}
-          </Text>
-        ) : null}
+        {highlighted && !disabled ? <Pictogram glyph={strings.selectedCheck} /> : null}
+        {disabled ? <Pictogram glyph={strings.waitingLockIcon} /> : null}
         {detail ? <Text style={styles.hint}>{detail}</Text> : null}
         {hint ? <Text style={styles.hint}>{hint}</Text> : null}
       </View>
@@ -117,19 +93,11 @@ const styles = StyleSheet.create({
   faceDisabled: {
     backgroundColor: colors.disabledFace,
   },
-  pictogram: {
-    fontSize: type.section,
-  },
   word: {
     color: colors.text,
     fontSize: type.button,
     fontWeight: "700",
     textAlign: "center",
-  },
-  check: {
-    color: colors.text,
-    fontSize: type.body,
-    fontWeight: "700",
   },
   hint: {
     color: colors.text,

@@ -9,6 +9,7 @@ import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, minTarget, radius, spacing, type } from "../theme";
 import { MeterBar } from "./MeterBar";
+import { Pictogram } from "./Pictogram";
 
 const STAGE_ORDER: Stage[] = ["novice", "friend", "master"];
 const EDGE = 4;
@@ -31,9 +32,7 @@ export function StatusStrip() {
     <View style={styles.wrap}>
       <View style={styles.status}>
         <View accessible aria-label={strings.balanceBadge(profile.balance)} style={styles.balance}>
-          <Text aria-hidden style={styles.balanceIcon}>
-            {strings.balanceIcon}
-          </Text>
+          <Pictogram glyph={strings.balanceIcon} />
           <Text aria-hidden style={styles.balanceValue}>
             {profile.balance}
           </Text>
@@ -59,9 +58,7 @@ export function StatusStrip() {
           style={({ pressed }) => [styles.settingsShell, pressed ? styles.settingsPressed : null]}
         >
           <View style={styles.settingsFace}>
-            <Text aria-hidden style={styles.settingsIcon}>
-              {strings.settingsIcon}
-            </Text>
+            <Pictogram glyph={strings.settingsIcon} />
           </View>
         </Pressable>
       </View>
@@ -98,9 +95,6 @@ const styles = StyleSheet.create({
     minHeight: minTarget,
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.s,
-  },
-  balanceIcon: {
-    fontSize: type.section,
   },
   balanceValue: {
     color: colors.text,
@@ -168,8 +162,5 @@ const styles = StyleSheet.create({
     height: minTarget - EDGE,
     justifyContent: "center",
     width: minTarget,
-  },
-  settingsIcon: {
-    fontSize: type.section,
   },
 });

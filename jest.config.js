@@ -4,7 +4,7 @@ module.exports = {
       displayName: "app",
       preset: "jest-expo",
       transformIgnorePatterns: [
-        "node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|expo-.*|@expo/.*|@react-navigation/.*|drizzle-orm)/.*)",
+        "node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|expo-.*|@expo/.*|@react-navigation/.*|drizzle-orm|react-native-svg|@expo-google-fonts)/.*)",
       ],
       testPathIgnorePatterns: ["/node_modules/", "\\.node\\.test\\.(ts|tsx)$"],
     },

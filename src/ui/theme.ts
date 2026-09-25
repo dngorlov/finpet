@@ -55,3 +55,30 @@ export const radius = {
 
 /** Minimum touch target (UX constraints). */
 export const minTarget = 48;
+
+/** Press Start 2P, loaded in FinPetApp. Sharp at multiples of 8. */
+export const font = {
+  pixel: "PressStart2P_400Regular",
+} as const;
+
+const PIXEL_SCREEN_TITLES = new Set([
+  "План",
+  "Магазин",
+  "Копилка",
+  "Задания",
+  "Итоги",
+  "Питомец",
+  "Банк",
+  "Словарик",
+  "ФинПет",
+]);
+
+/** Pixel face for the short one-line screen titles. Null keeps the phone font. */
+export function screenTitleStyle(label: string) {
+  if (!PIXEL_SCREEN_TITLES.has(label)) return null;
+  return {
+    fontFamily: font.pixel,
+    fontSize: 24,
+    fontWeight: "400" as const,
+  };
+}

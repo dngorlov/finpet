@@ -6,6 +6,7 @@ import { playableTasks } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DaySummaryView, JournalEntry, TaskProgressView } from "../../data/repositories/gameRepository";
 import { Badge } from "../components/Badge";
+import { GlyphLabel, Pictogram } from "../components/Pictogram";
 import { Card } from "../components/Card";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
@@ -159,9 +160,7 @@ export function ResultsBody() {
 function FactLine({ icon, label }: { icon: string; label: string }) {
   return (
     <View accessible aria-label={label} style={styles.fact}>
-      <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.body}>
-        {icon}
-      </Text>
+      <Pictogram glyph={icon} />
       <Text style={styles.body}>{label}</Text>
     </View>
   );
@@ -180,9 +179,7 @@ function BucketLine({
 }) {
   return (
     <View>
-      <Text style={styles.body}>
-        {pictogram} {label}
-      </Text>
+      <GlyphLabel glyph={pictogram} label={label} labelStyle={styles.body} />
       <Text style={styles.body}>{strings.planVsActual(plan, actual)}</Text>
     </View>
   );

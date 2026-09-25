@@ -6,6 +6,8 @@ import { applyGoalProgress, estimateDaysToGoal } from "../../core/savings";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, SavingsView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
+import { GlyphLabel } from "../components/Pictogram";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { GoalPicker } from "../components/GoalPicker";
@@ -69,7 +71,7 @@ export default function SavingsScreen() {
   if (day && !day.open) {
     return (
       <Screen>
-        <Text style={styles.title}>{strings.navSavings}</Text>
+        <ScreenTitle style={styles.title}>{strings.navSavings}</ScreenTitle>
         <Text style={styles.body}>{strings.waitingEconomyHint}</Text>
       </Screen>
     );
@@ -250,7 +252,7 @@ export default function SavingsScreen() {
 
   return (
     <Screen footer={footer}>
-      <Text style={styles.title}>{strings.navSavings}</Text>
+      <ScreenTitle style={styles.title}>{strings.navSavings}</ScreenTitle>
       <Text style={styles.pot}>{strings.savingsPot(savings.pot)}</Text>
       {savingsLeftover != null && phase.name === "home" ? (
         <Text
@@ -332,9 +334,7 @@ export default function SavingsScreen() {
       ) : null}
       {phase.name === "celebration" ? (
         <Card>
-          <Text style={styles.section}>
-            {strings.savingsConfetti} {strings.savingsAchieved}
-          </Text>
+          <GlyphLabel glyph={strings.savingsConfetti} label={strings.savingsAchieved} labelStyle={styles.section} />
         </Card>
       ) : null}
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}

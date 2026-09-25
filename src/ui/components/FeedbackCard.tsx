@@ -1,4 +1,5 @@
 import { Modal, StyleSheet, Text, View } from "react-native";
+import { Pictogram } from "./Pictogram";
 import { PrimaryButton } from "./PrimaryButton";
 import { strings } from "../strings";
 import { colors, radius, spacing, type } from "../theme";
@@ -20,9 +21,7 @@ export type FeedbackModel = {
 function DeltaRow({ icon, label }: { icon: string; label: string }) {
   return (
     <View style={styles.row}>
-      <Text aria-hidden style={styles.icon}>
-        {icon}
-      </Text>
+      <Pictogram glyph={icon} />
       <Text style={styles.body}>{label}</Text>
     </View>
   );
@@ -101,9 +100,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: spacing.s,
-  },
-  icon: {
-    fontSize: type.section,
   },
   body: {
     color: colors.text,

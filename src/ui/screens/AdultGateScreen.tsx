@@ -3,6 +3,7 @@ import { StyleSheet, Text, TextInput, type Role } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BackButton } from "../components/BackButton";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import type { RootStackParamList } from "../navigation/types";
@@ -50,7 +51,7 @@ export default function AdultGateScreen({ navigation }: Props) {
       keyboardShouldPersistTaps="handled"
     >
       <BackButton />
-      <Text style={styles.title}>{strings.navAdult}</Text>
+      <ScreenTitle style={styles.title}>{strings.navAdult}</ScreenTitle>
       {question ? <Text style={styles.body}>{strings.adultGatePrompt(question.a, question.b)}</Text> : null}
       <TextInput
         role={TEXTBOX_ROLE}

@@ -2,6 +2,7 @@ import { StyleSheet, Text } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { APP_BUILD, APP_VERSION } from "../appInfo";
 import { BackButton } from "../components/BackButton";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -16,7 +17,7 @@ export default function SettingsScreen({ navigation }: Props) {
     <Screen>
       <BackButton />
       <Card>
-        <Text style={styles.title}>{strings.appName}</Text>
+        <ScreenTitle style={styles.title}>{strings.appName}</ScreenTitle>
         <Text style={styles.body}>{strings.versionLine(APP_VERSION, APP_BUILD)}</Text>
       </Card>
       <PrimaryButton label={strings.navAdult} onPress={() => navigation.navigate("AdultGate")} />

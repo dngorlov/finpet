@@ -8,6 +8,7 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import { colors, minTarget, spacing, type } from "../theme";
+import { Pictogram } from "./Pictogram";
 
 const DRAG_THRESHOLD = 8;
 const BEAD_SIZE = 20;
@@ -155,9 +156,7 @@ export function BeadSlider<K extends string>({
   return (
     <View style={styles.block}>
       <View style={styles.labelRow}>
-        <Text aria-hidden style={styles.pictogram}>
-          {pictogram}
-        </Text>
+        <Pictogram glyph={pictogram} />
         <Text style={styles.legend}>{legend}</Text>
       </View>
       <View
@@ -233,9 +232,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: spacing.s,
-  },
-  pictogram: {
-    fontSize: type.section,
   },
   legend: {
     color: colors.text,

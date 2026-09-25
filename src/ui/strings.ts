@@ -37,6 +37,7 @@ export const strings = {
   done: "Готово",
   close: "Закрыть",
   back: "Назад",
+  backIcon: "←",
   settings: "Настройки",
   settingsIcon: "⚙",
   deleteProfile: "Удалить профиль",
@@ -93,7 +94,8 @@ export const strings = {
   missionStart: "Начать",
   missionReplay: "Пройти ещё раз",
   missionDistrict: (district: string) => `Район: ${district}`,
-  missionDifficulty: (n: number) => `Сложность: ${"★".repeat(n)}${"☆".repeat(Math.max(0, 3 - n))}`,
+  missionDifficultyLabel: "Сложность:",
+  missionDifficulty: (n: number) => `Сложность: ${n} из 3`,
   missionRewardMax: (max: number) => `Награда: до ${max} монет`,
   missionRewardBest: (best: number, max: number) => `Лучший результат: ${best} из ${max} монет`,
   missionRewardLeft: (left: number) =>
@@ -114,9 +116,14 @@ export const strings = {
   taskBackToMap: "На карту",
   taskSpawned: "Новое задание появилось в списке!",
   verdictLabel: (verdict: "good" | "warn" | "bad") => {
-    if (verdict === "good") return "✅ Верно";
-    if (verdict === "warn") return "🤔 Есть цена";
-    return "⚠️ Попробуй ещё";
+    if (verdict === "good") return "Верно";
+    if (verdict === "warn") return "Есть цена";
+    return "Попробуй ещё";
+  },
+  verdictGlyph: (verdict: "good" | "warn" | "bad") => {
+    if (verdict === "good") return "✅";
+    if (verdict === "warn") return "🤔";
+    return "⚠️";
   },
 
   shopMandatoryTab: "Обязательное",
@@ -304,6 +311,8 @@ export const strings = {
   tabMap: "Карта",
   tabMoney: "Деньги",
   moneyMenu: "Раздел денег",
+  moneyChevronClosed: "▼",
+  moneyChevronOpen: "▲",
   tabWords: "Слова",
   tabLessons: "Уроки",
   bankTitle: "Банк",

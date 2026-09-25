@@ -4,6 +4,8 @@ import { STAGE_NAMES } from "../../core/stages";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DaySummaryView } from "../../data/repositories/gameRepository";
 import { BackButton } from "../components/BackButton";
+import { GlyphLabel, Pictogram } from "../components/Pictogram";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -19,14 +21,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "DaySummary">;
 function ScoreRow({ word, points, earned }: { word: string; points: number; earned: boolean }) {
   return (
     <View style={styles.row}>
-      <Text
-        aria-hidden
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={styles.icon}
-      >
-        {earned ? strings.scoreYesIcon : strings.scoreNoIcon}
-      </Text>
+      <Pictogram glyph={earned ? strings.scoreYesIcon : strings.scoreNoIcon} />
       <Text style={styles.body}>{strings.scoreFact(word, points)}</Text>
     </View>
   );
@@ -55,7 +50,7 @@ export default function DaySummaryScreen({ navigation }: Props) {
     return (
       <Screen header={<StatusStrip />}>
         <BackButton />
-        <Text style={styles.title}>{strings.daySummaryTitle}</Text>
+        <ScreenTitle style={styles.title}>{strings.daySummaryTitle}</ScreenTitle>
       </Screen>
     );
   }
@@ -66,7 +61,7 @@ export default function DaySummaryScreen({ navigation }: Props) {
   return (
     <Screen header={<StatusStrip />} footer={<PrimaryButton label={primary} onPress={() => navigation.goBack()} />}>
       <BackButton />
-      <Text style={styles.title}>{strings.daySummaryTitle}</Text>
+      <ScreenTitle style={styles.title}>{strings.daySummaryTitle}</ScreenTitle>
       <PetView
         species={profile.species}
         color={profile.color}
@@ -95,9 +90,11 @@ export default function DaySummaryScreen({ navigation }: Props) {
       </Card>
       {summary.stageExplanation ? (
         <Card>
-          <Text style={styles.section}>
-            {strings.stageIcon} {strings.stageWord} {STAGE_NAMES[summary.stage]}
-          </Text>
+          <GlyphLabel
+            glyph={strings.stageIcon}
+            label={`${strings.stageWord} ${STAGE_NAMES[summary.stage]}`}
+            labelStyle={styles.section}
+          />
           <Text style={styles.body}>{summary.stageExplanation}</Text>
         </Card>
       ) : null}
@@ -125,8 +122,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: spacing.s,
-  },
-  icon: {
-    fontSize: type.section,
   },
 });

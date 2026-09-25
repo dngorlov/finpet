@@ -5,6 +5,8 @@ import { planMandatoryFloor, validatePlan, type PlanBuckets } from "../../core/e
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, DaySummaryView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
+import { GlyphLabel } from "../components/Pictogram";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -62,7 +64,7 @@ export default function PlanScreen() {
   if (!day.open) {
     return (
       <Screen>
-        <Text style={styles.title}>{strings.navPlan}</Text>
+        <ScreenTitle style={styles.title}>{strings.navPlan}</ScreenTitle>
         <Text style={styles.body}>{strings.waitingEconomyHint}</Text>
       </Screen>
     );
@@ -113,7 +115,7 @@ export default function PlanScreen() {
         )
       }
     >
-      <Text style={styles.title}>{strings.navPlan}</Text>
+      <ScreenTitle style={styles.title}>{strings.navPlan}</ScreenTitle>
       {confirmed || income <= 0 ? null : <Text style={styles.body}>{strings.planIncomeToday(income)}</Text>}
       <Text style={styles.body}>{strings.planAvailable(day.available)}</Text>
       {confirmed ? null : <Text style={styles.body}>{strings.planPromise}</Text>}
@@ -235,9 +237,7 @@ function BucketActual({
 }) {
   return (
     <View>
-      <Text style={styles.body}>
-        {pictogram} {label}
-      </Text>
+      <GlyphLabel glyph={pictogram} label={label} labelStyle={styles.body} />
       <Text style={styles.body}>{strings.planVsActual(plan, actual)}</Text>
     </View>
   );

@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { colors, radius, spacing, type } from "../theme";
+import { Pictogram } from "./Pictogram";
 
 export function Badge({
   icon,
@@ -12,14 +13,7 @@ export function Badge({
 }) {
   return (
     <View style={styles.badge}>
-      <Text
-        aria-hidden
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={styles.icon}
-      >
-        {icon}
-      </Text>
+      <Pictogram glyph={icon} />
       <Text style={styles.line}>
         {word} <Text>{String(value)}</Text>
       </Text>
@@ -37,9 +31,6 @@ const styles = StyleSheet.create({
     minHeight: 32,
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.s,
-  },
-  icon: {
-    fontSize: type.body,
   },
   line: {
     color: colors.text,

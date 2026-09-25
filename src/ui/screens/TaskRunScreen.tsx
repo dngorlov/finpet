@@ -15,6 +15,7 @@ import {
 import { META_KEYS } from "../../data/metaKeys";
 import type { ProfileView } from "../../data/repositories/gameRepository";
 import { BackButton } from "../components/BackButton";
+import { Pictogram } from "../components/Pictogram";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -223,7 +224,10 @@ export default function TaskRunScreen({ navigation, route }: Props) {
           aria-label={strings.verdictLabel((result?.verdict ?? sortResult?.verdict)!)}
           style={styles.verdict}
         >
-          <Text style={styles.section}>{strings.verdictLabel((result?.verdict ?? sortResult?.verdict)!)}</Text>
+          <View style={styles.verdictTitle}>
+            <Pictogram glyph={strings.verdictGlyph((result?.verdict ?? sortResult?.verdict)!)} />
+            <Text style={styles.section}>{strings.verdictLabel((result?.verdict ?? sortResult?.verdict)!)}</Text>
+          </View>
           <Text style={styles.body}>{withPet((result?.explanation ?? sortResult?.explanation)!)}</Text>
           {result?.effects.map((effect, index) =>
             effect.meter && effect.delta ? (
@@ -251,6 +255,11 @@ const styles = StyleSheet.create({
     fontSize: type.body,
   },
   verdict: {
+    gap: spacing.s,
+  },
+  verdictTitle: {
+    alignItems: "center",
+    flexDirection: "row",
     gap: spacing.s,
   },
   item: {

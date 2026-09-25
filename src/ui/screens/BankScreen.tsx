@@ -6,6 +6,7 @@ import { BANK } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, DepositView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
@@ -73,7 +74,7 @@ export default function BankScreen() {
   if (day && !day.open) {
     return (
       <Screen>
-        <Text style={styles.title}>{strings.bankTitle}</Text>
+        <ScreenTitle style={styles.title}>{strings.bankTitle}</ScreenTitle>
         <Text style={styles.body}>{strings.waitingEconomyHint}</Text>
       </Screen>
     );
@@ -92,7 +93,7 @@ export default function BankScreen() {
         )
       }
     >
-      <Text style={styles.title}>{strings.bankTitle}</Text>
+      <ScreenTitle style={styles.title}>{strings.bankTitle}</ScreenTitle>
       <Text style={styles.body}>{strings.bankIntro}</Text>
       <View style={styles.row}>
         {BANK.offers.map((item) => (

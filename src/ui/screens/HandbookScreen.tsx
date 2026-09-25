@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { taskUnlockOrder, unlockedTasks, type TaskContent } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
 import { BackButton } from "../components/BackButton";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
 import { Screen } from "../components/Screen";
@@ -52,7 +53,7 @@ export default function HandbookScreen() {
   return (
     <Screen header={<StatusStrip />}>
       <BackButton />
-      <Text style={styles.title}>{strings.glossaryTitle}</Text>
+      <ScreenTitle style={styles.title}>{strings.glossaryTitle}</ScreenTitle>
       <View style={styles.tabs}>
         <Chip label={strings.tabWords} selected={tab === "words"} onPress={() => setTab("words")} />
         <Chip label={strings.tabLessons} selected={tab === "lessons"} onPress={() => setTab("lessons")} />

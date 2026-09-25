@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text } from "react-native";
 import { strings } from "../strings";
+import { Pictogram } from "./Pictogram";
 import { colors, minTarget, spacing, type } from "../theme";
 
 export function Chip({
@@ -25,22 +26,9 @@ export function Chip({
       onPress={onPress}
       style={[styles.chip, selected ? styles.chipOn : null, disabled ? styles.chipOff : null]}
     >
-      {pictogram ? (
-        <Text aria-hidden style={styles.label}>
-          {pictogram}
-        </Text>
-      ) : null}
+      {pictogram ? <Pictogram glyph={pictogram} /> : null}
       <Text style={styles.label}>{label}</Text>
-      {selected ? (
-        <Text
-          aria-hidden
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          style={styles.check}
-        >
-          {strings.selectedCheck}
-        </Text>
-      ) : null}
+      {selected ? <Pictogram glyph={strings.selectedCheck} /> : null}
     </Pressable>
   );
 }
@@ -68,10 +56,5 @@ const styles = StyleSheet.create({
   label: {
     color: colors.text,
     fontSize: type.body,
-  },
-  check: {
-    color: colors.text,
-    fontSize: type.body,
-    fontWeight: "700",
   },
 });
