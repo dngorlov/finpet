@@ -3,6 +3,7 @@ import type { CatalogItem } from "../../core/economy";
 import { loadContent } from "../../data/content";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
+import { openMoney, openTab } from "../testSupport/flowHelpers";
 
 const content = loadContent();
 const lunch = content.catalog.find((item) => item.id === "lunch")!;
@@ -33,14 +34,14 @@ describe("Прогресс", () => {
     ports.game.purchase(profileId, day.dayId, lunch);
     const { user } = await renderApp(ports);
 
-    await user.press(screen.getByRole("button", { name: "Прогресс" }));
-    expect(screen.getByRole("button", { name: "Журнал" })).toBeSelected();
+    await openMoney(user, "Журнал");
     expect(screen.getByText("День 1")).toBeOnTheScreen();
     expect(screen.getByText("Покупка: Обед -12")).toBeOnTheScreen();
     expect(screen.getByText("Пособие +20")).toBeOnTheScreen();
     expect(screen.getByText("Старт")).toBeOnTheScreen();
     expect(screen.getByText("Стартовый бюджет +100")).toBeOnTheScreen();
 
+    await openTab(user, "Дом");
     await user.press(screen.getByRole("button", { name: "Итоги" }));
     expect(screen.getByText("Итоги появятся после первого закрытого игрового дня.")).toBeOnTheScreen();
   });
@@ -61,10 +62,11 @@ describe("Прогресс", () => {
     closeScoredDay(ports, profileId);
 
     const { user } = await renderApp(ports);
-    await user.press(screen.getByRole("button", { name: "Прогресс" }));
+    await openMoney(user, "Журнал");
     expect(screen.getByText("Задание: Что такое бюджет? +10")).toBeOnTheScreen();
     expect(screen.getByText("Задание +8")).toBeOnTheScreen();
 
+    await openTab(user, "Дом");
     await user.press(screen.getByRole("button", { name: "Итоги" }));
     expect(
       screen.queryByText("Итоги появятся после первого закрытого игрового дня."),

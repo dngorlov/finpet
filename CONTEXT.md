@@ -53,8 +53,12 @@ The day's promised split of available coins into Обязательные, Же�
 _Avoid_: бюджет, бронь, список покупок
 
 **Итоги дня (Day summary)**:
-The end-of-day screen: plan vs. actual, the day's score, and meter/Этап changes with explanations.
-_Avoid_: отчёт, дневник
+The screen shown when an Игровой день ends: that day's plan versus actual, score, and meter and Этап changes with explanations.
+_Avoid_: отчёт, дневник, прогресс
+
+**Итоги (Results)**:
+The reopenable record of the last closed Игровой день — its score, plan versus actual, and meter and Этап changes — plus the counts of days played, Задания done, and Цели bought.
+_Avoid_: Прогресс, отчёт, итоги дня
 
 **Обязательные расходы (Mandatory expenses)**:
 Purchases the pet needs (food, school supplies, transport, medicine). Skipping today's Счета hurts Забота, unless Магазин is Закрыто.
@@ -89,6 +93,10 @@ _Avoid_: ачивка, мечта, произвольная цель
 
 ### Pet
 
+**Дом (Home)**:
+The child's home view: their Питомец, their current Цель, the way into Магазин, and the way into Итоги.
+_Avoid_: главная, хаб
+
 **Питомец (Pet)**:
 The virtual creature whose state reflects the child's financial decisions. It may speak fixed, scripted guidance but does not answer questions.
 _Avoid_: герой, аватар
@@ -120,19 +128,23 @@ _Avoid_: уровень, эволюция
 ### Learning
 
 **Закрыто (Locked)**:
-План, Магазин, Копилка, or Задания withheld on the child's profile until later play opens it. Withholding covers every entrance and creates no obligation; Демо-режим never withholds them, and opening Прогресс does not open them.
+План, Магазин, Копилка, or Задания withheld on the child's profile until later play opens it. Withholding covers every entrance and creates no obligation; Демо-режим never withholds them, and opening Итоги does not open them.
 _Avoid_: уровень, туториал, квест
 
 **Помощник (Helper)**:
-An optional, kid-visible chat assistant on the main screen that answers money questions in kid language. Never required for the game loop.
+An optional, kid-visible chat assistant on Дом that answers money questions in kid language. Never required for the game loop.
 _Avoid_: чат-бот, ИИ-друг
 
+**Урок (Lesson)**:
+A pinned Задание made of unscored theory cards followed by scored questions. Once it is open, those cards can be read in Словарик. A mini-game may belong to it and is played from the pin.
+_Avoid_: теория, лекция, тест
+
 **Задание (Task)**:
-A financial-literacy mission on the Карта заданий: teaching cards, then a mini-game or questions with choices and consequences; every answer gets a short explanation. Coins scale with first-try answers; a replay pays only the improvement.
-_Avoid_: квест, тест (content may call its theory part «урок»)
+A financial-literacy mission — an Урок, a mini-game that belongs to an Урок, or a follow-up spawned to correct a mistake — where every answer gets a short explanation. Coins scale with first-try answers; a replay pays only the improvement.
+_Avoid_: квест, тест
 
 **Карта заданий (Mission map)**:
-The map of Moscow districts where each Задание is a pin. Only the first budget Задание is open at first; finishing it opens the first Задание of every other topic and the next budget one; after that each topic goes in order.
+The map of Moscow districts where each Урок is a pin. The short name is Карта. Only the first budget Урок is open at first; finishing it opens the first Урок of every other topic and the next budget one; after that each topic goes in order.
 _Avoid_: список заданий, уровни
 
 **Журнал (History)**:
@@ -140,5 +152,5 @@ The in-app record of income, purchases and savings transfers for the current Gam
 _Avoid_: лог, отчёт
 
 **Словарик (Glossary)**:
-The short help section explaining key terms in kid language.
+The handbook of key terms in kid language and the theory cards of Уроки the child can already open. Reading it pays nothing and does not replay Первый запуск.
 _Avoid_: справка, FAQ, Как играть

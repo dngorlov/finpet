@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { usePlayChrome } from "../navigation/playChrome";
 import type { RootStackParamList } from "../navigation/types";
 import { STAGE_CODES, STAGE_NAMES, type Stage } from "../../core/stages";
 import { META_KEYS } from "../../data/metaKeys";
@@ -15,8 +16,10 @@ const EDGE = 4;
 export function StatusStrip() {
   const focused = useIsFocused();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { revision } = usePlayChrome();
   const { game, meta } = useSession();
   const profileId = meta.get(META_KEYS.activeProfileId);
+  void revision;
   const profile = profileId ? game.getProfile(profileId) : null;
 
   if (!focused || !profile) return null;

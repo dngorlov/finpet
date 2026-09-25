@@ -5,6 +5,7 @@ import { BackButton } from "../components/BackButton";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
+import { usePlayChrome } from "../navigation/playChrome";
 import type { RootStackParamList } from "../navigation/types";
 import { rewardLeft, scoredUnits } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
@@ -16,6 +17,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "TaskResult">;
 
 export default function TaskResultScreen({ navigation, route }: Props) {
   const { content, game, meta } = useSession();
+  const { setTab } = usePlayChrome();
   const { taskId, reward, earned, points, sceneCoins } = route.params;
   const task = content.tasks.find((item) => item.id === taskId);
   const total = task ? scoredUnits(task) : 0;
@@ -37,7 +39,13 @@ export default function TaskResultScreen({ navigation, route }: Props) {
   return (
     <Screen
       footer={
-        <PrimaryButton label={strings.taskBackToMap} onPress={() => navigation.popTo("TaskList")} />
+        <PrimaryButton
+          label={strings.taskBackToMap}
+          onPress={() => {
+            setTab("map");
+            navigation.popTo("Main");
+          }}
+        />
       }
     >
       <BackButton />

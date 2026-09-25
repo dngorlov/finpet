@@ -15,6 +15,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { StatusStrip } from "../components/StatusStrip";
 import { TextButton } from "../components/TextButton";
+import { usePlayChrome } from "../navigation/playChrome";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
@@ -38,6 +39,11 @@ function engineItem(item: CatalogItemContent) {
 
 export default function ShopScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
+  const { setTab: setPlayTab } = usePlayChrome();
+  const openMap = () => {
+    setPlayTab("map");
+    navigation.navigate("Main");
+  };
   const [tab, setTab] = useState<Tab>("mandatory");
   const [day, setDay] = useState<DayState | null>(null);
   const [balance, setBalance] = useState(0);
@@ -225,9 +231,7 @@ export default function ShopScreen({ navigation }: Props) {
           <TextButton label={strings.shopWaitAllowance} onPress={() => setWaiting(true)} />
           <TextButton
             label={strings.shopDoTask}
-            onPress={() => {
-              navigation.navigate("TaskList");
-            }}
+            onPress={openMap}
           />
           {optionalCta}
         </>
@@ -239,9 +243,7 @@ export default function ShopScreen({ navigation }: Props) {
           <TextButton label={strings.shopWaitAllowance} onPress={() => setWaiting(true)} />
           <TextButton
             label={strings.shopDoTask}
-            onPress={() => {
-              navigation.navigate("TaskList");
-            }}
+            onPress={openMap}
           />
           <PrimaryButton label={strings.gotIt} onPress={() => setPhase({ name: "list" })} />
         </>

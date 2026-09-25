@@ -2,6 +2,7 @@ import { render, screen, userEvent } from "@testing-library/react-native";
 import { loadContent } from "../../data/content";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
+import { openMoney } from "../testSupport/flowHelpers";
 
 const content = loadContent();
 const lunch = content.catalog.find((item) => item.id === "lunch")!;
@@ -39,7 +40,7 @@ describe("Магазин", () => {
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
     expect(screen.getByLabelText("Баланс 108")).toBeOnTheScreen();
-    expect(screen.getByText("Забота 60")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Забота 60")).toBeOnTheScreen();
   });
 
   it("buys an optional item from the Желаемое tab", async () => {
@@ -58,7 +59,7 @@ describe("Магазин", () => {
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
     expect(screen.getByLabelText("Баланс 115")).toBeOnTheScreen();
-    expect(screen.getByText("Настроение 55")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Настроение 55")).toBeOnTheScreen();
   });
 
   it("labels one-shot Желаемые while they remain on the shelf", async () => {
@@ -131,12 +132,11 @@ describe("Магазин", () => {
     expect(screen.getByRole("button", { name: "Выбрать новую цель" })).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Скейтборд" })).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    await user.press(screen.getByRole("button", { name: "Прогресс" }));
+    await openMoney(user, "Журнал");
     expect(screen.getByText("Покупка: Скейтборд -90")).toBeOnTheScreen();
 
     ports.game.closeDay(profileId, content.catalog);
-    await user.press(screen.getByRole("button", { name: "Назад" }));
-    await user.press(screen.getByRole("button", { name: "Прогресс" }));
+    await user.press(screen.getByRole("button", { name: "Дом" }));
     await user.press(screen.getByRole("button", { name: "Итоги" }));
     expect(screen.getByText("Целей: 1")).toBeOnTheScreen();
   });
@@ -158,7 +158,6 @@ describe("Магазин", () => {
 
     ports.game.closeDay(profileId, content.catalog);
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    await user.press(screen.getByRole("button", { name: "Прогресс" }));
     await user.press(screen.getByRole("button", { name: "Итоги" }));
     expect(screen.getByText("Целей: 0")).toBeOnTheScreen();
   });
@@ -181,7 +180,6 @@ describe("Магазин", () => {
 
     ports.game.closeDay(profileId, content.catalog);
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    await user.press(screen.getByRole("button", { name: "Прогресс" }));
     await user.press(screen.getByRole("button", { name: "Итоги" }));
     expect(screen.getByText("Целей: 1")).toBeOnTheScreen();
   });

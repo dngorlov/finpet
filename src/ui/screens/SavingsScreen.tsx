@@ -1,27 +1,23 @@
 import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { CatalogItemContent } from "../../data/content";
 import { applyGoalProgress, estimateDaysToGoal } from "../../core/savings";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, SavingsView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
-import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { GoalPicker } from "../components/GoalPicker";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
-import { StatusStrip } from "../components/StatusStrip";
 import { TextButton } from "../components/TextButton";
-import type { RootStackParamList } from "../navigation/types";
+import { usePlayChrome } from "../navigation/playChrome";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, type } from "../theme";
 import { confirmedLeftover, leftoverAfterTap } from "./planLeftover";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Savings">;
 type Phase =
   | { name: "home" }
   | { name: "deposit"; amount: number }
@@ -33,8 +29,9 @@ function engineItem(item: CatalogItemContent) {
   return { id: item.id, kind: item.kind, price: item.price, effect: item.effect, once: item.once };
 }
 
-export default function SavingsScreen(_props: Props) {
+export default function SavingsScreen() {
   const { game, meta, content } = useSession();
+  const { touchChrome } = usePlayChrome();
   const [savings, setSavings] = useState<SavingsView | null>(null);
   const [day, setDay] = useState<DayState | null>(null);
   const [balance, setBalance] = useState(0);
@@ -49,7 +46,8 @@ export default function SavingsScreen(_props: Props) {
     setSavings(game.savingsState(profileId));
     setDay(game.dayState(profileId));
     setBalance(game.getProfile(profileId).balance);
-  }, [game, meta]);
+    touchChrome();
+  }, [game, meta, touchChrome]);
 
   useFocusEffect(
     useCallback(() => {
@@ -62,9 +60,17 @@ export default function SavingsScreen(_props: Props) {
 
   if (!savings) {
     return (
-      <Screen header={<StatusStrip />}>
-        <BackButton />
+      <Screen>
         <Text style={styles.body}>{strings.appName}</Text>
+      </Screen>
+    );
+  }
+
+  if (day && !day.open) {
+    return (
+      <Screen>
+        <Text style={styles.title}>{strings.navSavings}</Text>
+        <Text style={styles.body}>{strings.waitingEconomyHint}</Text>
       </Screen>
     );
   }
@@ -243,8 +249,7 @@ export default function SavingsScreen(_props: Props) {
   })();
 
   return (
-    <Screen header={<StatusStrip />} footer={footer}>
-      <BackButton />
+    <Screen footer={footer}>
       <Text style={styles.title}>{strings.navSavings}</Text>
       <Text style={styles.pot}>{strings.savingsPot(savings.pot)}</Text>
       {savingsLeftover != null && phase.name === "home" ? (

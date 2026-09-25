@@ -1,34 +1,30 @@
 import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { checkDeposit, depositPayout, maturesOnDay } from "../../core/bank";
 import { BANK } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, DepositView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
-import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
-import { StatusStrip } from "../components/StatusStrip";
 import { TextButton } from "../components/TextButton";
-import type { RootStackParamList } from "../navigation/types";
+import { usePlayChrome } from "../navigation/playChrome";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, spacing, type } from "../theme";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Bank">;
-
 /**
  * Банк — separate from Копилка: a вклад takes coins out of Баланс for a fixed
- * number of Игровые дни and returns them with interest (collected on Main when
+ * number of Игровые дни and returns them with interest (collected on Дом when
  * the day opens). No early withdrawal.
  */
-export default function BankScreen(_props: Props) {
+export default function BankScreen() {
   const { game, meta } = useSession();
+  const { touchChrome } = usePlayChrome();
   const [day, setDay] = useState<DayState | null>(null);
   const [balance, setBalance] = useState(0);
   const [deposits, setDeposits] = useState<DepositView[]>([]);
@@ -43,7 +39,8 @@ export default function BankScreen(_props: Props) {
     setDay(game.dayState(profileId));
     setBalance(game.getProfile(profileId).balance);
     setDeposits(game.listDeposits(profileId));
-  }, [game, meta]);
+    touchChrome();
+  }, [game, meta, touchChrome]);
 
   useFocusEffect(
     useCallback(() => {
@@ -73,9 +70,17 @@ export default function BankScreen(_props: Props) {
     load();
   };
 
+  if (day && !day.open) {
+    return (
+      <Screen>
+        <Text style={styles.title}>{strings.bankTitle}</Text>
+        <Text style={styles.body}>{strings.waitingEconomyHint}</Text>
+      </Screen>
+    );
+  }
+
   return (
     <Screen
-      header={<StatusStrip />}
       footer={
         confirming ? (
           <>
@@ -87,7 +92,6 @@ export default function BankScreen(_props: Props) {
         )
       }
     >
-      <BackButton />
       <Text style={styles.title}>{strings.bankTitle}</Text>
       <Text style={styles.body}>{strings.bankIntro}</Text>
       <View style={styles.row}>

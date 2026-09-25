@@ -22,6 +22,7 @@ describe("AdultGate", () => {
     let secondQuestion = false;
     jest.spyOn(Math, "random").mockImplementation(() => (secondQuestion ? 0.9 : 0));
 
+    await user.press(screen.getByRole("button", { name: "Настройки" }));
     await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
     expect(visibleGatePrompt()).toBe("Сколько будет 10 × 2?");
     await user.type(screen.getByRole("textbox", { name: "Ответ" }), "0");
@@ -42,10 +43,11 @@ describe("AdultGate", () => {
     seedReturningChild(ports);
     const { user } = await renderApp(ports);
 
+    await user.press(screen.getByRole("button", { name: "Настройки" }));
     await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
     expect(screen.getByText(/Сколько будет \d+ × \d+\?/)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    expect(screen.getByRole("button", { name: "Магазин" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Взрослый раздел" })).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
     expect(screen.getByText(/Сколько будет \d+ × \d+\?/)).toBeOnTheScreen();
@@ -62,7 +64,7 @@ describe("AdultGate", () => {
     expect(screen.getByRole("button", { name: "Демо-режим" })).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    expect(screen.getByRole("button", { name: "Магазин" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Взрослый раздел" })).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
     expect(screen.getByText(/Сколько будет \d+ × \d+\?/)).toBeOnTheScreen();

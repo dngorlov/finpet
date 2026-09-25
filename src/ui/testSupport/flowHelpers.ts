@@ -29,19 +29,34 @@ export function visibleGateProduct(): number {
   return Number(match[1]) * Number(match[2]);
 }
 
-/** Open Взрослый раздел and type the visible product. */
+export async function openTab(user: ReturnType<typeof userEvent.setup>, name: "Дом" | "Карта" | "Деньги") {
+  await user.press(screen.getByRole("button", { name }));
+}
+
+/** Open a Деньги section. The dropdown starts closed on Копилка. */
+export async function openMoney(
+  user: ReturnType<typeof userEvent.setup>,
+  section: "Копилка" | "План" | "Журнал" | "Банк",
+) {
+  await openTab(user, "Деньги");
+  await user.press(screen.getByRole("button", { name: "Раздел денег" }));
+  await user.press(screen.getByRole("button", { name: section }));
+}
+
+/** Open Взрослый раздел from Настройки and type the visible product. */
 export async function passAdultGate(user: ReturnType<typeof userEvent.setup>) {
+  await user.press(screen.getByRole("button", { name: "Настройки" }));
   await user.press(screen.getByRole("button", { name: "Взрослый раздел" }));
   await user.type(screen.getByRole("textbox", { name: "Ответ" }), String(visibleGateProduct()));
   await user.press(screen.getByRole("button", { name: "Войти" }));
 }
 
 export async function confirmTinyPlan(user: ReturnType<typeof userEvent.setup>) {
-  await user.press(screen.getByRole("button", { name: "План" }));
+  await openMoney(user, "План");
   await user.press(screen.getByRole("button", { name: "Обязательные, больше" }));
   await user.press(screen.getByRole("button", { name: "Желаемые, больше" }));
   await user.press(screen.getByRole("button", { name: "Копилка, больше" }));
   await user.press(screen.getByRole("button", { name: "Подтвердить план" }));
   await user.press(screen.getByRole("button", { name: "Подтвердить план" }));
-  await user.press(screen.getByRole("button", { name: "Назад" }));
+  await openTab(user, "Дом");
 }

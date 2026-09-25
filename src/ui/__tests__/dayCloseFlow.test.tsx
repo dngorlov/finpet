@@ -2,7 +2,8 @@ import { render, screen, userEvent } from "@testing-library/react-native";
 import { loadContent } from "../../data/content";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
-import { confirmTinyPlan } from "../testSupport/flowHelpers";
+import { confirmTinyPlan, openMoney } from "../testSupport/flowHelpers";
+import { META_KEYS } from "../../data/metaKeys";
 
 const content = loadContent();
 
@@ -21,36 +22,31 @@ describe("Итоги дня", () => {
       const { user } = await renderApp(ports);
 
       await confirmTinyPlan(user);
-      await user.press(screen.getByRole("button", { name: "Закончить день" }));
-
-      expect(screen.getByText("Итоги дня")).toBeOnTheScreen();
-      expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: "Настройки" })).toBeOnTheScreen();
-      expect(screen.getByText("план 21 · потрачено 0")).toBeOnTheScreen();
-      expect(screen.getAllByText("план 1 · потрачено 0")).toHaveLength(2);
-      expect(screen.getByText("Обязательные +0")).toBeOnTheScreen();
-      // The План promised 1 to Копилка and nothing was put in: not «по плану».
-      expect(screen.getByText("По плану +0")).toBeOnTheScreen();
-      expect(screen.getByText("Копилка +0")).toBeOnTheScreen();
-      expect(screen.getByText("Забота -15: пропущены обязательные расходы")).toBeOnTheScreen();
-      expect(screen.getByText("Настроение без изменений")).toBeOnTheScreen();
-      expect(screen.getByText("Завтра сначала запланируй обязательное.")).toBeOnTheScreen();
-      expect(screen.queryByText(/доверяет/)).not.toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: "Ждём завтра!" })).toBeOnTheScreen();
-
-      await user.press(screen.getByRole("button", { name: "Ждём завтра!" }));
+      const profileId = ports.meta.get(META_KEYS.activeProfileId)!;
+      await user.press(screen.getByRole("button", { name: "Настройки" }));
+      ports.game.closeDay(profileId, content.catalog, content.bills);
+      await user.press(screen.getByRole("button", { name: "Назад" }));
 
       expect(screen.getByText("Новый день откроется завтра")).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: "План" })).toBeDisabled();
       expect(screen.getByRole("button", { name: "Магазин" })).toBeDisabled();
-      expect(screen.getByRole("button", { name: "Копилка" })).toBeDisabled();
-      expect(screen.getByText("0")).toBeOnTheScreen();
-      expect(screen.getAllByText("Откроется завтра").length).toBeGreaterThanOrEqual(3);
       expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
 
-      await user.press(screen.getByRole("button", { name: "Задания" }));
+      await openMoney(user, "План");
+      expect(screen.getByText("Откроется завтра")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Дом" }));
+
+      await user.press(screen.getByRole("button", { name: "Итоги" }));
+      expect(screen.getByText("план 21 · потрачено 0")).toBeOnTheScreen();
+      expect(screen.getAllByText("план 1 · потрачено 0")).toHaveLength(2);
+      expect(screen.getByText("Обязательные 0")).toBeOnTheScreen();
+      expect(screen.getByText("По плану 0")).toBeOnTheScreen();
+      expect(screen.getByText("Копилка 0")).toBeOnTheScreen();
+      expect(screen.getByText("Забота -15: пропущены обязательные расходы")).toBeOnTheScreen();
+      expect(screen.queryByText(/доверяет/)).not.toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Назад" }));
+
+      await user.press(screen.getByRole("button", { name: "Карта" }));
       expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
-      // Задания stay playable after the day closes (economy frozen, learning open).
       await user.press(screen.getByRole("button", { name: "Начать" }));
       await user.press(screen.getByRole("button", { name: "Дальше" }));
       await user.press(screen.getByRole("button", { name: "Дальше" }));
@@ -59,12 +55,10 @@ describe("Итоги дня", () => {
       expect(screen.getByRole("status", { name: "✅ Верно" })).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
       expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
-      await user.press(screen.getByRole("button", { name: "Назад" }));
 
-      await user.press(screen.getByRole("button", { name: "Прогресс" }));
-      expect(screen.getByRole("button", { name: "Журнал" })).toBeOnTheScreen();
-      await user.press(screen.getByRole("button", { name: "Назад" }));
-
+      await openMoney(user, "Журнал");
+      expect(screen.getByText("Пособие +20")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Дом" }));
       expect(screen.getByText("Новый день откроется завтра")).toBeOnTheScreen();
     },
     15000,
@@ -80,23 +74,19 @@ describe("Итоги дня", () => {
       ports.game.purchase(profileId, day.dayId, item);
     }
     ports.game.transferToSavings(profileId, day.dayId, 15);
+    ports.game.closeDay(profileId, content.catalog, content.bills);
     const { user } = await renderApp(ports);
+    await user.press(screen.getByRole("button", { name: "Итоги" }));
 
-    await user.press(screen.getByRole("button", { name: "Закончить день" }));
-
-    expect(screen.getByText("Итоги дня")).toBeOnTheScreen();
     expect(screen.getByText("план 45 · потрачено 45")).toBeOnTheScreen();
     expect(screen.getByText("план 0 · потрачено 0")).toBeOnTheScreen();
     expect(screen.getByText("план 15 · потрачено 15")).toBeOnTheScreen();
     expect(screen.getByText("Обязательные +2")).toBeOnTheScreen();
     expect(screen.getByText("По плану +1")).toBeOnTheScreen();
     expect(screen.getByText("Копилка +1")).toBeOnTheScreen();
-    expect(screen.getByText("Забота без изменений")).toBeOnTheScreen();
-    expect(screen.getByText("Настроение без изменений")).toBeOnTheScreen();
+    expect(screen.getByText("Забота и настроение без изменений")).toBeOnTheScreen();
     expect(screen.getByText("Питомец доверяет тебе: теперь ты Друг!")).toBeOnTheScreen();
     expect(screen.getByLabelText("Этап Друг")).toBeOnTheScreen();
-    expect(screen.getByText("Друг")).toBeOnTheScreen();
-    expect(screen.queryByText("Завтра сначала запланируй обязательное.")).not.toBeOnTheScreen();
   });
 
   it("uses Следующий день on a demo profile so the next Игровой день can open", async () => {
@@ -105,14 +95,14 @@ describe("Итоги дня", () => {
     const { user } = await renderApp(ports);
 
     await confirmTinyPlan(user);
-    await user.press(screen.getByRole("button", { name: "Закончить день" }));
-
-    expect(screen.queryByRole("button", { name: "Ждём завтра!" })).not.toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Следующий день" }));
+    const profileId = ports.meta.get(META_KEYS.activeProfileId)!;
+    await user.press(screen.getByRole("button", { name: "Настройки" }));
+    ports.game.closeDay(profileId, content.catalog, content.bills);
+    await user.press(screen.getByRole("button", { name: "Назад" }));
 
     expect(screen.getByText("Пособие +20 монет")).toBeOnTheScreen();
     expect(screen.queryByText("Новый день откроется завтра")).not.toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "Закончить день" })).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "План" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Магазин" })).toBeEnabled();
   });
 });

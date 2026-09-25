@@ -61,9 +61,8 @@ describe("Взрослый раздел contents and persistence", () => {
     const { view } = await renderApp(ports);
 
     expect(screen.getByLabelText("Баланс 103")).toBeOnTheScreen();
-    expect(screen.getByText("15")).toBeOnTheScreen();
     expect(screen.getByText("15 / 90")).toBeOnTheScreen();
-    expect(screen.getByText("Забота 60")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Забота 60")).toBeOnTheScreen();
     expect(ports.game.listTaskProgress(childId)).toEqual([
       { taskKey: "budget_what", status: "completed", rewardPaid: true, bestReward: 10 },
     ]);
@@ -72,10 +71,9 @@ describe("Взрослый раздел contents and persistence", () => {
     await render(<FinPetApp ports={ports} />);
 
     expect(screen.getByLabelText("Баланс 103")).toBeOnTheScreen();
-    expect(screen.getByText("15")).toBeOnTheScreen();
     expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
     expect(screen.getByText("15 / 90")).toBeOnTheScreen();
-    expect(screen.getByText("Забота 60")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Забота 60")).toBeOnTheScreen();
     expect(screen.getByLabelText(/Питомец Пух/)).toBeOnTheScreen();
     expect(ports.game.listTaskProgress(childId)).toEqual([
       { taskKey: "budget_what", status: "completed", rewardPaid: true, bestReward: 10 },

@@ -2,6 +2,7 @@ import { render, screen, userEvent } from "@testing-library/react-native";
 import { loadContent } from "../../data/content";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
+import { openMoney } from "../testSupport/flowHelpers";
 
 const content = loadContent();
 
@@ -17,14 +18,18 @@ describe("Банк", () => {
     const profileId = seedReturningChild(ports);
     const day = ports.game.dayState(profileId);
     ports.game.claimTaskReward(profileId, day.dayId, "savings_where", 15);
-    await renderApp(ports);
+    const { user } = await renderApp(ports);
+    await user.press(screen.getByRole("button", { name: "Деньги" }));
+    await user.press(screen.getByRole("button", { name: "Раздел денег" }));
     expect(screen.getByRole("button", { name: "Банк" })).toBeOnTheScreen();
   });
 
   it("hides the tile before the lesson", async () => {
     const ports = createFakePorts();
     seedReturningChild(ports);
-    await renderApp(ports);
+    const { user } = await renderApp(ports);
+    await user.press(screen.getByRole("button", { name: "Деньги" }));
+    await user.press(screen.getByRole("button", { name: "Раздел денег" }));
     expect(screen.queryByRole("button", { name: "Банк" })).not.toBeOnTheScreen();
   });
 
@@ -35,7 +40,7 @@ describe("Банк", () => {
       const profileId = seedReturningChild(ports, { isDemo: true, name: "Демо", petName: "Демо" });
       const { user } = await renderApp(ports);
 
-      await user.press(screen.getByRole("button", { name: "Банк" }));
+      await openMoney(user, "Банк");
       expect(screen.getByText(/Забрать раньше нельзя/)).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "3 дня · +10%" }));
       for (let i = 0; i < 10; i += 1) await user.press(screen.getByRole("button", { name: "Сумма, больше" }));
@@ -52,14 +57,14 @@ describe("Банк", () => {
 
       // Three demo days pass; the вклад comes back on day 4 as the day opens on Main.
       for (let n = 0; n < 3; n += 1) {
-        await user.press(screen.getByRole("button", { name: "Назад" }));
+        await user.press(screen.getByRole("button", { name: "Дом" }));
+        await user.press(screen.getByRole("button", { name: "Магазин" }));
         ports.game.closeDay(profileId, content.catalog, content.bills);
-        await user.press(screen.getByRole("button", { name: "Банк" }));
+        await user.press(screen.getByRole("button", { name: "Назад" }));
       }
-      await user.press(screen.getByRole("button", { name: "Назад" }));
       expect(screen.getByText("Вклад вернулся: +22 (из них 2 — проценты).")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: /Понятно|Дальше/ }));
-      await user.press(screen.getByRole("button", { name: "Банк" }));
+      await openMoney(user, "Банк");
       expect(screen.getByText("Вернулся")).toBeOnTheScreen();
     },
     30000,

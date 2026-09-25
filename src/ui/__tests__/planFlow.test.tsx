@@ -14,6 +14,8 @@ describe("plan from Main", () => {
     seedReturningChild(ports);
     const { user } = await renderApp(ports);
 
+    await user.press(screen.getByRole("button", { name: "Деньги" }));
+    await user.press(screen.getByRole("button", { name: "Раздел денег" }));
     const planTile = screen.getByRole("button", { name: "План" });
     expect(planTile).toBeSelected();
     expect(screen.getByText("Составь план дня")).toBeOnTheScreen();
@@ -59,13 +61,11 @@ describe("plan from Main", () => {
     expect(screen.queryByText("Положишь их отдельно — в Копилке.")).not.toBeOnTheScreen();
     expect(screen.queryByText(/вчера \d+/)).not.toBeOnTheScreen();
 
-    await user.press(screen.getByRole("button", { name: "Назад" }));
+    await user.press(screen.getByRole("button", { name: "Раздел денег" }));
     expect(screen.getByText("План готов")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "План" })).not.toBeSelected();
     expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
-
-    await user.press(screen.getByRole("button", { name: "Закончить день" }));
-    expect(screen.getByText("Итоги дня")).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
   });
 
   it("blocks confirm when the План exceeds Баланс and keeps the draft editable", async () => {
@@ -75,6 +75,8 @@ describe("plan from Main", () => {
     ports.game.saveDraftPlan(profileId, day.dayId, { mandatory: 80, optional: 80, savings: 80 });
     const { user } = await renderApp(ports);
 
+    await user.press(screen.getByRole("button", { name: "Деньги" }));
+    await user.press(screen.getByRole("button", { name: "Раздел денег" }));
     await user.press(screen.getByRole("button", { name: "План" }));
     expect(screen.getByText("Это обещание на сегодня. Монеты пока в Балансе.")).toBeOnTheScreen();
     expect(screen.getByText("Останется свободных: -120")).toBeOnTheScreen();
@@ -94,6 +96,8 @@ describe("plan from Main", () => {
     ports.game.saveDraftPlan(profileId, day.dayId, { mandatory: 5, optional: 0, savings: 0 });
     const { user } = await renderApp(ports);
 
+    await user.press(screen.getByRole("button", { name: "Деньги" }));
+    await user.press(screen.getByRole("button", { name: "Раздел денег" }));
     await user.press(screen.getByRole("button", { name: "План" }));
     expect(screen.getByText("Обязательные 5")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Подтвердить план" })).toBeDisabled();

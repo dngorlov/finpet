@@ -10,7 +10,7 @@
 - Onboarding: brief intro to the game's purpose + the three decision types (spend on required item / spend on desired item / postpone)
 - Guest mode, no mandatory registration; child profile = game name + selected character
 - The intro hint is returnable at any time
-- **Resolved:** Первый запуск is ordered Питомец → Имя. The child first chooses the pet's Вид, Окрас, and Аксессуар, then names only the Питомец on «Имя» (compact in-cloud chip). Valid Имя «Дальше» writes the Профиль ребёнка (leftover `name` equals `petName`) and opens Main. The first Пособие card is the ordinary one (chip «Начало игрового дня», «Понятно», no dim). There is no «Как играть» walkthrough and no replay from Словарик. Profile = the pet (name + appearance); no account; Первый запуск does not collect a name for the ребёнок. (ROADMAP §2.5, §4.2)
+- **Resolved:** Первый запуск is ordered Питомец → Имя. The child first chooses the pet's Вид, Окрас, and Аксессуар, then names only the Питомец on «Имя» (compact in-cloud chip). Valid Имя «Дальше» writes the Профиль ребёнка (leftover `name` equals `petName`) and opens Main. The first Пособие card is the ordinary one (chip «Начало игрового дня», «Понятно», no dim). There is no «Как играть» walkthrough and no replay from Словарик. Profile = the pet (name + appearance); no account; Первый запуск does not collect a name for the ребёнка. (ROADMAP §2.5, §4.2)
 
 ## 2. Pet Creation
 - Pet appearance customization
@@ -19,9 +19,9 @@
 - **Resolved:** appearance = Вид (3 species `sp1–sp3`, designer's Pokémon-like PNG bundle) × Окрас (3) × Аксессуар (3) = **27 combinations**; pet name entry after appearance pick. (ROADMAP §2.2, §5.4)
 
 ## 3. Main Screen
-- Simultaneously visible without complex navigation: pet, available balance, savings amount, current goal, key status indicators, active task
-- Reachable from main screen: budget plan, tasks, purchases, savings, progress, adult section
-- **Resolved:** hub layout — pinned play-screen strip (Забота icon+bar, Настроение icon+bar, Баланс icon+number, Этап DVD dots + current name, ⚙ Настройки) on Main, План, Магазин, Копилка, Задания list, Прогресс, and Итоги дня; pet + chunky Забота/Настроение bars (icon + label + bar + number) on Main; Копилка pot on the hub tile and the Копилка screen (not the strip); active-goal and active-task cards; a 2×3 nav grid (План, Магазин, Копилка, Задания, Прогресс, Взрослый раздел) — everything ≤2 taps. Key status indicators = Забота and Настроение. (ROADMAP §2.2, §4.2)
+- Simultaneously visible without complex navigation: pet, available balance, current goal, key status indicators
+- Reachable from the play shell: budget plan, tasks, purchases, savings, the day record, adult section
+- **Resolved:** three-tab shell (ADR-0004). Bottom bar on the roots only: Дом, Карта, Деньги. Fresh launch opens Дом; Деньги opens on Копилка and remembers the last choice while the app stays open. The strip carries compact Забота and Настроение meters, Баланс, Этап, and ⚙ Настройки. Дом, under the strip: pet, the demo line when Демо-режим, the Пособие ribbon when credited this visit, the Цель card (display only), Итоги, Магазин. Карта is Карта заданий plus Словарик. Деньги dropdown: Копилка, План, Журнал, Банк (Банк after `savings_where`, always in Демо-режим). Взрослый раздел is in Настройки in every build, behind the arithmetic gate. Key status indicators = Забота and Настроение, and they are the strip meters. (ROADMAP §4.2; ADR-0004)
 
 ## 4. Game Currency & Income
 - Only in-game currency (no real money anywhere)
@@ -34,7 +34,7 @@
 - Before each game period: distribute available amount across **≥3 areas** — mandatory expenses, optional expenses, savings
 - Enforce: distributed total ≤ available budget; display remaining balance
 - Plan editable until confirmation; after confirmation, show **plan vs. actual expenses** comparison
-- **Resolved:** a "game period" = **Игровой день** — one economy cycle; a new one unlocks on the next local calendar day in normal play, back-to-back in Демо-режиме (ADR-0002). Area labels: **Обязательные / Желаемые / Копилка**. Draft План is a promise, not a transfer: each row is the integer plus a horizontal track (0…today's available) plus −/+ (tap ±1, hold repeats), with copy that coins stay in Баланс and that Копилка is Положить later; later days show draft-only «вчера N» from last closed actuals (including «вчера 0»). After confirm, Магазин (open tab) and Копилка home show leftover («Осталось N» or «сверх плана N»); buy / Положить confirm shows leftover after the tap and warns «Это сверх плана.» without blocking. Confirmed plan is locked for the day; plan-vs-actual columns stay on План during the day and in Итоги дня. (ROADMAP §2.1, §4.2; ADR-0002)
+- **Resolved:** a "game period" = **Игровой день** — one economy cycle; a new one unlocks on the next local calendar day in normal play, back-to-back in Демо-режиме (ADR-0002). Area labels: **Обязательные / Желаемые / Копилка**. Draft План is a promise, not a transfer: each row is the integer plus a horizontal track (0…today's available) plus −/+ (tap ±1, hold repeats), with copy that coins stay in Баланс and that Копилка is Положить later; later days show draft-only «вчера N» from last closed actuals (including «вчера 0»). After confirm, Магазин (open tab) and Копилка home show leftover («Осталось N» or «сверх плана N»); buy / Положить confirm shows leftover after the tap and warns «Это сверх плана.» without blocking. Confirmed plan is locked for the day; plan-vs-actual columns stay on План during the day and in Итоги. On a waiting day, План, Копилка, and Банк show «Откроется завтра» and take no coins. (ROADMAP §2.1, §4.2; ADR-0002, ADR-0004)
 
 ## 6. Purchases & Expenses
 - Catalog of priced items/actions of two types: mandatory and optional — minimum **8 items**
@@ -76,14 +76,14 @@
 ## 11. History & Learning Progress
 - Visible: completed tasks, progress toward current goal, results of the last game period
 - Short help section explaining key terms
-- **Resolved:** Прогресс screen with 3 tabs — Итоги (last day's score + plan-vs-actual + overall), Журнал (chronological transactions with source labels), Словарик. Key terms (11): Баланс, Копилка, Цель, Пособие, План, Обязательные расходы, Желаемые расходы, Забота, Настроение, Этап, Игровой день — one-to-one with `CONTEXT.md`, kid-worded definitions. (ROADMAP §2.5, §4.2)
+- **Resolved:** no Прогресс screen (ADR-0004). Итоги on Дом is the reopenable record (last closed day + overall counts). Журнал is a Деньги section. Словарик on Карта has «Слова» (the 11 terms) and «Уроки» (unscored cards of open уроки). Key terms: Баланс, Копилка, Цель, Пособие, План, Обязательные расходы, Желаемые расходы, Забота, Настроение, Этап, Игровой день — one-to-one with `CONTEXT.md`, kid-worded definitions. (ROADMAP §2.5, §4.2; ADR-0004)
 
 ## 12. Adult Section
 - Entry barrier: simple adult gate (doc's examples: hold a button, solve an arithmetic problem)
 - Shows completed topics + overall progress; no negative evaluations of the child
 - Optional: parent-awarded bonus points
 - Profile reset/delete lives here
-- **Resolved:** gate = random two-digit × one-digit multiplication (e.g., 14 × 7); wrong answer → new question; asked on every entry. Contents: learning progress in positive wording only, Демо-режим toggle, «Сбросить демо», profile reset/delete with extra confirmations. Родительский бонус (+5/+10/+20 once per day, optional reason) is a stretch item. (ROADMAP §2.4, §2.6)
+- **Resolved:** entry is Настройки → «Взрослый раздел» in every build (the gear is on the strip; there is no hub tile and no delete button on Настройки). Gate = random two-digit × one-digit multiplication (e.g., 14 × 7); wrong answer → new question; asked on every entry. Contents: learning progress in positive wording only, Демо-режим toggle, «Сбросить демо», profile reset/delete with extra confirmations. Родительский бонус (+5/+10/+20 once per day, optional reason) is a stretch item. (ROADMAP §2.4, §4.2; ADR-0004)
 
 ## 13. Persistence & Demo Mode
 - Survive close/relaunch: profile, balance, purchases, savings, selected goal, learning progress

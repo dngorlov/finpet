@@ -1,6 +1,7 @@
 import { render, screen, userEvent } from "@testing-library/react-native";
 import { FinPetApp } from "../FinPetApp";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
+import { openMoney, openTab } from "../testSupport/flowHelpers";
 
 async function renderApp(ports = createFakePorts()) {
   const user = userEvent.setup();
@@ -14,7 +15,7 @@ describe("Копилка", () => {
     seedReturningChild(ports);
     const { user } = await renderApp(ports);
 
-    await user.press(screen.getByRole("button", { name: "Копилка" }));
+    await openMoney(user, "Копилка");
     expect(screen.getByText("В копилке 0")).toBeOnTheScreen();
     expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
     expect(screen.getByText("90 монет")).toBeOnTheScreen();
@@ -33,9 +34,7 @@ describe("Копилка", () => {
     expect(screen.getByText("В копилке 1")).toBeOnTheScreen();
     expect(screen.getByLabelText("Баланс 119")).toBeOnTheScreen();
 
-    await user.press(screen.getByRole("button", { name: "Назад" }));
-    expect(screen.getByRole("button", { name: "Копилка" })).toBeOnTheScreen();
-    expect(screen.getByText("1")).toBeOnTheScreen();
+    await openTab(user, "Дом");
     expect(screen.getByText("1 / 90")).toBeOnTheScreen();
     expect(screen.getByLabelText("Баланс 119")).toBeOnTheScreen();
     expect(screen.queryByLabelText("Баланс 1")).not.toBeOnTheScreen();
@@ -48,7 +47,7 @@ describe("Копилка", () => {
     ports.game.transferToSavings(profileId, day.dayId, 15);
     const { user } = await renderApp(ports);
 
-    await user.press(screen.getByRole("button", { name: "Копилка" }));
+    await openMoney(user, "Копилка");
     await user.press(screen.getByRole("button", { name: "Забрать" }));
     await user.press(screen.getByRole("button", { name: "Сумма, больше" }));
     await user.press(screen.getByRole("button", { name: "Забрать" }));
@@ -69,7 +68,7 @@ describe("Копилка", () => {
     ports.game.transferToSavings(profileId, day.dayId, 89);
     const { user } = await renderApp(ports);
 
-    await user.press(screen.getByRole("button", { name: "Копилка" }));
+    await openMoney(user, "Копилка");
     await user.press(screen.getByRole("button", { name: "Положить" }));
     await user.press(screen.getByRole("button", { name: "Сумма, больше" }));
     await user.press(screen.getByRole("button", { name: "Положить" }));

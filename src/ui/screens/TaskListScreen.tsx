@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   childGames,
   missionPrerequisite,
@@ -12,11 +12,9 @@ import {
 } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
 import type { TaskProgressView } from "../../data/repositories/gameRepository";
-import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
-import { StatusStrip } from "../components/StatusStrip";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
@@ -27,8 +25,6 @@ import {
   preferredHubTask,
   type TaskTopic,
 } from "../tasks/model";
-
-type Props = NativeStackScreenProps<RootStackParamList, "TaskList">;
 
 /** Background art: Andrei's Moscow map drops in here (same file name, any size, 3:4). */
 const MAP_IMAGE = require("../../../assets/map/moscow.png");
@@ -51,7 +47,8 @@ const TOPIC_COPY: Record<TaskTopic, { title: string; icon: string }> = {
 type PinState = "locked" | "open" | "done" | "soon";
 
 /** Карта заданий (replaces the Задания list): pins by district, unlock chain, reward left. */
-export default function TaskListScreen({ navigation }: Props) {
+export default function TaskListScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { game, meta, content } = useSession();
   const [progress, setProgress] = useState<TaskProgressView[]>([]);
   const [isDemo, setIsDemo] = useState(false);
@@ -101,9 +98,18 @@ export default function TaskListScreen({ navigation }: Props) {
     `${Math.round(fraction * 1000) / 10}%`;
 
   return (
-    <Screen header={<StatusStrip />}>
-      <BackButton />
-      <Text style={styles.title}>{strings.mapTitle}</Text>
+    <Screen>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{strings.mapTitle}</Text>
+        <Pressable
+          role="button"
+          aria-label={strings.glossaryTitle}
+          onPress={() => navigation.navigate("Handbook")}
+          style={styles.handbook}
+        >
+          <Text style={styles.handbookLabel}>{strings.glossaryTitle}</Text>
+        </Pressable>
+      </View>
       <Text style={styles.body}>{strings.mapHint}</Text>
       <View
         style={styles.map}
@@ -320,6 +326,21 @@ const styles = StyleSheet.create({
   title: {
     color: colors.text,
     fontSize: type.title,
+    fontWeight: "700",
+  },
+  titleRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  handbook: {
+    justifyContent: "center",
+    minHeight: minTarget,
+    minWidth: minTarget,
+  },
+  handbookLabel: {
+    color: colors.text,
+    fontSize: type.button,
     fontWeight: "700",
   },
   section: {

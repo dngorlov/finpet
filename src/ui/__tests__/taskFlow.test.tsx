@@ -45,7 +45,7 @@ describe("Карта заданий", () => {
       seedReturningChild(ports);
       const { user } = await renderApp(ports);
 
-      await user.press(screen.getByRole("button", { name: "Задания" }));
+      await user.press(screen.getByRole("button", { name: "Карта" }));
       expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Что такое бюджет?, открыто" })).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Планирование бюджета, закрыто" })).toBeOnTheScreen();
@@ -90,7 +90,7 @@ describe("Карта заданий", () => {
     seedReturningChild(ports, { isDemo: true, name: "Демо", petName: "Демо" });
     const { user } = await renderApp(ports);
 
-    await user.press(screen.getByRole("button", { name: "Задания" }));
+    await user.press(screen.getByRole("button", { name: "Карта" }));
     await user.press(screen.getByRole("button", { name: "Что такое сбережения, открыто" }));
     await user.press(screen.getByRole("button", { name: "Начать" }));
     await user.press(screen.getByRole("button", { name: "Дальше" }));
@@ -120,7 +120,7 @@ describe("Карта заданий", () => {
     seedReturningChild(ports, { isDemo: true, name: "Демо", petName: "Демо" });
     const { user } = await renderApp(ports);
 
-    await user.press(screen.getByRole("button", { name: "Задания" }));
+    await user.press(screen.getByRole("button", { name: "Карта" }));
     await user.press(screen.getByRole("button", { name: "Планирование бюджета, открыто" }));
     await user.press(screen.getByRole("button", { name: "Начать" }));
     await user.press(screen.getByRole("button", { name: "Дальше" }));

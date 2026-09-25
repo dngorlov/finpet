@@ -1,29 +1,25 @@
 import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { planMandatoryFloor, validatePlan, type PlanBuckets } from "../../core/economy";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, DaySummaryView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
-import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
-import { StatusStrip } from "../components/StatusStrip";
 import { TextButton } from "../components/TextButton";
-import type { RootStackParamList } from "../navigation/types";
+import { usePlayChrome } from "../navigation/playChrome";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, type } from "../theme";
 import { daysToGoalAt, incomeToday, todayBills, wantsThatFit } from "./planDraft";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Plan">;
-
 const EMPTY: PlanBuckets = { mandatory: 0, optional: 0, savings: 0 };
 
-export default function PlanScreen(_props: Props) {
+export default function PlanScreen() {
   const { game, meta, content } = useSession();
+  const { touchChrome } = usePlayChrome();
   const [day, setDay] = useState<DayState | null>(null);
   const [buckets, setBuckets] = useState<PlanBuckets>(EMPTY);
   const [lastClosed, setLastClosed] = useState<DaySummaryView | null>(null);
@@ -46,7 +42,8 @@ export default function PlanScreen(_props: Props) {
     const name = active ? content.goals.find((entry) => entry.id === active.key)?.name : undefined;
     setGoal(active && name && !active.achieved ? { name, remaining: active.remaining } : null);
     setAskingConfirm(false);
-  }, [game, meta, content]);
+    touchChrome();
+  }, [game, meta, content, touchChrome]);
 
   useFocusEffect(
     useCallback(() => {
@@ -56,9 +53,17 @@ export default function PlanScreen(_props: Props) {
 
   if (!day) {
     return (
-      <Screen header={<StatusStrip />}>
-        <BackButton />
+      <Screen>
         <Text style={styles.body}>{strings.appName}</Text>
+      </Screen>
+    );
+  }
+
+  if (!day.open) {
+    return (
+      <Screen>
+        <Text style={styles.title}>{strings.navPlan}</Text>
+        <Text style={styles.body}>{strings.waitingEconomyHint}</Text>
       </Screen>
     );
   }
@@ -97,7 +102,6 @@ export default function PlanScreen(_props: Props) {
 
   return (
     <Screen
-      header={<StatusStrip />}
       footer={
         confirmed ? null : askingConfirm ? (
           <>
@@ -109,7 +113,6 @@ export default function PlanScreen(_props: Props) {
         )
       }
     >
-      <BackButton />
       <Text style={styles.title}>{strings.navPlan}</Text>
       {confirmed || income <= 0 ? null : <Text style={styles.body}>{strings.planIncomeToday(income)}</Text>}
       <Text style={styles.body}>{strings.planAvailable(day.available)}</Text>

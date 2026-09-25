@@ -2,20 +2,18 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
 import DaySummaryScreen from "../screens/DaySummaryScreen";
 import FirstRunScreen from "../screens/FirstRunScreen";
+import HandbookScreen from "../screens/HandbookScreen";
 import MainScreen from "../screens/MainScreen";
-import PlanScreen from "../screens/PlanScreen";
-import ProgressScreen from "../screens/ProgressScreen";
+import ResultsScreen from "../screens/ResultsScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import ShopScreen from "../screens/ShopScreen";
-import SavingsScreen from "../screens/SavingsScreen";
 import AdultGateScreen from "../screens/AdultGateScreen";
-import BankScreen from "../screens/BankScreen";
 import DemoScreen from "../screens/DemoScreen";
 import StubScreen from "../screens/StubScreen";
-import TaskListScreen from "../screens/TaskListScreen";
 import TaskResultScreen from "../screens/TaskResultScreen";
 import TaskRunScreen from "../screens/TaskRunScreen";
 import { useSession } from "../session/SessionProvider";
+import { PlayChromeProvider } from "./playChrome";
 import type { RootStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -25,22 +23,21 @@ export function RootNavigator() {
   const hasProfile = Boolean(meta.get(META_KEYS.activeProfileId));
 
   return (
-    <Stack.Navigator initialRouteName={hasProfile ? "Main" : "FirstRun"} screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="FirstRun" component={FirstRunScreen} />
-      <Stack.Screen name="Main" component={MainScreen} />
-      <Stack.Screen name="Plan" component={PlanScreen} />
-      <Stack.Screen name="Shop" component={ShopScreen} />
-      <Stack.Screen name="Savings" component={SavingsScreen} />
-      <Stack.Screen name="Bank" component={BankScreen} />
-      <Stack.Screen name="Progress" component={ProgressScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="DaySummary" component={DaySummaryScreen} />
-      <Stack.Screen name="AdultGate" component={AdultGateScreen} />
-      <Stack.Screen name="Demo" component={DemoScreen} />
-      <Stack.Screen name="TaskList" component={TaskListScreen} />
-      <Stack.Screen name="TaskRun" component={TaskRunScreen} />
-      <Stack.Screen name="TaskResult" component={TaskResultScreen} />
-      <Stack.Screen name="Stub" component={StubScreen} />
-    </Stack.Navigator>
+    <PlayChromeProvider>
+      <Stack.Navigator initialRouteName={hasProfile ? "Main" : "FirstRun"} screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="FirstRun" component={FirstRunScreen} />
+        <Stack.Screen name="Main" component={MainScreen} />
+        <Stack.Screen name="Shop" component={ShopScreen} />
+        <Stack.Screen name="Results" component={ResultsScreen} />
+        <Stack.Screen name="Handbook" component={HandbookScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="DaySummary" component={DaySummaryScreen} />
+        <Stack.Screen name="AdultGate" component={AdultGateScreen} />
+        <Stack.Screen name="Demo" component={DemoScreen} />
+        <Stack.Screen name="TaskRun" component={TaskRunScreen} />
+        <Stack.Screen name="TaskResult" component={TaskResultScreen} />
+        <Stack.Screen name="Stub" component={StubScreen} />
+      </Stack.Navigator>
+    </PlayChromeProvider>
   );
 }
