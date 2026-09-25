@@ -111,7 +111,7 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText("Это уже твоя Цель. Копи дальше в Копилке.")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Выполнить задание" }));
-    expect(screen.getByText("Бюджет")).toBeOnTheScreen();
+    expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
   });
 
   it("buys the funded Цель from the Магазин sheet and counts only dream buys", async () => {

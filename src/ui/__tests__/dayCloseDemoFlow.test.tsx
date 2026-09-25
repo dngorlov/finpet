@@ -6,7 +6,7 @@ import {
   createFakePorts,
   seedReturningChild,
 } from "../testSupport/fakePorts";
-import { confirmTinyPlan, passAdultGate, sixUnlocked } from "../testSupport/flowHelpers";
+import { confirmTinyPlan, passAdultGate, demoMissions } from "../testSupport/flowHelpers";
 
 async function renderApp(ports = createFakePorts()) {
   const user = userEvent.setup();
@@ -35,7 +35,7 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       const ports = createFakePorts();
       const childId = seedReturningChild(ports);
       const childDay = ports.game.dayState(childId);
-      expect(ports.game.claimTaskReward(childId, childDay.dayId, "budget_first_plan", true)).toBe(10);
+      expect(ports.game.claimTaskReward(childId, childDay.dayId, "budget_what", 10)).toBe(10);
       const { user } = await renderApp(ports);
 
       await confirmTinyPlan(user);
@@ -60,7 +60,7 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
 
       await user.press(screen.getByRole("button", { name: "Задания" }));
-      expect(screen.getByText("Бюджет")).toBeOnTheScreen();
+      expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
       const childAfterClose = ports.game.getProfile(childId);
@@ -77,11 +77,11 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       await user.press(screen.getByRole("button", { name: "Понятно" }));
 
       expect(screen.getByText("Демо: дни идут подряд")).toBeOnTheScreen();
-      expect(screen.getByText("Первый план")).toBeOnTheScreen();
-      expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
+      expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
+      expect(screen.queryByText("Охота за ценником")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Задания" }));
-      for (const title of sixUnlocked) {
-        expect(screen.getByText(title)).toBeOnTheScreen();
+      for (const title of demoMissions) {
+        expect(screen.getByRole("button", { name: `${title}, открыто` })).toBeOnTheScreen();
       }
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
@@ -115,11 +115,11 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       expect(screen.getByText("Демо: дни идут подряд")).toBeOnTheScreen();
       expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
       expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
-      expect(screen.getByText("Первый план")).toBeOnTheScreen();
-      expect(screen.queryByText("Две цены")).not.toBeOnTheScreen();
+      expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
+      expect(screen.queryByText("Охота за ценником")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Задания" }));
-      for (const title of sixUnlocked) {
-        expect(screen.getByText(title)).toBeOnTheScreen();
+      for (const title of demoMissions) {
+        expect(screen.getByRole("button", { name: `${title}, открыто` })).toBeOnTheScreen();
       }
       await user.press(screen.getByRole("button", { name: "Назад" }));
 

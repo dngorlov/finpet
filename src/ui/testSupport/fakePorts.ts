@@ -9,9 +9,10 @@ import {
   type CatalogItem,
   type PlanBuckets,
 } from "../../core/economy";
+import { checkDeposit, depositInterest, depositPayout, findOffer, maturesOnDay } from "../../core/bank";
 import { applyGoalProgress, checkWithdrawal, estimateDaysToGoal, potFromTransfers } from "../../core/savings";
 import { dayScore, explainStageChange, stageFromScores } from "../../core/stages";
-import { taskRewardDue, type TaskStepResult } from "../../core/tasks";
+import { rewardTopUp, type TaskStepResult } from "../../core/tasks";
 import { loadContent } from "../../data/content";
 import { META_KEYS } from "../../data/metaKeys";
 import type {
@@ -49,6 +50,16 @@ type StoredProfile = ProfileView & {
   scores: number[];
   lastClosed: DaySummaryView | null;
   tasks: TaskProgressView[];
+  deposits: StoredDeposit[];
+};
+
+type StoredDeposit = {
+  id: string;
+  amount: number;
+  ratePercent: number;
+  days: number;
+  maturesDayN: number;
+  status: "open" | "paid";
 };
 
 function viewOf(row: StoredProfile): ProfileView {
@@ -65,6 +76,7 @@ function viewOf(row: StoredProfile): ProfileView {
     scores: _scores,
     lastClosed: _lastClosed,
     tasks: _tasks,
+    deposits: _deposits,
     ...view
   } = row;
   return view;
@@ -175,6 +187,7 @@ export function createFakePorts(): SessionPorts {
       scores: [],
       lastClosed: null,
       tasks: [],
+      deposits: [],
     };
     appendJournal(row, {
       amount: ECONOMY.startingBudget,
@@ -426,6 +439,59 @@ export function createFakePorts(): SessionPorts {
       lastClosedDay(profileId) {
         return requireRow(profiles, profileId).lastClosed;
       },
+      listDeposits(profileId) {
+        const row = requireRow(profiles, profileId);
+        return row.deposits
+          .slice()
+          .reverse()
+          .map((dep) => ({
+            id: dep.id,
+            amount: dep.amount,
+            ratePercent: dep.ratePercent,
+            days: dep.days,
+            payout: depositPayout(dep.amount, dep.ratePercent),
+            maturesDayN: dep.maturesDayN,
+            daysLeft: dep.status === "paid" ? 0 : Math.max(0, dep.maturesDayN - row.dayN),
+            status: dep.status,
+          }));
+      },
+      openDeposit(profileId, dayId, offerId, amount) {
+        const row = requireRow(profiles, profileId);
+        requireOpen(row, dayId);
+        const offer = findOffer(offerId);
+        const check = checkDeposit(row.balance, amount);
+        if (check.status !== "ok") return check;
+        row.balance -= amount;
+        appendJournal(row, { amount: -amount, kind: "bank_in", labelKey: "bank_in" });
+        const maturesDayN = maturesOnDay(row.dayN, offer.days);
+        row.deposits.push({
+          id: `dep_${row.deposits.length + 1}`,
+          amount,
+          ratePercent: offer.ratePercent,
+          days: offer.days,
+          maturesDayN,
+          status: "open",
+        });
+        return { status: "ok" as const, payout: depositPayout(amount, offer.ratePercent), maturesDayN };
+      },
+      collectDeposits(profileId, dayId) {
+        const row = requireRow(profiles, profileId);
+        requireOpen(row, dayId);
+        let paid = 0;
+        let interest = 0;
+        let count = 0;
+        for (const dep of row.deposits) {
+          if (dep.status !== "open" || dep.maturesDayN > row.dayN) continue;
+          const payout = depositPayout(dep.amount, dep.ratePercent);
+          row.balance += payout;
+          appendJournal(row, { amount: payout, kind: "bank_out", labelKey: "bank_out" });
+          dep.status = "paid";
+          paid += payout;
+          interest += depositInterest(dep.amount, dep.ratePercent);
+          count += 1;
+        }
+        return { paid, interest, count };
+      },
       listTaskProgress(profileId) {
         return requireRow(profiles, profileId).tasks.map((task) => ({ ...task }));
       },
@@ -450,15 +516,15 @@ export function createFakePorts(): SessionPorts {
           }
         }
         if (result.spawnTask && !row.tasks.some((task) => task.taskKey === result.spawnTask)) {
-          row.tasks.push({ taskKey: result.spawnTask, status: "available", rewardPaid: false });
+          row.tasks.push({ taskKey: result.spawnTask, status: "available", rewardPaid: false, bestReward: 0 });
         }
       },
-      claimTaskReward(profileId, dayId, taskId, correct) {
+      claimTaskReward(profileId, dayId, taskId, earned) {
         const row = requireRow(profiles, profileId);
         requireDayForTask(row, dayId);
         const existing = row.tasks.find((task) => task.taskKey === taskId);
-        const alreadyPaid = existing?.rewardPaid === true;
-        const reward = correct ? taskRewardDue(alreadyPaid) : 0;
+        const best = existing?.bestReward ?? 0;
+        const reward = rewardTopUp(best, earned);
         if (reward > 0) {
           row.balance += reward;
           appendJournal(row, {
@@ -467,11 +533,13 @@ export function createFakePorts(): SessionPorts {
             labelKey: `task_reward:${taskId}`,
           });
         }
+        const bestReward = Math.max(best, earned);
         if (existing) {
           existing.status = "completed";
-          existing.rewardPaid = alreadyPaid || reward > 0;
+          existing.rewardPaid = existing.rewardPaid || bestReward > 0;
+          existing.bestReward = bestReward;
         } else {
-          row.tasks.push({ taskKey: taskId, status: "completed", rewardPaid: reward > 0 });
+          row.tasks.push({ taskKey: taskId, status: "completed", rewardPaid: bestReward > 0, bestReward });
         }
         return reward;
       },

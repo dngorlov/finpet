@@ -138,10 +138,28 @@ export const taskProgress = sqliteTable("taskProgress", {
   taskKey: text("taskKey").notNull(),
   status: text("status").notNull(),
   rewardPaid: integer("rewardPaid").notNull(),
+  /** Best coins earned on this Задание so far; replays only pay above it. */
+  bestReward: integer("bestReward").notNull().default(0),
   completedAt: integer("completedAt"),
 });
 
 export const meta = sqliteTable("meta", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
+});
+
+/** Банк: a вклад locked until `maturesDayN`, then paid back with interest once. */
+export const deposits = sqliteTable("deposits", {
+  id: text("id").primaryKey(),
+  profileId: text("profileId")
+    .notNull()
+    .references(() => profiles.id),
+  amount: integer("amount").notNull(),
+  ratePercent: integer("ratePercent").notNull(),
+  days: integer("days").notNull(),
+  openedDayN: integer("openedDayN").notNull(),
+  maturesDayN: integer("maturesDayN").notNull(),
+  status: text("status", { enum: ["open", "paid"] }).notNull(),
+  openedAt: integer("openedAt").notNull(),
+  paidAt: integer("paidAt"),
 });

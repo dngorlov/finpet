@@ -59,7 +59,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     await user.press(screen.getByRole("button", { name: "Дождаться пособия" }));
     expect(screen.getByText(/Пособие придёт/)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Выполнить задание" }));
-    expect(screen.getByText("Бюджет")).toBeOnTheScreen();
+    expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Назад" }));
     await user.press(screen.getByRole("button", { name: "Сделать целью" }));
     expect(screen.getByText(/Цель станет Игрушка/)).toBeOnTheScreen();

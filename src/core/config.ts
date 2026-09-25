@@ -39,3 +39,19 @@ export const SAVINGS = {
   /** How many recent deposits feed the rolling average for the date estimate (§2.1). */
   estimateWindow: 5,
 } as const;
+
+/**
+ * Банк (вклад), separate from Копилка (2026-09-24, Александр): opens after the
+ * lesson about banks; coins leave Баланс on confirm and come back with
+ * interest when the term (in Игровые дни) ends. No early withdrawal.
+ */
+export const BANK = {
+  /** Finishing this Задание shows the Банк tile (Демо-режим: always). */
+  unlockTaskId: "savings_where",
+  minDeposit: 10,
+  offers: [
+    { id: "short", days: 3, ratePercent: 10 },
+    { id: "long", days: 5, ratePercent: 20 },
+  ],
+} as const;
+

@@ -75,12 +75,12 @@ describe("runMigrations", () => {
     expect(driver.statements).toHaveLength(0);
   });
 
-  it("applies meta then the settled game schema and ends at version 3", () => {
+  it("applies meta then the settled game schema and ends at version 5", () => {
     const driver = new FakeSqlite(0);
 
     runMigrations(driver, MIGRATIONS);
 
-    expect(driver.userVersion).toBe(3);
+    expect(driver.userVersion).toBe(5);
     expect(driver.createTableStatements()[0]).toContain("CREATE TABLE IF NOT EXISTS meta");
     const ddl = driver.statements.join("\n");
     for (const table of [
@@ -95,19 +95,57 @@ describe("runMigrations", () => {
       "meterEvents",
       "dayScores",
       "taskProgress",
+      "deposits",
     ]) {
       expect(ddl).toContain(`CREATE TABLE IF NOT EXISTS ${table}`);
     }
     expect(ddl).toContain("ALTER TABLE purchases ADD COLUMN paidFrom");
     expect(ddl).toContain("ALTER TABLE goals ADD COLUMN fundedCelebrated");
+    expect(ddl).toContain("ALTER TABLE taskProgress ADD COLUMN bestReward");
   });
 
   it("real migration set is a no-op on an already migrated database", () => {
-    const driver = new FakeSqlite(3);
+    const driver = new FakeSqlite(5);
 
     runMigrations(driver, MIGRATIONS);
 
-    expect(driver.userVersion).toBe(3);
+    expect(driver.userVersion).toBe(5);
     expect(driver.statements).toHaveLength(0);
+  });
+
+  it("rolls back a failing migration and reports its real error with the version", () => {
+    const driver = new FakeSqlite(0);
+    const exec = driver.execSync.bind(driver);
+    driver.execSync = (sql: string) => {
+      exec(sql);
+      if (sql.includes("BROKEN")) throw new Error("near BROKEN: syntax error");
+    };
+
+    expect(() =>
+      runMigrations(driver, [
+        { version: 1, up: "CREATE TABLE t1;" },
+        { version: 2, up: "BROKEN;" },
+      ]),
+    ).toThrow("Миграция 2 не применилась: near BROKEN: syntax error");
+    expect(driver.statements.at(-1)).toBe("ROLLBACK;");
+  });
+
+  it("recovers once from a transaction an earlier crash left open", () => {
+    const driver = new FakeSqlite(0);
+    const exec = driver.execSync.bind(driver);
+    let open = true;
+    driver.execSync = (sql: string) => {
+      if (sql === "ROLLBACK;") {
+        open = false;
+      } else if (open && sql.startsWith("BEGIN")) {
+        throw new Error("cannot start a transaction within a transaction");
+      }
+      exec(sql);
+    };
+
+    runMigrations(driver, [{ version: 1, up: "CREATE TABLE t1;" }]);
+
+    expect(driver.userVersion).toBe(1);
+    expect(driver.createTableStatements()).toHaveLength(1);
   });
 });

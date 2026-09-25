@@ -28,7 +28,7 @@
 - Income from completing tasks and/or a clear recurring income (doc's example: daily login)
 - Every accrual shows source + amount; balance never changes without an explanation to the user
 - Starting budget granted at profile setup (game loop step 4)
-- **Resolved:** currency = монеты. Стартовый бюджет **100** granted at profile creation. The grant has no explanation screen. Пособие **+20** per Игровой день (recurring income; raised from 10 on 2026-09-22 so Счета and a Цель both fit the 5-day demo). Task reward **+10**, first correct completion of each Задание only. Every movement goes through a feedback card (source + amount). (ROADMAP §2.1, §4.2)
+- **Resolved:** currency = монеты. Стартовый бюджет **100** granted at profile creation. The grant has no explanation screen. Пособие **+20** per Игровой день (recurring income; raised from 10 on 2026-09-22 so Счета and a Цель both fit the 5-day demo). Task reward: up to the Задание's max (10–15) scaled by first-try answers; replays pay only the improvement. Every movement goes through a feedback card (source + amount). (ROADMAP §2.1, §4.2)
 
 ## 5. Budget Planning
 - Before each game period: distribute available amount across **≥3 areas** — mandatory expenses, optional expenses, savings

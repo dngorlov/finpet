@@ -79,6 +79,10 @@ _Avoid_: витрина, инвентарь
 The pot of coins set aside from Баланс toward the Цель. Coins leave it only by confirmed withdrawal or by buying that Цель. While Копилка is Закрыто, a План's deposit stays at 0.
 _Avoid_: накопления, депозит, вклад
 
+**Банк (Bank)** / **Вклад (Deposit)**:
+Separate from Копилка and opened after the lesson «Где живут накопления?»: a вклад takes coins out of Баланс for a fixed number of Игровые дни and returns them with interest when the term ends. No early withdrawal.
+_Avoid_: депозит, счёт, копилка (for the bank)
+
 **Цель (Goal)**:
 The one Желаемое from Магазин that Копилка is accumulating toward. There is at most one at a time; Обязательные cannot be a Цель.
 _Avoid_: ачивка, мечта, произвольная цель
@@ -124,8 +128,12 @@ An optional, kid-visible chat assistant on the main screen that answers money qu
 _Avoid_: чат-бот, ИИ-друг
 
 **Задание (Task)**:
-A financial-literacy scenario with choices and consequences; every action gets a short explanation. Inside an open Задания, a task may still wait for a later Игровой день.
-_Avoid_: урок, квест, тест
+A financial-literacy mission on the Карта заданий: teaching cards, then a mini-game or questions with choices and consequences; every answer gets a short explanation. Coins scale with first-try answers; a replay pays only the improvement.
+_Avoid_: квест, тест (content may call its theory part «урок»)
+
+**Карта заданий (Mission map)**:
+The map of Moscow districts where each Задание is a pin. Only the first budget Задание is open at first; finishing it opens the first Задание of every other topic and the next budget one; after that each topic goes in order.
+_Avoid_: список заданий, уровни
 
 **Журнал (History)**:
 The in-app record of income, purchases and savings transfers for the current Game Day plus results of past days.

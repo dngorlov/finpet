@@ -14,6 +14,7 @@ import {
   type DayBills,
   type PlanBuckets,
 } from "../../core/economy";
+import { checkDeposit, depositInterest, depositPayout, findOffer, maturesOnDay } from "../../core/bank";
 import { applyGoalProgress, checkWithdrawal, estimateDaysToGoal, potFromTransfers } from "../../core/savings";
 import {
   dayScore,
@@ -23,7 +24,7 @@ import {
   stageFromScores,
   type Stage,
 } from "../../core/stages";
-import { taskRewardDue, type TaskStepResult } from "../../core/tasks";
+import { rewardTopUp, type TaskStepResult } from "../../core/tasks";
 import { createLocalId } from "../localId";
 import { META_KEYS } from "../metaKeys";
 import * as tables from "../schema";
@@ -66,10 +67,36 @@ export interface DaySummaryView {
 
 export type CloseDayResult = DaySummaryView;
 
+export interface DepositView {
+  id: string;
+  amount: number;
+  ratePercent: number;
+  days: number;
+  payout: number;
+  maturesDayN: number;
+  /** Игровые дни until the payout (0 once paid). */
+  daysLeft: number;
+  status: "open" | "paid";
+}
+
+export type OpenDepositResult =
+  | { status: "ok"; payout: number; maturesDayN: number }
+  | { status: "tooSmall"; min: number }
+  | { status: "blocked"; missing: number };
+
+export interface CollectDepositsResult {
+  /** Coins credited to Баланс right now (principal + interest). */
+  paid: number;
+  interest: number;
+  count: number;
+}
+
 export interface TaskProgressView {
   taskKey: string;
   status: "available" | "completed";
   rewardPaid: boolean;
+  /** Best coins earned on this Задание so far (0 if never finished). */
+  bestReward: number;
 }
 
 /** Read model for the hub and PetView (appearance + meters + Баланс). */
@@ -267,6 +294,17 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       .from(tables.days)
       .where(and(eq(tables.days.profileId, profileId), isNull(tables.days.closedAt)))
       .get();
+  }
+
+  /** Highest Игровой день number so far (0 before the first day). */
+  function latestDayN(conn: GameDb, profileId: string): number {
+    const last = conn
+      .select()
+      .from(tables.days)
+      .where(eq(tables.days.profileId, profileId))
+      .orderBy(desc(tables.days.n))
+      .get();
+    return last?.n ?? 0;
   }
 
   function requireOpenDay(conn: GameDb, profileId: string, dayId: string) {
@@ -516,6 +554,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         tx.delete(tables.plans).where(eq(tables.plans.profileId, profileId)).run();
         tx.delete(tables.transactions).where(eq(tables.transactions.profileId, profileId)).run();
         tx.delete(tables.taskProgress).where(eq(tables.taskProgress.profileId, profileId)).run();
+        tx.delete(tables.deposits).where(eq(tables.deposits.profileId, profileId)).run();
         tx.delete(tables.goals).where(eq(tables.goals.profileId, profileId)).run();
         tx.delete(tables.petState).where(eq(tables.petState.profileId, profileId)).run();
         tx.delete(tables.days).where(eq(tables.days.profileId, profileId)).run();
@@ -811,6 +850,78 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       return readDaySummary(db, profileId, last.id);
     },
 
+    /** Вклады of this profile, newest first, with days left against the current Игровой день. */
+    listDeposits(profileId: string): DepositView[] {
+      profile(db, profileId);
+      const today = latestDayN(db, profileId);
+      return db
+        .select()
+        .from(tables.deposits)
+        .where(eq(tables.deposits.profileId, profileId))
+        .orderBy(desc(tables.deposits.openedAt))
+        .all()
+        .map((row) => ({
+          id: row.id,
+          amount: row.amount,
+          ratePercent: row.ratePercent,
+          days: row.days,
+          payout: depositPayout(row.amount, row.ratePercent),
+          maturesDayN: row.maturesDayN,
+          daysLeft: row.status === "paid" ? 0 : Math.max(0, row.maturesDayN - today),
+          status: row.status === "paid" ? ("paid" as const) : ("open" as const),
+        }));
+    },
+
+    /** Moves `amount` from Баланс into a вклад; it comes back with interest on maturesDayN. */
+    openDeposit(profileId: string, dayId: string, offerId: string, amount: number): OpenDepositResult {
+      return db.transaction((tx) => {
+        const day = requireOpenDay(tx, profileId, dayId);
+        const offer = findOffer(offerId);
+        const check = checkDeposit(profile(tx, profileId).balance, amount);
+        if (check.status !== "ok") return check;
+        debit(tx, profileId, dayId, amount, "bank_in", "bank_in");
+        const maturesDayN = maturesOnDay(day.n, offer.days);
+        tx.insert(tables.deposits)
+          .values({
+            id: newId("dep"),
+            profileId,
+            amount,
+            ratePercent: offer.ratePercent,
+            days: offer.days,
+            openedDayN: day.n,
+            maturesDayN,
+            status: "open",
+            openedAt: nowMs(),
+            paidAt: null,
+          })
+          .run();
+        return { status: "ok" as const, payout: depositPayout(amount, offer.ratePercent), maturesDayN };
+      });
+    },
+
+    /** Pays every вклад whose term ended by today's Игровой день — once, with a Журнал row. */
+    collectDeposits(profileId: string, dayId: string): CollectDepositsResult {
+      return db.transaction((tx) => {
+        const day = requireOpenDay(tx, profileId, dayId);
+        const due = tx
+          .select()
+          .from(tables.deposits)
+          .where(and(eq(tables.deposits.profileId, profileId), eq(tables.deposits.status, "open")))
+          .all()
+          .filter((row) => row.maturesDayN <= day.n);
+        let paid = 0;
+        let interest = 0;
+        for (const row of due) {
+          const payout = depositPayout(row.amount, row.ratePercent);
+          credit(tx, profileId, dayId, payout, "bank_out", "bank_out");
+          tx.update(tables.deposits).set({ status: "paid", paidAt: nowMs() }).where(eq(tables.deposits.id, row.id)).run();
+          paid += payout;
+          interest += depositInterest(row.amount, row.ratePercent);
+        }
+        return { paid, interest, count: due.length };
+      });
+    },
+
     listTaskProgress(profileId: string): TaskProgressView[] {
       profile(db, profileId);
       return db
@@ -822,6 +933,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           taskKey: row.taskKey,
           status: row.status === "completed" ? ("completed" as const) : ("available" as const),
           rewardPaid: row.rewardPaid === 1,
+          bestReward: row.bestReward,
         }));
     },
 
@@ -1014,24 +1126,31 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       });
     },
 
-    claimTaskReward(profileId: string, dayId: string, taskId: string, correct: boolean): number {
+    /**
+     * Finishes a Задание with `earned` coins (score × max, computed by the
+     * caller from core/tasks). Pays only the top-up over the best earlier run.
+     */
+    claimTaskReward(profileId: string, dayId: string, taskId: string, earned: number): number {
       return db.transaction((tx) => {
         requireDayForTask(tx, profileId, dayId);
+        if (earned < 0) throw new Error("Награда не может быть отрицательной");
         const existing = tx
           .select()
           .from(tables.taskProgress)
           .where(and(eq(tables.taskProgress.profileId, profileId), eq(tables.taskProgress.taskKey, taskId)))
           .get();
-        const alreadyPaid = existing?.rewardPaid === 1;
-        const reward = correct ? taskRewardDue(alreadyPaid) : 0;
+        const best = existing?.bestReward ?? 0;
+        const reward = rewardTopUp(best, earned);
         if (reward > 0) {
           credit(tx, profileId, dayId, reward, "task_reward", `task_reward:${taskId}`);
         }
+        const bestReward = Math.max(best, earned);
         if (existing) {
           tx.update(tables.taskProgress)
             .set({
               status: "completed",
-              rewardPaid: alreadyPaid || reward > 0 ? 1 : existing.rewardPaid,
+              rewardPaid: bestReward > 0 ? 1 : existing.rewardPaid,
+              bestReward,
               completedAt: nowMs(),
             })
             .where(eq(tables.taskProgress.id, existing.id))
@@ -1043,7 +1162,8 @@ export function createGameRepository(db: GameDb, clock: Clock) {
               profileId,
               taskKey: taskId,
               status: "completed",
-              rewardPaid: reward > 0 ? 1 : 0,
+              rewardPaid: bestReward > 0 ? 1 : 0,
+              bestReward,
               completedAt: nowMs(),
             })
             .run();
@@ -1051,5 +1171,6 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         return reward;
       });
     },
+
   };
 }

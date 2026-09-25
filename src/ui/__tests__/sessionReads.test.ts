@@ -42,7 +42,7 @@ describe("fake SessionGame M4 reads", () => {
       effects: [],
       spawnTask: "budget_fix_backpack",
     });
-    expect(ports.game.claimTaskReward(profileId, day.dayId, "budget_first_plan", true)).toBe(10);
+    expect(ports.game.claimTaskReward(profileId, day.dayId, "budget_what", 10)).toBe(10);
 
     const closed = closeScoredDay(ports, profileId);
     expect(closed).toMatchObject({
@@ -58,8 +58,8 @@ describe("fake SessionGame M4 reads", () => {
     expect(ports.game.dayState(profileId)).toMatchObject({ open: false, n: 1, dayId: closed.dayId });
     expect(ports.game.listTaskProgress(profileId)).toEqual(
       expect.arrayContaining([
-        { taskKey: "budget_fix_backpack", status: "available", rewardPaid: false },
-        { taskKey: "budget_first_plan", status: "completed", rewardPaid: true },
+        { taskKey: "budget_fix_backpack", status: "available", rewardPaid: false, bestReward: 0 },
+        { taskKey: "budget_what", status: "completed", rewardPaid: true, bestReward: 10 },
       ]),
     );
   });
@@ -96,6 +96,6 @@ describe("fake SessionGame M4 reads", () => {
       effects: [],
       spawnTask: "budget_fix_backpack",
     });
-    expect(ports.game.claimTaskReward(profileId, closed.dayId, "budget_first_plan", true)).toBe(10);
+    expect(ports.game.claimTaskReward(profileId, closed.dayId, "budget_what", 10)).toBe(10);
   });
 });

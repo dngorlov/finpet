@@ -108,32 +108,91 @@ describe("loadContent", () => {
     });
   });
 
-  it("ships six playable task scripts plus the backpack correction, every option explained", () => {
-    const playable = content.tasks.filter((t) => !t.correction);
-    expect(playable.map((t) => t.id)).toEqual([
-      "budget_first_plan",
-      "budget_backpack",
-      "savings_dream_jar",
-      "savings_big_sale",
-      "payments_two_prices",
-      "payments_receipt",
+  it("ships nine lesson pins (three «скоро») and three mini-games inside «Покупки», every answer explained", () => {
+    const pins = content.tasks.filter((t) => !t.correction && !t.parent);
+    expect(pins.map((t) => t.id)).toEqual([
+      "budget_what",
+      "budget_plan",
+      "budget_3",
+      "savings_what",
+      "savings_where",
+      "savings_3",
+      "payments_pay",
+      "payments_shop",
+      "payments_3",
+    ]);
+    for (const task of pins) {
+      expect(task.pin).toBeDefined();
+      expect(task.order).toBeGreaterThan(0);
+    }
+    // Три урока Саввы ещё пишутся: точка есть, пройти нельзя.
+    expect(pins.filter((t) => t.comingSoon).map((t) => t.order)).toEqual([3, 3, 3]);
+    const playable = content.tasks.filter((t) => !t.correction && !t.comingSoon);
+    expect(content.tasks.filter((t) => t.parent === "payments_shop").map((t) => t.title)).toEqual([
+      "Скидка или ловушка",
+      "Что дешевле?",
+      "Охота за ценником",
     ]);
     expect(content.tasks.some((t) => t.id === "budget_fix_backpack" && t.correction)).toBe(true);
-    const backpackEgg = content.tasks
-      .find((t) => t.id === "budget_backpack")
-      ?.nodes[0]?.options.find((o) => o.spawnTask === "budget_fix_backpack");
-    expect(backpackEgg?.effects).toEqual([
+    const spawn = content.tasks
+      .find((t) => t.id === "budget_plan")
+      ?.nodes.flatMap((n) => n.options ?? [])
+      .find((o) => o.spawnTask === "budget_fix_backpack");
+    expect(spawn?.effects).toEqual([
       { meter: "mood", delta: 5 },
       { meter: "care", delta: -15 },
     ]);
 
+    // Т/З: ≥6 Заданий over 3 topics, each with a right and a wrong answer.
+    for (const topic of ["budget", "savings", "payments"] as const) {
+      expect(playable.filter((t) => t.topic === topic).length).toBeGreaterThanOrEqual(2);
+    }
     for (const task of content.tasks) {
+      const verdicts = new Set<string>();
       for (const node of task.nodes) {
-        for (const option of node.options) {
+        for (const option of node.options ?? []) {
           expect(option.explanation.length).toBeGreaterThan(0);
-          expect(["good", "warn", "bad"]).toContain(option.verdict);
+          verdicts.add(option.verdict);
         }
+        for (const item of node.items ?? []) {
+          expect(item.explanation.length).toBeGreaterThan(0);
+          expect(item.bin).toBeLessThan(node.bins?.length ?? 0);
+        }
+        // Every sort item has a right basket and at least one wrong one.
+        if (node.kind === "sort") ["good", "bad"].forEach((v) => verdicts.add(v));
       }
+      if (!task.correction && !task.comingSoon) expect(verdicts.size).toBeGreaterThan(1);
     }
   });
+
+  it("reaches every node of every Задание from its start, and every Задание can end", () => {
+    for (const task of content.tasks) {
+      const byId = new Map(task.nodes.map((node) => [node.id, node]));
+      const seen = new Set<string>();
+      const stack = [task.nodes[0]!.id];
+      let canExit = false;
+      while (stack.length > 0) {
+        const id = stack.pop()!;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        const node = byId.get(id)!;
+        const targets = node.kind === "card" || node.kind === "sort" ? [node.next!] : (node.options ?? []).map((o) => o.next);
+        for (const next of targets) {
+          if (next === "exit") canExit = true;
+          else if (next !== "retry") stack.push(next);
+        }
+      }
+      expect({ task: task.id, reached: seen.size }).toEqual({ task: task.id, reached: task.nodes.length });
+      expect({ task: task.id, canExit }).toEqual({ task: task.id, canExit: true });
+    }
+  });
+
+  it("keeps the savings test and the Нужно или хочется? game from the scenario", () => {
+    const savings = content.tasks.find((t) => t.id === "savings_what");
+    expect(savings?.nodes.filter((n) => (n.kind ?? "choice") === "choice")).toHaveLength(4);
+    const sort = content.tasks.find((t) => t.id === "budget_what")?.nodes.find((n) => n.kind === "sort");
+    expect(sort?.bins).toEqual(["Нужно", "Хочется"]);
+    expect(sort?.items?.length).toBeGreaterThanOrEqual(6);
+  });
+
 });
