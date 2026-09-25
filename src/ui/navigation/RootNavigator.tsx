@@ -18,13 +18,23 @@ import type { RootStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+function closedDayWaiting(profileId: string | null, game: ReturnType<typeof useSession>["game"]): boolean {
+  if (!profileId) return false;
+  try {
+    return !game.dayState(profileId).open;
+  } catch {
+    return false;
+  }
+}
+
 export function RootNavigator() {
-  const { meta } = useSession();
-  const hasProfile = Boolean(meta.get(META_KEYS.activeProfileId));
+  const { meta, game } = useSession();
+  const profileId = meta.get(META_KEYS.activeProfileId);
+  const initialRouteName = !profileId ? "FirstRun" : closedDayWaiting(profileId, game) ? "DaySummary" : "Main";
 
   return (
     <PlayChromeProvider>
-      <Stack.Navigator initialRouteName={hasProfile ? "Main" : "FirstRun"} screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="FirstRun" component={FirstRunScreen} />
         <Stack.Screen name="Main" component={MainScreen} />
         <Stack.Screen name="Shop" component={ShopScreen} />

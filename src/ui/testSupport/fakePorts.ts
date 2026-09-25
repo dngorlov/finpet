@@ -14,7 +14,7 @@ import {
 import { checkDeposit, depositInterest, depositPayout, findOffer, maturesOnDay } from "../../core/bank";
 import { applyGoalProgress, checkWithdrawal, estimateDaysToGoal, potFromTransfers } from "../../core/savings";
 import { dayScore, explainStageChange, stageFromScores } from "../../core/stages";
-import { rewardTopUp, type TaskStepResult } from "../../core/tasks";
+import { endsGameDay, rewardTopUp, type TaskStepResult } from "../../core/tasks";
 import { loadContent } from "../../data/content";
 import { META_KEYS } from "../../data/metaKeys";
 import type {
@@ -243,9 +243,6 @@ export function createFakePorts(): SessionPorts {
         const row = requireRow(profiles, profileId);
         if (row.dayOpen) {
           return { status: "opened" as const, dayId: row.dayId, n: row.dayN, allowanceCredited: false };
-        }
-        if (row.lastClosed && !row.isDemo) {
-          return { status: "blocked" as const };
         }
         if (row.lastClosed) {
           row.dayN += 1;
@@ -519,10 +516,11 @@ export function createFakePorts(): SessionPorts {
           row.tasks.push({ taskKey: result.spawnTask, status: "available", rewardPaid: false, bestReward: 0 });
         }
       },
-      claimTaskReward(profileId, dayId, taskId, earned) {
+      claimTaskReward(profileId, dayId, taskId, earned, lesson) {
         const row = requireRow(profiles, profileId);
         requireDayForTask(row, dayId);
         const existing = row.tasks.find((task) => task.taskKey === taskId);
+        const firstCompletion = existing?.status !== "completed";
         const best = existing?.bestReward ?? 0;
         const reward = rewardTopUp(best, earned);
         if (reward > 0) {
@@ -540,6 +538,9 @@ export function createFakePorts(): SessionPorts {
           existing.bestReward = bestReward;
         } else {
           row.tasks.push({ taskKey: taskId, status: "completed", rewardPaid: bestReward > 0, bestReward });
+        }
+        if (lesson && firstCompletion && endsGameDay(lesson.task)) {
+          this.closeDay(profileId, lesson.catalog, lesson.bills ?? []);
         }
         return reward;
       },

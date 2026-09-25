@@ -160,7 +160,7 @@ export default function MainScreen({ navigation }: Props) {
                 size={HUB_PET_SIZE}
               />
             </View>
-            {hub.profile.isDemo ? <Text style={styles.body}>{strings.demoBanner}</Text> : null}
+            <Text style={styles.body}>{strings.journalDay(hub.day.n)}</Text>
             {waiting ? <Text style={styles.body}>{strings.waitingBanner}</Text> : null}
             {hub.allowanceCredited ? <Text style={styles.body}>{strings.allowanceRibbon}</Text> : null}
             <Card>

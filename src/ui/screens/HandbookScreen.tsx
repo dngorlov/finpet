@@ -39,7 +39,7 @@ export default function HandbookScreen() {
       const profile = game.getProfile(profileId);
       const progress = game.listTaskProgress(profileId);
       const openIds = new Set(
-        unlockedTasks(content.tasks, completedTaskIds(progress), profile.isDemo).map((task) => task.id),
+        unlockedTasks(content.tasks, completedTaskIds(progress)).map((task) => task.id),
       );
       setPetName(profile.petName);
       setLessons(

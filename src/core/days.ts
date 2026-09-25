@@ -14,8 +14,8 @@ export interface DayCloseInput {
 }
 
 /**
- * Whether the next Игровой день may open (§2.1): first day is always open;
- * after that, demo is back-to-back and normal play waits for local midnight.
+ * Retired calendar gate from ADR-0002. ADR-0007 opens the next Игровой день
+ * without consulting it.
  */
 export function canOpenNextDay(clock: Clock, lastClosedAt: Date | null, isDemo: boolean): boolean {
   if (lastClosedAt === null) return true;

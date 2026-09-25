@@ -64,11 +64,11 @@ describe("fake SessionGame M4 reads", () => {
     );
   });
 
-  it("blocks the next open after close for a child and stays back-to-back in Демо-режим", () => {
+  it("opens the next Игровой день right after close for a child and for Демо-режим", () => {
     const childPorts = createFakePorts();
     const childId = seedReturningChild(childPorts);
     closeScoredDay(childPorts, childId);
-    expect(childPorts.game.openDay(childId)).toEqual({ status: "blocked" });
+    expect(childPorts.game.openDay(childId)).toMatchObject({ status: "opened", n: 2, allowanceCredited: true });
 
     const demoPorts = createFakePorts();
     const demoId = seedReturningChild(demoPorts, { isDemo: true, name: "Демо", petName: "Демо" });

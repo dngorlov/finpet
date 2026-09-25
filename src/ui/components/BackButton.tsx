@@ -4,13 +4,13 @@ import { strings } from "../strings";
 import { colors, minTarget, spacing, type } from "../theme";
 import { PixelIcon } from "./Pictogram";
 
-export function BackButton() {
+export function BackButton({ onPress }: { onPress?: () => void }) {
   const navigation = useNavigation();
   return (
     <Pressable
       role="button"
       aria-label={strings.back}
-      onPress={() => navigation.goBack()}
+      onPress={() => (onPress ? onPress() : navigation.goBack())}
       style={styles.button}
     >
       <PixelIcon name="arrow-left" color={colors.text} />

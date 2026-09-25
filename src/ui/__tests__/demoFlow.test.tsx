@@ -32,9 +32,10 @@ async function confirmDemo(user: ReturnType<typeof userEvent.setup>) {
   await user.press(screen.getByRole("button", { name: "Понятно" }));
 }
 
-function expectUnlockedTitles() {
-  for (const title of demoMissions) {
-    expect(screen.getByRole("button", { name: `${title}, открыто` })).toBeOnTheScreen();
+function expectSameChain() {
+  expect(screen.getByRole("button", { name: `${demoMissions[0]}, открыто` })).toBeOnTheScreen();
+  for (const title of demoMissions.slice(1)) {
+    expect(screen.getByRole("button", { name: `${title}, закрыто` })).toBeOnTheScreen();
   }
   expect(screen.queryByText("Почини рюкзак")).not.toBeOnTheScreen();
 }
@@ -61,14 +62,15 @@ describe("Демо-режим panel", () => {
 
       await confirmDemo(user);
 
-      expect(screen.getByText("Демо: дни идут подряд")).toBeOnTheScreen();
+      expect(screen.queryByText("Демо: дни идут подряд")).not.toBeOnTheScreen();
+      expect(screen.getByText("День 1")).toBeOnTheScreen();
       expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
       expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
       expect(screen.getByLabelText(/Питомец Демо/)).toBeOnTheScreen();
       expect(screen.queryByText("Охота за ценником")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Карта" }));
       expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
-      expectUnlockedTitles();
+      expectSameChain();
       await openTab(user, "Дом");
       expect(ports.game.getProfile(childId)).toEqual(childBefore);
       expect(ports.game.listTaskProgress(childId)).toEqual(childTasksBefore);
@@ -89,13 +91,14 @@ describe("Демо-режим panel", () => {
       await user.press(screen.getByRole("button", { name: "Готово" }));
       await user.press(screen.getByRole("button", { name: "Понятно" }));
 
-      expect(screen.getByText("Демо: дни идут подряд")).toBeOnTheScreen();
+      expect(screen.queryByText("Демо: дни идут подряд")).not.toBeOnTheScreen();
+      expect(screen.getByText("День 1")).toBeOnTheScreen();
       expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
       expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
       expect(screen.queryByText("Охота за ценником")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Карта" }));
       expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
-      expectUnlockedTitles();
+      expectSameChain();
       await openTab(user, "Дом");
 
       await openMoney(user, "Журнал");

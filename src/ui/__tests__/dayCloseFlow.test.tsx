@@ -15,7 +15,7 @@ async function renderApp(ports = createFakePorts()) {
 
 describe("Итоги дня", () => {
   it(
-    "closes a confirmed day, shows skipped-mandatory Итоги дня, then waits on Main",
+    "closes a confirmed day, opens the next one, and keeps the closed day in Итоги",
     async () => {
       const ports = createFakePorts();
       seedReturningChild(ports);
@@ -27,13 +27,11 @@ describe("Итоги дня", () => {
       ports.game.closeDay(profileId, content.catalog, content.bills);
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
-      expect(screen.getByText("Новый день откроется завтра")).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: "Магазин" })).toBeDisabled();
+      expect(screen.getByText("День 2")).toBeOnTheScreen();
+      expect(screen.getByText("Пособие +20 монет")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Понятно" }));
+      expect(screen.getByRole("button", { name: "Магазин" })).toBeEnabled();
       expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
-
-      await openMoney(user, "План");
-      expect(screen.getByText("Откроется завтра")).toBeOnTheScreen();
-      await user.press(screen.getByRole("button", { name: "Дом" }));
 
       await user.press(screen.getByRole("button", { name: "Итоги" }));
       expect(screen.getByText("план 21 · потрачено 0")).toBeOnTheScreen();
@@ -58,9 +56,9 @@ describe("Итоги дня", () => {
       expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
 
       await openMoney(user, "Журнал");
-      expect(screen.getByText("Пособие +20")).toBeOnTheScreen();
+      expect(screen.getAllByText("Пособие +20")).toHaveLength(2);
       await user.press(screen.getByRole("button", { name: "Дом" }));
-      expect(screen.getByText("Новый день откроется завтра")).toBeOnTheScreen();
+      expect(screen.getByText("День 2")).toBeOnTheScreen();
     },
     15000,
   );
@@ -77,6 +75,8 @@ describe("Итоги дня", () => {
     ports.game.transferToSavings(profileId, day.dayId, 15);
     ports.game.closeDay(profileId, content.catalog, content.bills);
     const { user } = await renderApp(ports);
+    await user.press(screen.getByRole("button", { name: "Следующий день" }));
+    await user.press(screen.getByRole("button", { name: "Понятно" }));
     await user.press(screen.getByRole("button", { name: "Итоги" }));
 
     expect(screen.getByText("план 45 · потрачено 45")).toBeOnTheScreen();

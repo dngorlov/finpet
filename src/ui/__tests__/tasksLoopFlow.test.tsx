@@ -67,12 +67,9 @@ describe("Задания combined loop", () => {
       await user.press(screen.getByRole("button", { name: "Понятно" }));
 
       await user.press(screen.getByRole("button", { name: "Карта" }));
-      expect(screen.queryAllByRole("button", { name: /, закрыто$/ })).toHaveLength(0);
-      expect(screen.getAllByRole("button", { name: /, открыто$/ })).toHaveLength(6);
-      await user.press(screen.getByRole("button", { name: "Покупки, открыто" }));
-      expect(screen.getByText("Мини-игры")).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: "Играть: Скидка или ловушка" })).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: "Играть: Охота за ценником" })).toBeOnTheScreen();
+      expect(screen.getAllByRole("button", { name: /, закрыто$/ })).toHaveLength(5);
+      expect(screen.getAllByRole("button", { name: /, скоро$/ })).toHaveLength(3);
+      expect(screen.getByRole("button", { name: "Что такое бюджет?, открыто" })).toBeOnTheScreen();
     },
     30000,
   );

@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
   chooseOption,
   earnedReward,
+  endsGameDay,
   sortVerdict,
   startTask,
   type NextRef,
@@ -89,13 +90,24 @@ export default function TaskRunScreen({ navigation, route }: Props) {
     if (!profileId) return;
     const day = game.dayState(profileId);
     const earned = earnedReward(task, Object.values(verdicts));
-    const reward = game.claimTaskReward(profileId, day.dayId, task.id, earned);
+    const alreadyCompleted = game
+      .listTaskProgress(profileId)
+      .some((row) => row.taskKey === task.id && row.status === "completed");
+    const dayEnded = endsGameDay(task) && !alreadyCompleted;
+    const reward = game.claimTaskReward(
+      profileId,
+      day.dayId,
+      task.id,
+      earned,
+      dayEnded ? { task, catalog: content.catalog, bills: content.bills } : undefined,
+    );
     navigation.replace("TaskResult", {
       taskId: task.id,
       reward,
       earned,
       sceneCoins: lastStep ? coinDelta(lastStep.effects) : 0,
       points: Object.values(verdicts).reduce((sum, v) => sum + (v === "good" ? 1 : v === "warn" ? 0.5 : 0), 0),
+      dayEnded,
     });
   };
 

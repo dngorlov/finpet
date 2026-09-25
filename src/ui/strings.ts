@@ -351,7 +351,6 @@ export const strings = {
   demoName: "Демо",
   demoConfirmBody: "Демо создаёт отдельный тестовый профиль",
   demoResetConfirmBody: "Демо вернётся к первому игровому дню",
-  demoBanner: "Демо: дни идут подряд",
   demoReset: "Сбросить демо",
   adultDaysEmpty: "Игровых дней пока нет — это нормально.",
   adultTopicLine: (topic: string, done: number, total: number) => {

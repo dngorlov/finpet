@@ -16,5 +16,5 @@ The play shell was one hub: a grid of equal tiles (План, Магазин, К�
 ## Consequences
 
 - Карта is the short name of Карта заданий. Прогресс is no longer a screen: Итоги is the reopenable record on Дом, Журнал lives under Деньги, and Словарик is the handbook on the map.
-- «Закончить день» is gone. ADR-0002 still stands: a normal Игровой день unlocks on the next calendar morning, and Демо-режим runs days back-to-back. No child control closes a day until the mission rule is specified.
-- The roadmap and requirements describe this shell. ADR-0002 is unchanged.
+- «Закончить день» is gone. A pinned Урок's first completion closes the Игровой день (ADR-0007, which supersedes ADR-0002).
+- The roadmap and requirements describe this shell.

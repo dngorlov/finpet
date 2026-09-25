@@ -95,7 +95,7 @@ describe("mission unlock chain", () => {
     fixture({ id: "bonus", topic: "payments", order: 3, requires: "payments_2" }),
     fixture({ id: "budget_fix_backpack", topic: "budget", correction: true }),
   ];
-  const open = (done: string[], demo = false) => unlockedTasks(tasks, new Set(done), demo).map((t) => t.id);
+  const open = (done: string[]) => unlockedTasks(tasks, new Set(done)).map((t) => t.id);
 
   it("opens only budget #1 at first and hides correction tasks", () => {
     expect(open([])).toEqual(["budget_1"]);
@@ -113,8 +113,8 @@ describe("mission unlock chain", () => {
     expect(missionPrerequisite(tasks[1]!, tasks)).toBeNull();
   });
 
-  it("opens every mission at once in Демо-режим, with no calendar gate", () => {
-    expect(open([], true)).toEqual(["budget_1", "budget_2", "savings_1", "payments_1", "payments_2", "bonus"]);
+  it("uses the same chain whether or not the profile is Демо-режим", () => {
+    expect(open([])).toEqual(["budget_1"]);
   });
 });
 
@@ -127,9 +127,8 @@ describe("mini-games inside a lesson sheet and «скоро» pins", () => {
 
   it("keeps games off the chain, opens them after the parent, and never opens a «скоро» pin", () => {
     expect(missionPrerequisite(tasks[2]!, tasks)?.id).toBe("budget_1");
-    expect(unlockedTasks(tasks, new Set(), false).map((t) => t.id)).toEqual(["budget_1"]);
-    expect(unlockedTasks(tasks, new Set(["budget_1"]), false).map((t) => t.id)).toEqual(["budget_1", "game"]);
-    expect(unlockedTasks(tasks, new Set(), true).map((t) => t.id)).toEqual(["budget_1", "game"]);
+    expect(unlockedTasks(tasks, new Set()).map((t) => t.id)).toEqual(["budget_1"]);
+    expect(unlockedTasks(tasks, new Set(["budget_1"])).map((t) => t.id)).toEqual(["budget_1", "game"]);
   });
 });
 

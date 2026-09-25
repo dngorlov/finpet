@@ -45,8 +45,9 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       ports.game.closeDay(childId, content.catalog, content.bills);
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
-      expect(screen.getByText("Новый день откроется завтра")).toBeOnTheScreen();
-      expect(screen.getByRole("button", { name: "Магазин" })).toBeDisabled();
+      expect(screen.getByText("День 2")).toBeOnTheScreen();
+      expect(screen.getByText("Пособие +20 монет")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Понятно" }));
       expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
 
       await user.press(screen.getByRole("button", { name: "Итоги" }));
@@ -66,9 +67,9 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       const childAfterClose = ports.game.getProfile(childId);
       const childTasksAfterClose = ports.game.listTaskProgress(childId);
       const childClosed = ports.game.lastClosedDay(childId);
-      expect(childAfterClose.balance).toBe(130);
+      expect(childAfterClose.balance).toBe(150);
       expect(childClosed?.n).toBe(1);
-      expect(ports.game.dayState(childId).open).toBe(false);
+      expect(ports.game.dayState(childId)).toMatchObject({ open: true, n: 2 });
 
       await passAdultGate(user);
       await user.press(screen.getByRole("button", { name: "Демо-режим" }));
@@ -76,12 +77,14 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       await user.press(screen.getByRole("button", { name: "Готово" }));
       await user.press(screen.getByRole("button", { name: "Понятно" }));
 
-      expect(screen.getByText("Демо: дни идут подряд")).toBeOnTheScreen();
+      expect(screen.queryByText("Демо: дни идут подряд")).not.toBeOnTheScreen();
+      expect(screen.getByText("День 1")).toBeOnTheScreen();
       expect(screen.queryByText("Охота за ценником")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Карта" }));
       expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
-      for (const title of demoMissions) {
-        expect(screen.getByRole("button", { name: `${title}, открыто` })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: `${demoMissions[0]}, открыто` })).toBeOnTheScreen();
+      for (const title of demoMissions.slice(1)) {
+        expect(screen.getByRole("button", { name: `${title}, закрыто` })).toBeOnTheScreen();
       }
       await openTab(user, "Дом");
 
@@ -111,14 +114,16 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       await user.press(screen.getByRole("button", { name: "Готово" }));
       await user.press(screen.getByRole("button", { name: "Понятно" }));
 
-      expect(screen.getByText("Демо: дни идут подряд")).toBeOnTheScreen();
+      expect(screen.queryByText("Демо: дни идут подряд")).not.toBeOnTheScreen();
+      expect(screen.getByText("День 1")).toBeOnTheScreen();
       expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
       expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
       expect(screen.queryByText("Охота за ценником")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Карта" }));
       expect(screen.getByText("Что такое бюджет?")).toBeOnTheScreen();
-      for (const title of demoMissions) {
-        expect(screen.getByRole("button", { name: `${title}, открыто` })).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: `${demoMissions[0]}, открыто` })).toBeOnTheScreen();
+      for (const title of demoMissions.slice(1)) {
+        expect(screen.getByRole("button", { name: `${title}, закрыто` })).toBeOnTheScreen();
       }
       await openTab(user, "Дом");
 
@@ -133,12 +138,12 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       await passAdultGate(user);
       await user.press(screen.getByRole("button", { name: "Демо-режим" }));
 
-      expect(screen.getByText("Новый день откроется завтра")).toBeOnTheScreen();
-      expect(screen.getByLabelText("Баланс 130")).toBeOnTheScreen();
-      expect(screen.queryByText("Демо: дни идут подряд")).not.toBeOnTheScreen();
+      expect(screen.queryByText("Новый день откроется завтра")).not.toBeOnTheScreen();
+      expect(screen.getByLabelText("Баланс 150")).toBeOnTheScreen();
+      expect(screen.getByText("День 2")).toBeOnTheScreen();
       expect(ports.game.getProfile(childId)).toEqual(childAfterClose);
       expect(ports.game.listTaskProgress(childId)).toEqual(childTasksAfterClose);
-      expect(ports.game.dayState(childId).open).toBe(false);
+      expect(ports.game.dayState(childId)).toMatchObject({ open: true, n: 2 });
       expect(ports.game.lastClosedDay(childId)?.n).toBe(1);
     },
     60000,

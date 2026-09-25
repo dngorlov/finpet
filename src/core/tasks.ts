@@ -170,18 +170,22 @@ export function missionPrerequisite(task: TaskContent, tasks: readonly TaskConte
   return ordered.find((t) => t.topic === "budget" && (t.order ?? 1) === 1) ?? null;
 }
 
+/** A pinned Урок (not a mini-game, correction, or «скоро» pin) ends the Игровой день on its first completion. */
+export function endsGameDay(
+  task: Pick<TaskContent, "pin" | "correction" | "parent" | "comingSoon">,
+): boolean {
+  return task.pin != null && !task.correction && !task.parent && !task.comingSoon;
+}
+
 /**
- * Open missions: those whose prerequisite is completed. Демо-режим opens all
- * of them at once so a juror is never gated (§2.3, R13). No calendar gate.
+ * Open missions: those whose prerequisite is completed. The same chain in
+ * normal play and Демо-режим. The Игровой день never locks a pin.
  */
 export function unlockedTasks(
   tasks: readonly TaskContent[],
   completedIds: ReadonlySet<string>,
-  isDemo: boolean,
 ): TaskContent[] {
-  const playable = playableTasks(tasks);
-  if (isDemo) return playable;
-  return playable.filter((task) => {
+  return playableTasks(tasks).filter((task) => {
     const before = missionPrerequisite(task, tasks);
     return before === null || completedIds.has(before.id);
   });

@@ -1,6 +1,6 @@
 /**
- * Clock port (ADR-0002): every "today" read goes through here. Демо-режим
- * swaps in a ManualClock so days run back-to-back; tests inject fakes.
+ * Clock port: timestamps go through here so tests can inject a fake.
+ * Opening the next Игровой день does not consult the clock (ADR-0007).
  */
 export interface Clock {
   /** Current instant. */

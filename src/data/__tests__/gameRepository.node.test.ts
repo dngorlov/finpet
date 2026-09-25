@@ -343,7 +343,7 @@ describe("stages", () => {
 });
 
 describe("day gating", () => {
-  it("unlocks the next calendar day through a fake Clock and stays locked before midnight", () => {
+  it("opens the next Игровой день as soon as the previous one is closed, without waiting for the clock", () => {
     const clock = new FakeClock(new Date(2026, 8, 19, 18, 0, 0));
     const { game, profileId } = seed(clock);
 
@@ -351,10 +351,9 @@ describe("day gating", () => {
     if (first.status !== "opened") throw new Error("expected opened");
     game.closeDay(profileId, tinyCatalog);
 
-    expect(game.openDay(profileId)).toEqual({ status: "blocked" });
-
-    clock.set(new Date(2026, 8, 20, 0, 0, 0));
     expect(game.openDay(profileId)).toMatchObject({ status: "opened", n: 2, allowanceCredited: true });
+    expect(game.getProfile(profileId).balance).toBe(140);
+    expect(game.openDay(profileId)).toMatchObject({ status: "opened", n: 2, allowanceCredited: false });
   });
 
   it("opens days back-to-back under a ManualClock", () => {
@@ -372,7 +371,59 @@ describe("day gating", () => {
   });
 });
 
+const pinnedLesson = {
+  pin: { x: 0, y: 0, district: "центр" },
+  correction: false,
+  comingSoon: false,
+};
+
 describe("task reward", () => {
+  it("closes the open Игровой день when a pinned Урок is first claimed, and keeps those coins on that day", () => {
+    const { game, profileId } = seed();
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+
+    expect(
+      game.claimTaskReward(profileId, opened.dayId, "budget_what", 10, {
+        task: pinnedLesson,
+        catalog: tinyCatalog,
+      }),
+    ).toBe(10);
+
+    expect(game.dayState(profileId)).toMatchObject({ open: false, n: 1, dayId: opened.dayId });
+    expect(game.getProfile(profileId)).toMatchObject({ balance: 130, care: 35 });
+    expect(game.lastClosedDay(profileId)?.n).toBe(1);
+  });
+
+  it("leaves the Игровой день open for a replay, a mini-game, and a correction", () => {
+    const { game, profileId } = seed();
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+
+    expect(game.claimTaskReward(profileId, opened.dayId, "budget_what", 10)).toBe(10);
+    expect(
+      game.claimTaskReward(profileId, opened.dayId, "budget_what", 10, {
+        task: pinnedLesson,
+        catalog: tinyCatalog,
+      }),
+    ).toBe(0);
+    expect(
+      game.claimTaskReward(profileId, opened.dayId, "budget_game", 10, {
+        task: { parent: "budget_what" },
+        catalog: tinyCatalog,
+      }),
+    ).toBe(10);
+    expect(
+      game.claimTaskReward(profileId, opened.dayId, "budget_fix_backpack", 10, {
+        task: { correction: true },
+        catalog: tinyCatalog,
+      }),
+    ).toBe(10);
+
+    expect(game.dayState(profileId).open).toBe(true);
+    expect(game.getProfile(profileId)).toMatchObject({ balance: 150, care: 50 });
+  });
+
   it("pays only the improvement over the best run, so replays cannot farm coins", () => {
     const { game, sqlite, profileId } = seed();
     const opened = game.openDay(profileId);

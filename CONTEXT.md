@@ -15,7 +15,7 @@ A local game identity: the child's Питомец (its name and appearance). No 
 _Avoid_: аккаунт, регистрация, пользователь, имя игрока, game name
 
 **Демо-режим (Demo mode)**:
-An isolated test profile that walks the mandatory game loop through consecutive Game Days without waiting for real dates, resettable to its initial state.
+An isolated test profile, resettable to its initial state. Its Игровые дни advance the same way as a normal profile, and its Карта follows the same chain.
 _Avoid_: тестовый аккаунт, отладка
 
 **Взрослый раздел (Adult section)**:
@@ -33,8 +33,8 @@ _Avoid_: награда, подарок
 ### Economy
 
 **Игровой день (Game Day)**:
-One cycle of the game economy: plan → income → purchases → savings → feedback. In normal play a new Game Day unlocks on the next calendar day; in Demo mode days follow back-to-back.
-_Avoid_: период, уровень, сессия
+One numbered cycle of the game economy, starting at 1: plan → income → purchases → savings → feedback. A profile begins on day 1, already open. The first completion of a pinned Урок ends the open day. The next one begins when the child leaves Итоги дня. The calendar does not start one.
+_Avoid_: период, уровень, сессия, календарный день
 
 **Баланс (Balance)**:
 Coins available to spend right now.
@@ -45,7 +45,7 @@ The coins granted once when a Child profile is created.
 _Avoid_: приветственный подарок
 
 **Пособие (Allowance)**:
-The recurring income credited once per Game Day just for showing up.
+The recurring income credited once when an Игровой день begins. Coins from the Урок that ended the previous day are not Пособие.
 _Avoid_: ежедневный доход, логин-бонус
 
 **План (Plan)**:
@@ -53,7 +53,7 @@ The day's promised split of available coins into Обязательные, Же�
 _Avoid_: бюджет, бронь, список покупок
 
 **Итоги дня (Day summary)**:
-The screen shown when an Игровой день ends: that day's plan versus actual, score, and meter and Этап changes with explanations.
+The screen shown when an Игровой день ends: that day's plan versus actual, score, and meter and Этап changes with explanations. The result of the Урок that ended the day leads here. Leaving it begins the next Игровой день, and until then this is the only screen.
 _Avoid_: отчёт, дневник, прогресс
 
 **Итоги (Results)**:
@@ -94,7 +94,7 @@ _Avoid_: ачивка, мечта, произвольная цель
 ### Pet
 
 **Дом (Home)**:
-The child's home view: their Питомец, their current Цель, the way into Магазин, and the way into Итоги.
+The child's home view: their Питомец, the current Игровой день number under it, their current Цель, the way into Магазин, and the way into Итоги.
 _Avoid_: главная, хаб
 
 **Питомец (Pet)**:
@@ -144,7 +144,7 @@ A financial-literacy mission — an Урок, a mini-game that belongs to an У�
 _Avoid_: квест, тест
 
 **Карта заданий (Mission map)**:
-The map of Moscow districts where each Урок is a pin. The short name is Карта. Only the first budget Урок is open at first; finishing it opens the first Урок of every other topic and the next budget one; after that each topic goes in order.
+The map of Moscow districts where each Урок is a pin. The short name is Карта. Only the first budget Урок is open at first; finishing it opens the first Урок of every other topic and the next budget one; after that each topic goes in order. The Игровой день never locks a pin. A replay, a mini-game, or a correction does not end the day.
 _Avoid_: список заданий, уровни
 
 **Журнал (History)**:

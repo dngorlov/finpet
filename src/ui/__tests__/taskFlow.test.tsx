@@ -38,6 +38,33 @@ async function playBudgetWhat(user: User, { mistakes = 0 }: { mistakes?: number 
 }
 
 describe("Карта заданий", () => {
+  it("shows the open Игровой день under the pet", async () => {
+    const ports = createFakePorts();
+    seedReturningChild(ports);
+    await renderApp(ports);
+    expect(screen.getByText("День 1")).toBeOnTheScreen();
+  });
+
+  it("opens Итоги дня when a day has ended and the next one has not begun", async () => {
+    const ports = createFakePorts();
+    const profileId = seedReturningChild(ports);
+    const day = ports.game.dayState(profileId);
+    const lesson = ports.content.tasks.find((task) => task.id === "budget_what");
+    if (!lesson) throw new Error("нет урока");
+    ports.game.claimTaskReward(profileId, day.dayId, lesson.id, 10, {
+      task: lesson,
+      catalog: ports.content.catalog,
+      bills: ports.content.bills,
+    });
+
+    const { user } = await renderApp(ports);
+    expect(screen.getByText("Сытость -15: пропущен обед")).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Магазин" })).not.toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Следующий день" }));
+    expect(screen.getByText("День 2")).toBeOnTheScreen();
+    expect(screen.getByText("Пособие +20 монет")).toBeOnTheScreen();
+  });
+
   it(
     "opens only «Что такое бюджет?», pays by score, then opens the next lessons and pays only a better replay",
     async () => {
@@ -66,7 +93,14 @@ describe("Карта заданий", () => {
       expect(screen.getByText("+8 монет")).toBeOnTheScreen();
       expect(screen.getByText("За лучший ответ можно получить ещё 2")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Понятно" }));
-      await user.press(screen.getByRole("button", { name: "На карту" }));
+      await user.press(screen.getByRole("button", { name: "Итоги дня" }));
+
+      expect(screen.getByText("Сытость -15: пропущен обед")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Следующий день" }));
+      expect(screen.getByText("День 2")).toBeOnTheScreen();
+      expect(screen.getByText("Пособие +20 монет")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Понятно" }));
+      await user.press(screen.getByRole("button", { name: "Карта" }));
 
       expect(screen.getByRole("button", { name: "Что такое бюджет?, пройдено" })).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Планирование бюджета, открыто" })).toBeOnTheScreen();
@@ -74,6 +108,7 @@ describe("Карта заданий", () => {
       expect(screen.getByRole("button", { name: "Платежи, открыто" })).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Где живут накопления?, закрыто" })).toBeOnTheScreen();
       expect(screen.getAllByRole("button", { name: "Новый урок, скоро" })).toHaveLength(3);
+      await user.press(screen.getByRole("button", { name: "Что такое бюджет?, пройдено" }));
       expect(screen.getByText("Лучший результат: 8 из 10 монет")).toBeOnTheScreen();
 
       await user.press(screen.getByRole("button", { name: "Пройти ещё раз" }));
@@ -87,7 +122,9 @@ describe("Карта заданий", () => {
 
   it("retries a wrong quiz answer and scores only the first try", async () => {
     const ports = createFakePorts();
-    seedReturningChild(ports, { isDemo: true, name: "Демо", petName: "Демо" });
+    const profileId = seedReturningChild(ports);
+    const day = ports.game.dayState(profileId);
+    ports.game.claimTaskReward(profileId, day.dayId, "budget_what", 10);
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Карта" }));
@@ -97,7 +134,7 @@ describe("Карта заданий", () => {
     await user.press(screen.getByRole("button", { name: "Дальше" }));
     await user.press(screen.getByRole("button", { name: "Проверить себя" }));
 
-    expect(screen.getByText(/У питомца Демо есть 50 монет/)).toBeOnTheScreen();
+    expect(screen.getByText(/У питомца Пух есть 50 монет/)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Потратить все 50 монет" }));
     expect(screen.getByRole("status", { name: "Попробуй ещё" })).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Дальше" }));
@@ -117,7 +154,9 @@ describe("Карта заданий", () => {
 
   it("spawns Почини рюкзак from the plan-vs-fact safe error", async () => {
     const ports = createFakePorts();
-    seedReturningChild(ports, { isDemo: true, name: "Демо", petName: "Демо" });
+    const profileId = seedReturningChild(ports);
+    const day = ports.game.dayState(profileId);
+    ports.game.claimTaskReward(profileId, day.dayId, "budget_what", 10);
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Карта" }));
@@ -137,7 +176,10 @@ describe("Карта заданий", () => {
     await user.press(screen.getByRole("button", { name: "Дальше" }));
     await user.press(screen.getByRole("button", { name: "Сначала распределить монеты, потом идти в магазин" }));
     await user.press(screen.getByRole("button", { name: "Дальше" }));
-    await user.press(screen.getByRole("button", { name: "На карту" }));
+    await user.press(screen.getByRole("button", { name: "Итоги дня" }));
+    await user.press(screen.getByRole("button", { name: "Следующий день" }));
+    await user.press(screen.getByRole("button", { name: "Понятно" }));
+    await user.press(screen.getByRole("button", { name: "Карта" }));
 
     expect(screen.getByText("Исправить ошибку")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Почини рюкзак" })).toBeOnTheScreen();

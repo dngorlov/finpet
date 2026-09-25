@@ -11,7 +11,6 @@ export function completedTaskIds(progress: readonly TaskProgressView[]): Set<str
 /** Pending correction first, then the first open unfinished mission on the map. */
 export function preferredHubTask(
   tasks: readonly TaskContent[],
-  isDemo: boolean,
   progress: readonly TaskProgressView[],
 ): TaskContent | null {
   const byKey = new Map(progress.map((row) => [row.taskKey, row]));
@@ -22,7 +21,7 @@ export function preferredHubTask(
     if (task?.correction && row.status !== "completed") return task;
   }
 
-  const unlocked = unlockedTasks(tasks, completedTaskIds(progress), isDemo);
+  const unlocked = unlockedTasks(tasks, completedTaskIds(progress));
   const unfinished = unlocked.find((task) => byKey.get(task.id)?.status !== "completed");
   if (unfinished) return unfinished;
   return unlocked[0] ?? null;

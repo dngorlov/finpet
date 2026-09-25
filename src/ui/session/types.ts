@@ -9,6 +9,7 @@ import type {
   CreateProfileInput,
   DayState,
   DaySummaryView,
+  PinnedLessonClaim,
   GoalOption,
   JournalEntry,
   OpenDayResult,
@@ -49,7 +50,13 @@ export type SessionGame = {
   purchasedItemIds(profileId: string, dayId: string): string[];
   boughtAsActiveGoalCount(profileId: string): number;
   applyTaskStep(profileId: string, dayId: string, result: TaskStepResult): void;
-  claimTaskReward(profileId: string, dayId: string, taskId: string, earned: number): number;
+  claimTaskReward(
+    profileId: string,
+    dayId: string,
+    taskId: string,
+    earned: number,
+    lesson?: PinnedLessonClaim,
+  ): number;
   closeDay(profileId: string, catalog: readonly CatalogItem[], bills?: readonly DayBills[]): DaySummaryView;
 };
 

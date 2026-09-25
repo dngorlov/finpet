@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { StyleSheet, Text } from "react-native";
+import { useCallback, useState } from "react";
+import { BackHandler, StyleSheet, Text } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BackButton } from "../components/BackButton";
 import { ScreenTitle } from "../components/ScreenTitle";
@@ -19,7 +20,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "TaskResult">;
 export default function TaskResultScreen({ navigation, route }: Props) {
   const { content, game, meta } = useSession();
   const { setTab } = usePlayChrome();
-  const { taskId, reward, earned, points, sceneCoins } = route.params;
+  const { taskId, reward, earned, points, sceneCoins, dayEnded } = route.params;
   const task = content.tasks.find((item) => item.id === taskId);
   const total = task ? scoredUnits(task) : 0;
   const [best] = useState(() => {
@@ -37,19 +38,31 @@ export default function TaskResultScreen({ navigation, route }: Props) {
     };
   });
 
+  const leave = useCallback(() => {
+    if (dayEnded) {
+      navigation.replace("DaySummary");
+      return;
+    }
+    setTab("map");
+    navigation.popTo("Main");
+  }, [dayEnded, navigation, setTab]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!dayEnded) return;
+      const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+        leave();
+        return true;
+      });
+      return () => subscription.remove();
+    }, [dayEnded, leave]),
+  );
+
   return (
     <Screen
-      footer={
-        <PrimaryButton
-          label={strings.taskBackToMap}
-          onPress={() => {
-            setTab("map");
-            navigation.popTo("Main");
-          }}
-        />
-      }
+      footer={<PrimaryButton label={dayEnded ? strings.daySummaryTitle : strings.taskBackToMap} onPress={leave} />}
     >
-      <BackButton />
+      <BackButton onPress={dayEnded ? leave : undefined} />
       <ScreenTitle style={styles.title}>{task?.title ?? strings.navTasks}</ScreenTitle>
       {total > 0 ? <Text style={styles.body}>{strings.taskScore(formatPoints(points), total)}</Text> : null}
       {reward > 0 ? <Text style={styles.section}>{strings.taskEarned(reward)}</Text> : null}

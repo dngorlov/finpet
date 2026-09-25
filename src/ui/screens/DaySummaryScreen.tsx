@@ -1,4 +1,6 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useCallback } from "react";
+import { BackHandler, StyleSheet, Text, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { STAGE_NAMES } from "../../core/stages";
 import { META_KEYS } from "../../data/metaKeys";
@@ -12,6 +14,7 @@ import { Screen } from "../components/Screen";
 import { StatusStrip } from "../components/StatusStrip";
 import type { RootStackParamList } from "../navigation/types";
 import { PetView } from "../pet/PetView";
+import { usePlayChrome } from "../navigation/playChrome";
 import { useSession } from "../session/SessionProvider";
 import { dayCloseLines, strings } from "../strings";
 import { colors, spacing, type } from "../theme";
@@ -33,6 +36,7 @@ function meterReason(summary: DaySummaryView): string[] {
 
 export default function DaySummaryScreen({ navigation }: Props) {
   const { game, meta } = useSession();
+  const { setTab } = usePlayChrome();
   const profileId = meta.get(META_KEYS.activeProfileId);
   const summary = profileId ? game.lastClosedDay(profileId) : null;
   const profile = profileId ? game.getProfile(profileId) : null;
@@ -47,11 +51,28 @@ export default function DaySummaryScreen({ navigation }: Props) {
   }
 
   const reasons = meterReason(summary);
-  const primary = profile.isDemo ? strings.nextDay : strings.waitTomorrow;
+  const beginNextDay = useCallback(() => {
+    setTab("home");
+    if (navigation.canGoBack()) {
+      navigation.popTo("Main");
+      return;
+    }
+    navigation.navigate("Main");
+  }, [navigation, setTab]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+        beginNextDay();
+        return true;
+      });
+      return () => subscription.remove();
+    }, [beginNextDay]),
+  );
 
   return (
-    <Screen header={<StatusStrip />} footer={<PrimaryButton label={primary} onPress={() => navigation.goBack()} />}>
-      <BackButton />
+    <Screen header={<StatusStrip />} footer={<PrimaryButton label={strings.nextDay} onPress={beginNextDay} />}>
+      <BackButton onPress={beginNextDay} />
       <ScreenTitle style={styles.title}>{strings.daySummaryTitle}</ScreenTitle>
       <PetView
         species={profile.species}

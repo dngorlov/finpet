@@ -2,7 +2,7 @@ import { and, desc, eq, isNotNull, isNull, like } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import type { Clock } from "../../core/clock";
 import { ECONOMY, METERS } from "../../core/config";
-import { canOpenNextDay, dayId as makeDayId } from "../../core/days";
+import { dayId as makeDayId } from "../../core/days";
 import {
   applyMeterDelta,
   billsForDay,
@@ -26,7 +26,7 @@ import {
   stageFromScores,
   type Stage,
 } from "../../core/stages";
-import { rewardTopUp, type TaskStepResult } from "../../core/tasks";
+import { endsGameDay, rewardTopUp, type TaskContent, type TaskStepResult } from "../../core/tasks";
 import { createLocalId } from "../localId";
 import { META_KEYS } from "../metaKeys";
 import * as tables from "../schema";
@@ -68,6 +68,13 @@ export interface DaySummaryView {
 }
 
 export type CloseDayResult = DaySummaryView;
+
+/** Passed with a reward claim so a pinned Урок can end the open Игровой день. */
+export interface PinnedLessonClaim {
+  task: Pick<TaskContent, "pin" | "correction" | "parent" | "comingSoon">;
+  catalog: readonly CatalogItem[];
+  bills?: readonly DayBills[];
+}
 
 export interface DepositView {
   id: string;
@@ -500,6 +507,70 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       .run();
   }
 
+  function closeOpenDay(
+    tx: GameDb,
+    profileId: string,
+    catalog: readonly CatalogItem[],
+    bills: readonly DayBills[],
+  ): DaySummaryView {
+    const day = openDayRow(tx, profileId);
+    if (!day) throw new Error("Нет открытого игрового дня");
+    const bought = tx.select().from(tables.purchases).where(eq(tables.purchases.dayId, day.id)).all();
+    const plan = planForDay(tx, day.id);
+    const deposits = tx
+      .select()
+      .from(tables.savingsTransfers)
+      .where(and(eq(tables.savingsTransfers.dayId, day.id), eq(tables.savingsTransfers.kind, "in")))
+      .all();
+    const mandatoryIds =
+      bills.length > 0
+        ? billsForDay(day.n, bills).items
+        : catalog.filter((item) => item.kind === "mandatory").map((item) => item.id);
+    const boughtIds = new Set(bought.map((row) => row.itemId));
+    const mandatoryCovered = mandatoryIds.every((id) => boughtIds.has(id));
+    const confirmed = plan?.status === "confirmed" ? plan : null;
+    const withinPlan = planKept({
+      plan: confirmed
+        ? { mandatory: confirmed.mandatory, optional: confirmed.optional, savings: confirmed.savings }
+        : null,
+      actual: actualForDay(tx, day.id),
+    });
+    const deposited = deposits.length > 0;
+    const score = dayScore({ mandatoryCovered, withinPlan, deposited });
+    const optionalSpend = bought
+      .filter((row) => row.kind === "optional" && row.paidFrom !== "savings")
+      .reduce((sum, row) => sum + row.price, 0);
+    const unpaid = unpaidBillFlags(mandatoryIds, boughtIds, catalog);
+    const deltas = dayCloseMeterDeltas({
+      missedFood: unpaid.missedFood,
+      missedOtherBill: unpaid.missedOtherBill,
+      optionalSpend,
+      optionalPlan: confirmed ? confirmed.optional : null,
+    });
+    if (deltas.care) applyMeter(tx, profileId, day.id, "care", deltas.care, "day_close_food");
+    if (deltas.missedNeed) applyMeter(tx, profileId, day.id, "mood", deltas.missedNeed, "day_close_need");
+    if (deltas.overspend) applyMeter(tx, profileId, day.id, "mood", deltas.overspend, "day_close_overspend");
+    const previous = tx.select().from(tables.dayScores).where(eq(tables.dayScores.profileId, profileId)).all();
+    const scores = [...previous.map((row) => row.score), score];
+    const to = stageFromScores(scores);
+    tx.insert(tables.dayScores)
+      .values({
+        id: newId("score"),
+        profileId,
+        dayId: day.id,
+        mandatoryCovered: mandatoryCovered ? 1 : 0,
+        withinPlan: withinPlan ? 1 : 0,
+        deposited: deposited ? 1 : 0,
+        score,
+      })
+      .run();
+    tx.update(tables.petState).set({ stage: STAGE_CODES[to] }).where(eq(tables.petState.profileId, profileId)).run();
+    tx.update(tables.days).set({ closedAt: nowMs() }).where(eq(tables.days.id, day.id)).run();
+    const summary = readDaySummary(tx, profileId, day.id);
+    if (!summary) throw new Error("Нет итогов закрытого дня");
+    return summary;
+  }
+
   return {
     createProfile(input: CreateProfileInput): string {
       const id = input.id ?? createLocalId("profile");
@@ -582,11 +653,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           .where(eq(tables.days.profileId, profileId))
           .orderBy(desc(tables.days.n))
           .get();
-        const row = profile(tx, profileId);
-        const isDemo = row.isDemo === 1;
-        if (last?.closedAt != null && !canOpenNextDay(clock, new Date(last.closedAt), isDemo)) {
-          return { status: "blocked" as const };
-        }
+        profile(tx, profileId);
         const n = last ? last.n + 1 : 1;
         const dayId = makeDayId(profileId, n);
         tx.insert(tables.days)
@@ -1036,71 +1103,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       catalog: readonly CatalogItem[],
       bills: readonly DayBills[] = [],
     ): CloseDayResult {
-      return db.transaction((tx) => {
-        const day = openDayRow(tx, profileId);
-        if (!day) throw new Error("Нет открытого игрового дня");
-        const bought = tx.select().from(tables.purchases).where(eq(tables.purchases.dayId, day.id)).all();
-        const plan = planForDay(tx, day.id);
-        const deposits = tx
-          .select()
-          .from(tables.savingsTransfers)
-          .where(and(eq(tables.savingsTransfers.dayId, day.id), eq(tables.savingsTransfers.kind, "in")))
-          .all();
-        const mandatoryIds =
-          bills.length > 0
-            ? billsForDay(day.n, bills).items
-            : catalog.filter((item) => item.kind === "mandatory").map((item) => item.id);
-        const boughtIds = new Set(bought.map((row) => row.itemId));
-        const mandatoryCovered = mandatoryIds.every((id) => boughtIds.has(id));
-        const confirmed = plan?.status === "confirmed" ? plan : null;
-        const withinPlan = planKept({
-          plan: confirmed
-            ? { mandatory: confirmed.mandatory, optional: confirmed.optional, savings: confirmed.savings }
-            : null,
-          actual: actualForDay(tx, day.id),
-        });
-        const deposited = deposits.length > 0;
-        const score = dayScore({ mandatoryCovered, withinPlan, deposited });
-        const optionalSpend = bought
-          .filter((row) => row.kind === "optional" && row.paidFrom !== "savings")
-          .reduce((sum, row) => sum + row.price, 0);
-        const unpaid = unpaidBillFlags(mandatoryIds, boughtIds, catalog);
-        const deltas = dayCloseMeterDeltas({
-          missedFood: unpaid.missedFood,
-          missedOtherBill: unpaid.missedOtherBill,
-          optionalSpend,
-          optionalPlan: confirmed ? confirmed.optional : null,
-        });
-        if (deltas.care) applyMeter(tx, profileId, day.id, "care", deltas.care, "day_close_food");
-        if (deltas.missedNeed) applyMeter(tx, profileId, day.id, "mood", deltas.missedNeed, "day_close_need");
-        if (deltas.overspend) applyMeter(tx, profileId, day.id, "mood", deltas.overspend, "day_close_overspend");
-        const previous = tx
-          .select()
-          .from(tables.dayScores)
-          .where(eq(tables.dayScores.profileId, profileId))
-          .all();
-        const scores = [...previous.map((row) => row.score), score];
-        const to = stageFromScores(scores);
-        tx.insert(tables.dayScores)
-          .values({
-            id: newId("score"),
-            profileId,
-            dayId: day.id,
-            mandatoryCovered: mandatoryCovered ? 1 : 0,
-            withinPlan: withinPlan ? 1 : 0,
-            deposited: deposited ? 1 : 0,
-            score,
-          })
-          .run();
-        tx.update(tables.petState)
-          .set({ stage: STAGE_CODES[to] })
-          .where(eq(tables.petState.profileId, profileId))
-          .run();
-        tx.update(tables.days).set({ closedAt: nowMs() }).where(eq(tables.days.id, day.id)).run();
-        const summary = readDaySummary(tx, profileId, day.id);
-        if (!summary) throw new Error("Нет итогов закрытого дня");
-        return summary;
-      });
+      return db.transaction((tx) => closeOpenDay(tx, profileId, catalog, bills));
     },
 
     applyTaskStep(profileId: string, dayId: string, result: TaskStepResult): void {
@@ -1145,7 +1148,13 @@ export function createGameRepository(db: GameDb, clock: Clock) {
      * Finishes a Задание with `earned` coins (score × max, computed by the
      * caller from core/tasks). Pays only the top-up over the best earlier run.
      */
-    claimTaskReward(profileId: string, dayId: string, taskId: string, earned: number): number {
+    claimTaskReward(
+      profileId: string,
+      dayId: string,
+      taskId: string,
+      earned: number,
+      lesson?: PinnedLessonClaim,
+    ): number {
       return db.transaction((tx) => {
         requireDayForTask(tx, profileId, dayId);
         if (earned < 0) throw new Error("Награда не может быть отрицательной");
@@ -1154,6 +1163,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           .from(tables.taskProgress)
           .where(and(eq(tables.taskProgress.profileId, profileId), eq(tables.taskProgress.taskKey, taskId)))
           .get();
+        const firstCompletion = existing?.status !== "completed";
         const best = existing?.bestReward ?? 0;
         const reward = rewardTopUp(best, earned);
         if (reward > 0) {
@@ -1182,6 +1192,9 @@ export function createGameRepository(db: GameDb, clock: Clock) {
               completedAt: nowMs(),
             })
             .run();
+        }
+        if (lesson && firstCompletion && endsGameDay(lesson.task)) {
+          closeOpenDay(tx, profileId, lesson.catalog, lesson.bills ?? []);
         }
         return reward;
       });

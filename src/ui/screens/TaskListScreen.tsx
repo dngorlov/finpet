@@ -53,7 +53,6 @@ export default function TaskListScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { game, meta, content } = useSession();
   const [progress, setProgress] = useState<TaskProgressView[]>([]);
-  const [isDemo, setIsDemo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mapWidth, setMapWidth] = useState(0);
 
@@ -61,14 +60,12 @@ export default function TaskListScreen() {
     useCallback(() => {
       const profileId = meta.get(META_KEYS.activeProfileId);
       if (!profileId) return;
-      const profile = game.getProfile(profileId);
       const rows = game.listTaskProgress(profileId);
-      setIsDemo(profile.isDemo);
       setProgress(rows);
       setSelectedId(
         (current) =>
           current ??
-          preferredHubTask(content.tasks, profile.isDemo, rows)?.id ??
+          preferredHubTask(content.tasks, rows)?.id ??
           null,
       );
     }, [content.tasks, game, meta]),
@@ -77,7 +74,7 @@ export default function TaskListScreen() {
   const byKey = new Map(progress.map((row) => [row.taskKey, row]));
   const completed = completedTaskIds(progress);
   const openIds = new Set(
-    unlockedTasks(content.tasks, completed, isDemo).map((task) => task.id),
+    unlockedTasks(content.tasks, completed).map((task) => task.id),
   );
   const missions = taskUnlockOrder(content.tasks);
   const corrections = correctionTasks(content.tasks, progress);

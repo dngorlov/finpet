@@ -62,6 +62,8 @@ describe("Прогресс", () => {
     closeScoredDay(ports, profileId);
 
     const { user } = await renderApp(ports);
+    await user.press(screen.getByRole("button", { name: "Следующий день" }));
+    await user.press(screen.getByRole("button", { name: "Понятно" }));
     await openMoney(user, "Журнал");
     expect(screen.getByText("Задание: Что такое бюджет? +10")).toBeOnTheScreen();
     expect(screen.getByText("Задание +8")).toBeOnTheScreen();
