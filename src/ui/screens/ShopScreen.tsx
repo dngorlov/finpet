@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
 import type { CatalogItemContent } from "../../data/content";
 import type { DayState, SavingsView } from "../../data/repositories/gameRepository";
-import { GlyphLabel, Pictogram } from "../components/Pictogram";
+import { Pictogram } from "../components/Pictogram";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
@@ -21,6 +21,7 @@ import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, font, minTarget, radius, spacing, type } from "../theme";
+import { METERS } from "../../core/config";
 import { billsForDay, itemMeterEffects, meterDeltaMap } from "../../core/economy";
 import { confirmedLeftover, leftoverAfterTap } from "./planLeftover";
 
@@ -45,12 +46,27 @@ function meterGlyph(meter: "care" | "mood") {
   return meter === "care" ? strings.careIcon : strings.moodIcon;
 }
 
+function feedsSatiety(item: CatalogItemContent) {
+  return itemMeterEffects(item).some((effect) => effect.meter === "care");
+}
+
+function skipLine(item: CatalogItemContent) {
+  const food = feedsSatiety(item);
+  const meter = food ? strings.care : strings.mood;
+  const delta = food ? METERS.missedFoodPenalty : METERS.missedOtherBillPenalty;
+  return {
+    meter: food ? ("care" as const) : ("mood" as const),
+    delta,
+    spoken: strings.shopSkipA11y(item.name, meter, delta, !food),
+  };
+}
+
 function rowAnnouncement(item: CatalogItemContent, balance: number, flags: { due: boolean; goal: boolean; bought: boolean }) {
   const parts = [item.name, strings.shopPrice(item.price)];
   for (const effect of itemMeterEffects(item)) {
     parts.push(strings.shopMeterA11y(meterWord(effect.meter), effect.delta));
   }
-  if (flags.due) parts.push(strings.shopBillChip);
+  if (flags.due && !flags.bought) parts.push(skipLine(item).spoken);
   if (flags.goal) parts.push(strings.shopGoalChip);
   if (flags.bought) parts.push(strings.shopBought);
   if (item.once) parts.push(strings.shopOnceChip);
@@ -62,7 +78,7 @@ function CoinPrice({ amount }: { amount: number }) {
   return (
     <View style={styles.price}>
       <Text style={styles.priceNumber}>{amount}</Text>
-      <Text style={styles.priceWord}>монет</Text>
+      <Pictogram glyph={strings.balanceIcon} />
     </View>
   );
 }
@@ -70,6 +86,7 @@ function CoinPrice({ amount }: { amount: number }) {
 function ItemHead({ item, shortfall }: { item: CatalogItemContent; shortfall: number | null }) {
   return (
     <View style={styles.itemTop}>
+      <Text style={styles.emoji}>{item.icon}</Text>
       <Text style={[styles.section, styles.name]}>{item.name}</Text>
       <View style={styles.priceCol}>
         <CoinPrice amount={item.price} />
@@ -79,25 +96,47 @@ function ItemHead({ item, shortfall }: { item: CatalogItemContent; shortfall: nu
   );
 }
 
-function MeterLines({ item, announce }: { item: CatalogItemContent; announce: boolean }) {
+function EffectChips({
+  item,
+  due,
+  bought,
+  announce,
+}: {
+  item: CatalogItemContent;
+  due: boolean;
+  bought: boolean;
+  announce: boolean;
+}) {
+  const skip = due && !bought ? skipLine(item) : null;
   return (
-    <>
+    <View style={styles.chips}>
       {itemMeterEffects(item).map((effect) => {
         const spoken = strings.shopMeterA11y(meterWord(effect.meter), effect.delta);
         return (
-          <View
-            key={effect.meter}
-            accessible={announce}
-            accessibilityLabel={announce ? spoken : undefined}
-            aria-hidden={announce ? undefined : true}
-            accessibilityElementsHidden={announce ? undefined : true}
-            importantForAccessibility={announce ? undefined : "no-hide-descendants"}
-          >
-            <GlyphLabel glyph={meterGlyph(effect.meter)} label={strings.shopMeterDelta(effect.delta)} labelStyle={styles.body} />
+          <View key={effect.meter} style={styles.chip} accessible={announce} accessibilityLabel={announce ? spoken : undefined}>
+            <Pictogram glyph={meterGlyph(effect.meter)} />
+            <Text style={styles.chipText}>{strings.shopMeterDelta(effect.delta)}</Text>
           </View>
         );
       })}
-    </>
+      {skip ? (
+        <View style={styles.chip} accessible={announce} accessibilityLabel={announce ? skip.spoken : undefined}>
+          <Pictogram glyph={meterGlyph(skip.meter)} />
+          <Text style={styles.chipText}>{strings.shopSkipDelta(skip.delta)}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function StateChips({ goal, bought, once }: { goal: boolean; bought: boolean; once: boolean }) {
+  if (!goal && !bought && !once) return null;
+  return (
+    <View style={styles.chips}>
+      {goal ? <StateChip label={strings.shopGoalChip} /> : null}
+      {bought ? <StateChip label={strings.shopBought} icon={strings.selectedCheck} /> : null}
+      {once ? <StateChip label={strings.shopOnceChip} /> : null}
+    </View>
   );
 }
 
@@ -367,13 +406,8 @@ export default function ShopScreen({ navigation }: Props) {
               >
                 <Card>
                   <ItemHead item={item} shortfall={shortfall} />
-                  <MeterLines item={item} announce={false} />
-                  <View style={styles.chips}>
-                    {flags.due ? <StateChip label={strings.shopBillChip} /> : null}
-                    {flags.goal ? <StateChip label={strings.shopGoalChip} /> : null}
-                    {flags.bought ? <StateChip label={strings.shopBought} icon={strings.selectedCheck} /> : null}
-                    {item.once ? <StateChip label={strings.shopOnceChip} /> : null}
-                  </View>
+                    <EffectChips item={item} due={flags.due} bought={flags.bought} announce={false} />
+                    <StateChips goal={flags.goal} bought={flags.bought} once={Boolean(item.once)} />
                 </Card>
               </Pressable>
             );
@@ -384,11 +418,17 @@ export default function ShopScreen({ navigation }: Props) {
         <Card>
           <ItemHead item={phase.item} shortfall={null} />
           <Text style={styles.body}>{phase.item.description}</Text>
-          <MeterLines item={phase.item} announce />
-          <View style={styles.chips}>
-            {dueIds.has(phase.item.id) ? <StateChip label={strings.shopBillChip} /> : null}
-            {activeKey === phase.item.id ? <StateChip label={strings.shopGoalChip} /> : null}
-          </View>
+          <EffectChips
+            item={phase.item}
+            due={dueIds.has(phase.item.id)}
+            bought={bought.includes(phase.item.id)}
+            announce
+          />
+          <StateChips
+            goal={activeKey === phase.item.id}
+            bought={bought.includes(phase.item.id)}
+            once={Boolean(phase.item.once)}
+          />
           {balance >= phase.item.price ? (
             <Text style={styles.body}>{strings.shopAfterBuy(balance - phase.item.price)}</Text>
           ) : (
@@ -486,9 +526,8 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     lineHeight: 24,
   },
-  priceWord: {
-    color: colors.text,
-    fontSize: type.body,
+  emoji: {
+    fontSize: 24,
   },
   chips: {
     flexDirection: "row",

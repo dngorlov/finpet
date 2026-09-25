@@ -14,6 +14,8 @@ const meterEffectSchema = z.object({
 const catalogItemSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
+  /** Emoji shown beside the name in Магазин. Hidden from TalkBack. */
+  icon: z.string().min(1),
   kind: z.enum(["mandatory", "optional"]),
   price: z.number().int().nonnegative(),
   effect: meterEffectSchema,

@@ -4,6 +4,7 @@
     {
       "id": "lunch",
       "name": "Обед",
+      "icon": "🍱",
       "kind": "mandatory",
       "price": 12,
       "effect": { "meter": "care", "delta": 10 },
@@ -13,6 +14,7 @@
     {
       "id": "school",
       "name": "Школьные принадлежности",
+      "icon": "✏️",
       "kind": "mandatory",
       "price": 10,
       "effect": { "meter": "mood", "delta": 5 },
@@ -21,6 +23,7 @@
     {
       "id": "transport",
       "name": "Проезд",
+      "icon": "🚌",
       "kind": "mandatory",
       "price": 8,
       "effect": { "meter": "mood", "delta": 5 },
@@ -29,6 +32,7 @@
     {
       "id": "medicine",
       "name": "Лекарство",
+      "icon": "💊",
       "kind": "mandatory",
       "price": 15,
       "effect": { "meter": "mood", "delta": 20 },
@@ -37,6 +41,7 @@
     {
       "id": "candy",
       "name": "Конфета",
+      "icon": "🍬",
       "kind": "optional",
       "price": 5,
       "effect": { "meter": "mood", "delta": 5 },
@@ -45,6 +50,7 @@
     {
       "id": "stickers",
       "name": "Стикеры",
+      "icon": "🌟",
       "kind": "optional",
       "price": 7,
       "effect": { "meter": "mood", "delta": 6 },
@@ -53,6 +59,7 @@
     {
       "id": "cinema",
       "name": "Кино",
+      "icon": "🎬",
       "kind": "optional",
       "price": 20,
       "effect": { "meter": "mood", "delta": 12 },
@@ -61,6 +68,7 @@
     {
       "id": "toy",
       "name": "Игрушка",
+      "icon": "🧸",
       "kind": "optional",
       "price": 25,
       "effect": { "meter": "mood", "delta": 10 },
@@ -69,6 +77,7 @@
     {
       "id": "skateboard",
       "name": "Скейтборд",
+      "icon": "🛹",
       "kind": "optional",
       "price": 90,
       "effect": { "meter": "mood", "delta": 12 },
@@ -78,6 +87,7 @@
     {
       "id": "telescope",
       "name": "Телескоп",
+      "icon": "🔭",
       "kind": "optional",
       "price": 160,
       "effect": { "meter": "mood", "delta": 15 },
@@ -87,6 +97,7 @@
     {
       "id": "bike",
       "name": "Велосипед",
+      "icon": "🚲",
       "kind": "optional",
       "price": 240,
       "effect": { "meter": "mood", "delta": 18 },

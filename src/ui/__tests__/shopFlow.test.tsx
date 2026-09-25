@@ -24,9 +24,22 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     expect(screen.getByRole("button", { name: "Обязательное" })).toBeSelected();
     expect(
-      screen.getByRole("button", { name: "Обед. 12 монет. Сытость +10. Настроение +5. Счёт" }),
+      screen.getByRole("button", {
+        name: "Обед. 12 монет. Сытость +10. Настроение +5. Если не купить Обед, Сытость −15",
+      }),
     ).toBeOnTheScreen();
-    expect(screen.getAllByText("Счёт")).toHaveLength(2);
+    expect(
+      screen.getByRole("button", {
+        name: "Проезд. 8 монет. Настроение +5. Если не купить Проезд, Настроение −15 один раз",
+      }),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByRole("button", { name: "Школьные принадлежности. 10 монет. Настроение +5" }),
+    ).toBeOnTheScreen();
+    expect(screen.getAllByText("−15")).toHaveLength(2);
+    expect(screen.getByText("🍱")).toBeOnTheScreen();
+    expect(screen.queryByText("Счёт")).not.toBeOnTheScreen();
+    expect(screen.queryByText("монет")).not.toBeOnTheScreen();
     expect(screen.queryByText("Обязательные")).not.toBeOnTheScreen();
     expect(screen.queryByText(/после покупки/)).not.toBeOnTheScreen();
     expect(screen.getByText("12")).toHaveStyle({ fontFamily: "PressStart2P_400Regular" });
@@ -34,6 +47,7 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: /^Обед/ }));
     expect(screen.getByText(lunch.description)).toBeOnTheScreen();
     expect(screen.getByLabelText("Сытость +10")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Если не купить Обед, Сытость −15")).toBeOnTheScreen();
     expect(screen.getByText("после покупки: 108 монет")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText("Купить Обед за 12?")).toBeOnTheScreen();

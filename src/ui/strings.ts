@@ -131,7 +131,11 @@ export const strings = {
   shopAfterBuy: (n: number) => `после покупки: ${n} монет`,
   shopMeterDelta: (n: number) => `+${n}`,
   shopMeterA11y: (meter: string, delta: number) => `${meter} +${delta}`,
-  shopBillChip: "Счёт",
+  shopSkipDelta: (n: number) => `−${n}`,
+  shopSkipA11y: (name: string, meter: string, delta: number, shared: boolean) =>
+    shared
+      ? `Если не купить ${name}, ${meter} −${delta} один раз`
+      : `Если не купить ${name}, ${meter} −${delta}`,
   shopGoalChip: "Цель",
   shopOnceChip: "Один раз",
   shopShortfall: (n: number) => `Не хватает ${n}`,
