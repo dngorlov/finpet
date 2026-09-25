@@ -6,6 +6,7 @@ function input(overrides: Partial<CurrentTaskInput> = {}): CurrentTaskInput {
     savingsOpen: false,
     planOpen: false,
     hasGoal: false,
+    goalReadyId: null,
     planConfirmed: false,
     billsCovered: false,
     savingsLessonPending: true,
@@ -29,6 +30,20 @@ describe("Текущая задача", () => {
     expect(
       currentTask(input({ savingsOpen: true, hasGoal: true, billsCovered: true })),
     ).toEqual({ kind: "lesson", taskId: FEATURES.planTaskId });
+  });
+
+  it("asks to buy the Цель once Копилка covers it, ahead of the План and the shop", () => {
+    expect(
+      currentTask(
+        input({
+          savingsOpen: true,
+          planOpen: true,
+          hasGoal: true,
+          goalReadyId: "lego",
+          billsCovered: false,
+        }),
+      ),
+    ).toEqual({ kind: "buy-goal", goalId: "lego" });
   });
 
   it("puts choosing a Цель, then the План, ahead of the shop", () => {

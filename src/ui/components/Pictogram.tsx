@@ -9,8 +9,6 @@ const GLYPH_ICON: Record<string, PixelIconName> = {
   "☀": "sun",
   "☺": "smile",
   "!": "square-alert",
-  "★": "star",
-  "☆": "star",
   "⚙": "gear",
   "⏳": "hourglass",
   "✏": "pencil",

@@ -3,6 +3,7 @@ import { FEATURES } from "./config";
 /** The one action Текущая задача points at. Null when nothing is left to suggest. */
 export type CurrentTask =
   | { kind: "set-goal" }
+  | { kind: "buy-goal"; goalId: string }
   | { kind: "confirm-plan" }
   | { kind: "buy-bills" }
   | { kind: "lesson"; taskId: string };
@@ -11,6 +12,8 @@ export interface CurrentTaskInput {
   savingsOpen: boolean;
   planOpen: boolean;
   hasGoal: boolean;
+  /** Копилка already covers the active Цель. */
+  goalReadyId: string | null;
   planConfirmed: boolean;
   /** Today's Счета are all bought. */
   billsCovered: boolean;
@@ -26,6 +29,7 @@ export interface CurrentTaskInput {
 /** First match wins. The two unlock lessons are never chosen from the random pool. */
 export function currentTask(input: CurrentTaskInput): CurrentTask | null {
   if (input.savingsOpen && !input.hasGoal) return { kind: "set-goal" };
+  if (input.savingsOpen && input.goalReadyId) return { kind: "buy-goal", goalId: input.goalReadyId };
   if (input.planOpen && !input.planConfirmed) return { kind: "confirm-plan" };
   if (!input.billsCovered) return { kind: "buy-bills" };
   if (!input.savingsOpen && input.savingsLessonPending) {

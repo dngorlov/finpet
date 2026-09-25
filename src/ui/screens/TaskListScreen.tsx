@@ -231,12 +231,20 @@ export default function TaskListScreen() {
   );
 }
 
+const hiddenStar = {
+  "aria-hidden": true as const,
+  accessibilityElementsHidden: true as const,
+  importantForAccessibility: "no" as const,
+};
+
 function DifficultyMarks({ level }: { level: number }) {
   return (
     <View accessible accessibilityLabel={strings.missionDifficulty(level)} style={styles.difficulty}>
       <Text style={styles.body}>{strings.missionDifficultyLabel}</Text>
       {[1, 2, 3].map((star) => (
-        <Pictogram key={star} glyph="★" color={star <= level ? colors.text : colors.subtle} />
+        <Text key={star} {...hiddenStar} style={styles.star}>
+          {star <= level ? strings.starFilled : strings.starEmpty}
+        </Text>
       ))}
     </View>
   );
@@ -429,6 +437,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 8,
+  },
+  star: {
+    fontSize: 24,
+    lineHeight: 28,
   },
   hit: {
     minHeight: minTarget,

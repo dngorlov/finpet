@@ -133,9 +133,7 @@ export const strings = {
   shopMeterA11y: (meter: string, delta: number) => `${meter} +${delta}`,
   shopSkipDelta: (n: number) => `−${n}`,
   shopSkipA11y: (name: string, meter: string, delta: number, shared: boolean) =>
-    shared
-      ? `Если не купить ${name}, ${meter} −${delta} один раз`
-      : `Если не купить ${name}, ${meter} −${delta}`,
+    shared ? `Если не купить ${name}, ${meter} −${delta} один раз` : `Если не купить ${name}, ${meter} −${delta}`,
   shopGoalChip: "Цель",
   shopOnceChip: "Один раз",
   shopShortfall: (n: number) => `Не хватает ${n}`,
@@ -146,10 +144,8 @@ export const strings = {
   shopBuyFromSavings: "Купить из копилки",
   shopOnceLabel: "Можно купить один раз",
   shopConfirmBuy: (name: string, price: number) => `Купить ${name} за ${price}?`,
-  shopConfirmReplaceGoal: (name: string, pot: number) =>
-    `Цель станет ${name}. В копилке останется ${pot}.`,
-  shopBuyActiveGoalWarn: (pot: number) =>
-    `Это твоя Цель. После покупки Цель снимется, в копилке останется ${pot}.`,
+  shopConfirmReplaceGoal: (name: string, pot: number) => `Цель станет ${name}. В копилке останется ${pot}.`,
+  shopBuyActiveGoalWarn: (pot: number) => `Это твоя Цель. После покупки Цель снимется, в копилке останется ${pot}.`,
   shopBlockedAlreadyGoal: "Это уже твоя Цель. Копи дальше в Копилке.",
   shopWaitAllowance: "Дождаться пособия",
   shopDoTask: "Выполнить задание",
@@ -159,6 +155,7 @@ export const strings = {
   goalDrop: "Без цели",
   goalEmptyPrompt: "Выбери цель",
   currentTaskSetGoal: "Текущая задача: выбрать цель",
+  currentTaskBuyGoal: (name: string) => `Текущая задача: купить «${name}»`,
   currentTaskPlan: "Текущая задача: спланировать день",
   currentTaskShop: "Текущая задача: купить нужное в Магазине",
   currentTaskLesson: (title: string) => `Текущая задача: урок «${title}»`,
@@ -183,8 +180,7 @@ export const strings = {
   savingsBuyFromSavings: "Купить из копилки",
   savingsLater: "Позже",
   savingsDropGoal: "Убрать цель",
-  savingsConfirmReplace: (name: string, pot: number) =>
-    `Цель станет ${name}. В копилке останется ${pot}.`,
+  savingsConfirmReplace: (name: string, pot: number) => `Цель станет ${name}. В копилке останется ${pot}.`,
   savingsAchievedBadge: "сбылась",
   savingsRemaining: (n: number) => `осталось ${n}`,
 
@@ -224,8 +220,7 @@ export const strings = {
   planBillsLine: (parts: readonly { name: string; price: number }[], total: number) =>
     `${parts.map((part) => `${part.name} ${part.price}`).join(" · ")} = ${total}`,
   planBillsFloor: (n: number) => `Обязательных не меньше ${n} — это счета.`,
-  planBillsShort: (missing: number) =>
-    `На все счета не хватает ${missing}. Сделай Задание — за него дают монеты.`,
+  planBillsShort: (missing: number) => `На все счета не хватает ${missing}. Сделай Задание — за него дают монеты.`,
   planGoalForecast: (goal: string, days: number) =>
     `${goal}: накопишь через ${days} ${daysWord(days)}, если откладывать столько каждый день.`,
   planGoalNoSavings: (goal: string) => `Если ничего не отложить, ${goal} не станет ближе.`,
@@ -287,7 +282,9 @@ export const strings = {
   goalRatio: (have: number, cost: number) => `${have} / ${cost}`,
   goalRemaining: (n: number) => `осталось ${n}`,
   selectedCheck: "✓",
-  stageIcon: "★",
+  stageIcon: "⭐",
+  starFilled: "★",
+  starEmpty: "☆",
   balanceIcon: "🪙",
   savingsIcon: "🐷",
   navPlanPictogram: "📋",

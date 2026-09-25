@@ -60,7 +60,7 @@
   "goals": [
     {
       "id": "lego",
-      "name": "LEGO",
+      "name": "Конструктор",
       "icon": "🧱",
       "stage": "novice",
       "price": 60,

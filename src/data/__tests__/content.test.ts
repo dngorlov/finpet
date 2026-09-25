@@ -57,7 +57,7 @@ describe("loadContent", () => {
       effect: { meter: "mood", delta: 6 },
     });
     expect(content.goals.map((goal) => [goal.stage, goal.name, goal.price])).toEqual([
-      ["novice", "LEGO", 60],
+      ["novice", "Конструктор", 60],
       ["novice", "Смарт-часы", 75],
       ["novice", "Скейтборд", 90],
       ["pro", "Набор для рисования", 120],

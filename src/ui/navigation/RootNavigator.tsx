@@ -13,6 +13,7 @@ import StubScreen from "../screens/StubScreen";
 import TaskResultScreen from "../screens/TaskResultScreen";
 import TaskRunScreen from "../screens/TaskRunScreen";
 import { useSession } from "../session/SessionProvider";
+import { BuyGoalPrompt } from "../components/BuyGoalPrompt";
 import { PlayChromeProvider } from "./playChrome";
 import type { RootStackParamList } from "./types";
 
@@ -48,6 +49,7 @@ export function RootNavigator() {
         <Stack.Screen name="TaskResult" component={TaskResultScreen} />
         <Stack.Screen name="Stub" component={StubScreen} />
       </Stack.Navigator>
+      <BuyGoalPrompt />
     </PlayChromeProvider>
   );
 }

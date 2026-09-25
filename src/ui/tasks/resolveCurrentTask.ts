@@ -55,10 +55,12 @@ export function resolveCurrentTask(
     )
     .map((task) => task.id);
 
+  const activeGoal = game.savingsState(profileId).activeGoal;
   return currentTask({
     savingsOpen,
     planOpen,
-    hasGoal: Boolean(game.savingsState(profileId).activeGoal) || goalsLeft(game, content, profileId, profile.stage) === 0,
+    hasGoal: Boolean(activeGoal) || goalsLeft(game, content, profileId, profile.stage) === 0,
+    goalReadyId: activeGoal?.achieved ? activeGoal.key : null,
     planConfirmed: day.plan.status === "confirmed",
     billsCovered: due.every((id) => purchased.has(id)),
     savingsLessonPending: openIds.has(FEATURES.savingsTaskId) && !completed.has(FEATURES.savingsTaskId),
@@ -70,6 +72,10 @@ export function resolveCurrentTask(
 
 export function currentTaskLabel(task: CurrentTask, content: GameContent): string {
   if (task.kind === "set-goal") return strings.currentTaskSetGoal;
+  if (task.kind === "buy-goal") {
+    const name = content.goals.find((goal) => goal.id === task.goalId)?.name ?? task.goalId;
+    return strings.currentTaskBuyGoal(name);
+  }
   if (task.kind === "confirm-plan") return strings.currentTaskPlan;
   if (task.kind === "buy-bills") return strings.currentTaskShop;
   const title = content.tasks.find((row) => row.id === task.taskId)?.title ?? task.taskId;

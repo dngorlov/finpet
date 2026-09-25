@@ -36,6 +36,13 @@ function openTask(
     chrome.navigation.navigate("Main");
     return;
   }
+  if (task.kind === "buy-goal") {
+    chrome.setTab("money");
+    chrome.setMoney("savings");
+    chrome.setFocus({ kind: "buy-goal" });
+    chrome.navigation.navigate("Main");
+    return;
+  }
   chrome.setTab("money");
   chrome.setMoney(task.kind === "confirm-plan" ? "plan" : "savings");
   chrome.setFocus(task.kind === "confirm-plan" ? { kind: "plan" } : { kind: "goal" });
@@ -56,6 +63,7 @@ export function StatusStrip() {
     if (!focus) return;
     const matches =
       (task?.kind === "set-goal" && focus.kind === "goal") ||
+      (task?.kind === "buy-goal" && focus.kind === "buy-goal") ||
       (task?.kind === "confirm-plan" && focus.kind === "plan") ||
       (task?.kind === "buy-bills" && focus.kind === "shop-bills") ||
       (task?.kind === "lesson" && focus.kind === "lesson" && focus.taskId === task.taskId);

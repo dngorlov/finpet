@@ -238,7 +238,11 @@ export default function SavingsScreen() {
             label={strings.savingsLater}
             onPress={() => setPhase({ name: "home" })}
           />
-          <PrimaryButton label={strings.savingsBuyFromSavings} onPress={buyFromSavings} />
+          <PrimaryButton
+            highlighted={focus?.kind === "buy-goal"}
+            label={strings.savingsBuyFromSavings}
+            onPress={buyFromSavings}
+          />
         </>
       );
     }
@@ -250,6 +254,7 @@ export default function SavingsScreen() {
           ) : null}
           {funded && !offerPickGoal ? (
             <PrimaryButton
+              highlighted={focus?.kind === "buy-goal"}
               label={strings.savingsBuyFromSavings}
               onPress={buyFromSavings}
             />

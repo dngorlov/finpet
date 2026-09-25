@@ -88,7 +88,7 @@ Separate from Копилка and opened after the lesson «Где живут н�
 _Avoid_: депозит, счёт, копилка (for the bank)
 
 **Цель (Goal)**:
-The one thing Копилка is accumulating toward, chosen from the three options of the child's current Этап — Новичок: Смарт-часы, Скейтборд, LEGO; Про: Телефон, Самокат, Набор для рисования; Миллионер: Компьютер, Велосипед, Гитара. It is not sold in Магазин; there is at most one at a time, and buying it advances Этап.
+The one thing Копилка is accumulating toward, chosen from the three options of the child's current Этап — Новичок: Смарт-часы, Скейтборд, Конструктор; Про: Телефон, Самокат, Набор для рисования; Миллионер: Компьютер, Велосипед, Гитара. It is not sold in Магазин; there is at most one at a time, and buying it advances Этап.
 _Avoid_: ачивка, мечта, произвольная цель, Желаемое
 
 ### Pet
@@ -144,7 +144,7 @@ A financial-literacy mission — an Урок, a mini-game that belongs to an У�
 _Avoid_: квест, тест
 
 **Текущая задача (Current task)**:
-The single next action suggested under the meters. It points at a Задание, at today's Счета, at confirming the План, or at choosing a Цель.
+The single next action suggested under the meters. It points at a Задание, at today's Счета, at confirming the План, at choosing a Цель, or at buying the Цель once Копилка covers its price. That last one also opens a buy modal.
 _Avoid_: Задание, квест, подсказка, туториал
 
 **Карта заданий (Mission map)**:
