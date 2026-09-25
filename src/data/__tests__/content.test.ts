@@ -7,6 +7,26 @@ describe("loadContent", () => {
     expect(content.contentVersion).toBe(1);
   });
 
+  it("ships six opening cards in Первый запуск order", () => {
+    expect(content.intro.map((card) => card.id)).toEqual([
+      "welcome",
+      "goal",
+      "decisions",
+      "appearance",
+      "name",
+      "budget",
+    ]);
+    expect(content.intro.map((card) => card.title)).toEqual([
+      "Заголовок 1",
+      "Заголовок 2",
+      "Заголовок 3",
+      "Заголовок 4",
+      "Заголовок 5",
+      "Заголовок 6",
+    ]);
+    expect(content.intro.every((card) => card.body.startsWith("Описание"))).toBe(true);
+  });
+
   it("ships eleven catalog items including three one-shot Желаемые", () => {
     const byId = Object.fromEntries(content.catalog.map((item) => [item.id, item]));
 
@@ -16,10 +36,11 @@ describe("loadContent", () => {
       kind: "mandatory",
       price: 12,
       effect: { meter: "care", delta: 10 },
+      also: { meter: "mood", delta: 5 },
     });
-    expect(byId.school).toMatchObject({ kind: "mandatory", price: 10, effect: { meter: "care", delta: 5 } });
-    expect(byId.transport).toMatchObject({ kind: "mandatory", price: 8, effect: { meter: "care", delta: 5 } });
-    expect(byId.medicine).toMatchObject({ kind: "mandatory", price: 15, effect: { meter: "care", delta: 20 } });
+    expect(byId.school).toMatchObject({ kind: "mandatory", price: 10, effect: { meter: "mood", delta: 5 } });
+    expect(byId.transport).toMatchObject({ kind: "mandatory", price: 8, effect: { meter: "mood", delta: 5 } });
+    expect(byId.medicine).toMatchObject({ kind: "mandatory", price: 15, effect: { meter: "mood", delta: 20 } });
     expect(byId.candy).toMatchObject({
       kind: "optional",
       price: 5,
@@ -71,7 +92,7 @@ describe("loadContent", () => {
       "План",
       "Обязательные расходы",
       "Желаемые расходы",
-      "Забота",
+      "Сытость",
       "Настроение",
       "Этап",
       "Игровой день",
@@ -104,7 +125,7 @@ describe("loadContent", () => {
     expect(content.terms.find((t) => t.id === "mood")).toEqual({
       id: "mood",
       term: "Настроение",
-      definition: "Как радуется питомец. Растёт от желаемых покупок.",
+      definition: "Как радуется питомец. Растёт от обеда, от других обязательных покупок и от желаемых.",
     });
   });
 
@@ -138,10 +159,8 @@ describe("loadContent", () => {
       .find((t) => t.id === "budget_plan")
       ?.nodes.flatMap((n) => n.options ?? [])
       .find((o) => o.spawnTask === "budget_fix_backpack");
-    expect(spawn?.effects).toEqual([
-      { meter: "mood", delta: 5 },
-      { meter: "care", delta: -15 },
-    ]);
+    expect(spawn?.effects).toBeUndefined();
+    expect(spawn?.effect).toBeUndefined();
 
     // Т/З: ≥6 Заданий over 3 topics, each with a right and a wrong answer.
     for (const topic of ["budget", "savings", "payments"] as const) {

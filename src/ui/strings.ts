@@ -58,7 +58,6 @@ export const strings = {
   scoreYesIcon: "✅",
   scoreNoIcon: "⚠️",
   scoreFact: (word: string, points: number) => `${word} ${points > 0 ? `+${points}` : "+0"}`,
-  meterReasonMoodOverspend: "Настроение -5: желаемое сверх плана.",
   meterReasonUnchanged: (label: string) => `${label} без изменений`,
   nextDayPlanNeeds: "Завтра сначала запланируй обязательное.",
   allowanceRibbon: "Пособие +20 монет",
@@ -66,7 +65,7 @@ export const strings = {
 
   feedbackBalance: (n: number) => `Баланс ${n > 0 ? "+" : ""}${n}`,
   feedbackSavings: (n: number) => `Копилка ${n > 0 ? "+" : ""}${n}`,
-  feedbackCare: (n: number) => `Забота ${n > 0 ? "+" : ""}${n}`,
+  feedbackCare: (n: number) => `Сытость ${n > 0 ? "+" : ""}${n}`,
   feedbackMood: (n: number) => `Настроение ${n > 0 ? "+" : ""}${n}`,
   feedbackCauseAllowance: "Потому что начался новый игровой день.",
   feedbackNextAllowance: "Что дальше: составь план дня.",
@@ -192,9 +191,10 @@ export const strings = {
   resultsScoreMandatory: (earned: boolean) => (earned ? "Обязательные +2" : "Обязательные 0"),
   resultsScoreWithinPlan: (earned: boolean) => (earned ? "По плану +1" : "По плану 0"),
   scoreDeposited: (earned: boolean) => (earned ? "Копилка +1" : "Копилка 0"),
-  meterReasonSkippedMandatory: (n: number) => `Забота ${n}: пропущены обязательные расходы`,
-  meterReasonOptionalOverspend: (n: number) => `Настроение ${n}: желаемое больше плана`,
-  meterReasonNoChange: "Забота и настроение без изменений",
+  meterReasonSkippedFood: (n: number) => `Сытость ${n}: пропущен обед`,
+  meterReasonSkippedNeed: (n: number) => `Настроение ${n}: пропущены обязательные расходы`,
+  meterReasonOverspend: (n: number) => `Настроение ${n}: желаемое сверх плана.`,
+  meterReasonNoChange: "Сытость и настроение без изменений",
   journalStart: "Старт",
   journalDay: (n: number) => `День ${n}`,
   journalStartingGrant: "Стартовый бюджет",
@@ -262,10 +262,11 @@ export const strings = {
   colorName: (key: string) => COLOR_NAMES[key] ?? key,
   accessoryName: (key: string) => ACCESSORY_NAMES[key] ?? key,
 
-  care: "Забота",
-  careIcon: "🐾",
+  care: "Сытость",
+  careIcon: "🍗",
   mood: "Настроение",
-  moodIcon: "☀",
+  moodIcon: "☺",
+  needsMissedIcon: "!",
   meterLine: (label: string, value: number) => `${label} ${value}`,
   balanceWord: "Баланс",
   savingsWord: "Копилка",
@@ -376,6 +377,23 @@ function daysWord(n: number): string {
   if (mod10 === 1) return "день";
   if (mod10 >= 2 && mod10 <= 4) return "дня";
   return "дней";
+}
+
+/** Итоги lines for a closed day. `showUnchanged` keeps a calm line for a meter that did not move. */
+export function dayCloseLines(
+  deltas: { care: number; missedNeed: number; overspend: number },
+  showUnchanged: boolean,
+): string[] {
+  const lines: string[] = [];
+  if (deltas.care < 0) lines.push(strings.meterReasonSkippedFood(deltas.care));
+  else if (showUnchanged) lines.push(strings.meterReasonUnchanged(strings.care));
+  if (deltas.missedNeed < 0) lines.push(strings.meterReasonSkippedNeed(deltas.missedNeed));
+  if (deltas.overspend < 0) lines.push(strings.meterReasonOverspend(deltas.overspend));
+  if (deltas.missedNeed >= 0 && deltas.overspend >= 0) {
+    if (showUnchanged) lines.push(strings.meterReasonUnchanged(strings.mood));
+    else if (lines.length === 0) lines.push(strings.meterReasonNoChange);
+  }
+  return lines;
 }
 
 /** «1 монета / 3 монеты / 5 монет». */

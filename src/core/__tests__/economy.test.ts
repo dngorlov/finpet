@@ -6,6 +6,7 @@ import {
   planMandatoryFloor,
   checkPurchase,
   dayCloseMeterDeltas,
+  unpaidBillFlags,
   validatePlan,
 } from "../economy";
 
@@ -40,22 +41,52 @@ describe("checkPurchase", () => {
 });
 
 describe("day-close meters", () => {
-  it("drops Забота by 15 when a mandatory item was skipped", () => {
+  it("drops Сытость by 15 when today's Обед was skipped", () => {
     expect(
-      dayCloseMeterDeltas({ missedMandatory: true, optionalSpend: 0, optionalPlan: 10 }),
-    ).toEqual({ care: -15, mood: 0 });
+      dayCloseMeterDeltas({ missedFood: true, missedOtherBill: false, optionalSpend: 0, optionalPlan: 10 }),
+    ).toEqual({ care: -15, mood: 0, missedNeed: 0, overspend: 0 });
+  });
+
+  it("drops Настроение by 15 once when a non-food Счёт was skipped", () => {
+    expect(
+      dayCloseMeterDeltas({ missedFood: false, missedOtherBill: true, optionalSpend: 0, optionalPlan: 10 }),
+    ).toEqual({ care: 0, mood: -15, missedNeed: -15, overspend: 0 });
+  });
+
+  it("stacks a skipped non-food Счёт with Желаемые overspend", () => {
+    expect(
+      dayCloseMeterDeltas({ missedFood: true, missedOtherBill: true, optionalSpend: 12, optionalPlan: 7 }),
+    ).toEqual({ care: -15, mood: -20, missedNeed: -15, overspend: -5 });
   });
 
   it("drops Настроение by 5 when optional spend exceeds the plan bucket", () => {
     expect(
-      dayCloseMeterDeltas({ missedMandatory: false, optionalSpend: 12, optionalPlan: 7 }),
-    ).toEqual({ care: 0, mood: -5 });
+      dayCloseMeterDeltas({ missedFood: false, missedOtherBill: false, optionalSpend: 12, optionalPlan: 7 }),
+    ).toEqual({ care: 0, mood: -5, missedNeed: 0, overspend: -5 });
   });
 
   it("does not punish optional spend when the day had no confirmed plan", () => {
     expect(
-      dayCloseMeterDeltas({ missedMandatory: false, optionalSpend: 12, optionalPlan: null }),
-    ).toEqual({ care: 0, mood: 0 });
+      dayCloseMeterDeltas({ missedFood: false, missedOtherBill: false, optionalSpend: 12, optionalPlan: null }),
+    ).toEqual({ care: 0, mood: 0, missedNeed: 0, overspend: 0 });
+  });
+
+  it("treats a care effect as food and every other unpaid Счёт as one mood drop", () => {
+    const catalog = [
+      { id: "lunch", effect: { meter: "care" as const, delta: 10 }, also: { meter: "mood" as const, delta: 5 } },
+      { id: "transport", effect: { meter: "mood" as const, delta: 5 } },
+      { id: "school", effect: { meter: "mood" as const, delta: 5 } },
+    ];
+    const bought = new Set(["lunch"]);
+
+    expect(unpaidBillFlags(["lunch", "transport", "school"], bought, catalog)).toEqual({
+      missedFood: false,
+      missedOtherBill: true,
+    });
+    expect(unpaidBillFlags(["lunch", "transport"], new Set<string>(), catalog)).toEqual({
+      missedFood: true,
+      missedOtherBill: true,
+    });
   });
 
   it("clamps meters to 0–100", () => {

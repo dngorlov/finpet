@@ -6,6 +6,8 @@ import { BANK, ECONOMY } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
 import { Card } from "../components/Card";
+import { Pictogram, PixelIcon } from "../components/Pictogram";
+import type { PixelIconName } from "../pixelIconXml";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -138,8 +140,6 @@ export default function MainScreen({ navigation }: Props) {
   }
 
   const waiting = !hub.day.open;
-  const planMarked = hub.day.open && hub.day.plan.status !== "confirmed";
-  const planHint = !hub.day.open ? null : planMarked ? strings.composePlanHint : strings.planReady;
   const options = MONEY_OPTIONS.filter((option) => option.id !== "bank" || hub.bankOpen);
   const current = options.find((option) => option.id === money) ?? options[0];
 
@@ -186,36 +186,54 @@ export default function MainScreen({ navigation }: Props) {
         {tab === "map" ? <TaskListScreen /> : null}
         {tab === "money" ? (
           <View style={styles.money}>
-            <Pressable
-              role="button"
-              aria-label={strings.moneyMenu}
-              aria-expanded={menuOpen}
-              onPress={() => setMenuOpen((open) => !open)}
-              style={styles.menuTrigger}
-            >
-              <Text style={styles.cardTitle}>{current.label}</Text>
-            </Pressable>
-            {menuOpen ? (
-              <View>
-                {options.map((option) => (
-                  <Pressable
-                    key={option.id}
-                    role="button"
-                    aria-label={option.label}
-                    aria-selected={option.id === "plan" ? planMarked : option.id === money}
-                    onPress={() => {
-                      setMoney(option.id);
-                      setMenuOpen(false);
-                    }}
-                    style={styles.menuRow}
-                  >
-                    <Text style={styles.body}>{option.label}</Text>
-                    {option.id === "plan" && planMarked ? <Text style={styles.body}>{strings.selectedCheck}</Text> : null}
-                    {option.id === "plan" && planHint ? <Text style={styles.body}>{planHint}</Text> : null}
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
+            <View style={styles.menu}>
+              <Pressable
+                role="button"
+                aria-label={strings.moneyMenu}
+                aria-expanded={menuOpen}
+                onPress={() => setMenuOpen((open) => !open)}
+                style={styles.menuTrigger}
+              >
+                <Text style={styles.menuValue}>{current.label}</Text>
+                <Text
+                  aria-hidden
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                  style={styles.menuChevron}
+                >
+                  {menuOpen ? strings.moneyChevronOpen : strings.moneyChevronClosed}
+                </Text>
+              </Pressable>
+              {menuOpen ? (
+                <View style={styles.menuList}>
+                  {options.map((option, index) => {
+                    const selected = option.id === money;
+                    return (
+                      <Pressable
+                        key={option.id}
+                        role="button"
+                        aria-label={option.label}
+                        aria-selected={selected}
+                        onPress={() => {
+                          setMoney(option.id);
+                          setMenuOpen(false);
+                        }}
+                        style={[
+                          styles.menuRow,
+                          index === options.length - 1 ? styles.menuRowLast : null,
+                          selected ? styles.menuRowOn : null,
+                        ]}
+                      >
+                        <Text style={styles.menuValue}>{option.label}</Text>
+                        {selected ? (
+                          <Pictogram glyph={strings.selectedCheck} color={colors.accentText} />
+                        ) : null}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ) : null}
+            </View>
             <View style={styles.bodySlot}>
               {money === "savings" ? <SavingsScreen /> : null}
               {money === "plan" ? <PlanScreen /> : null}
@@ -229,28 +247,49 @@ export default function MainScreen({ navigation }: Props) {
           </View>
         ) : null}
       </View>
-      <View style={styles.tabs}>
-        {(
-          [
-            ["home", strings.tabHome],
-            ["map", strings.tabMap],
-            ["money", strings.tabMoney],
-          ] as const
-        ).map(([id, label]) => (
-          <Pressable
-            key={id}
-            role="button"
-            aria-label={label}
-            aria-selected={tab === id}
-            onPress={() => {
-              if (id !== "money") setMenuOpen(false);
-              setTab(id);
-            }}
-            style={styles.tab}
-          >
-            <Text style={tab === id ? styles.tabOn : styles.body}>{label}</Text>
-          </Pressable>
-        ))}
+      <View style={styles.tabTray}>
+        <View style={styles.tabs}>
+          {(
+            [
+              ["home", strings.tabHome, "home"],
+              ["map", strings.tabMap, "map"],
+              ["money", strings.tabMoney, "coins"],
+            ] as const
+          ).map(([id, label, icon]) => {
+            const selected = tab === id;
+            const ink = selected ? colors.onRaised : colors.subtle;
+            return (
+              <Pressable
+                key={id}
+                role="button"
+                aria-label={label}
+                aria-selected={selected}
+                onPress={() => {
+                  if (id !== "money") setMenuOpen(false);
+                  setTab(id);
+                }}
+                style={styles.tab}
+              >
+                {({ pressed }) => (
+                  <>
+                    <View
+                      style={[
+                        styles.token,
+                        selected ? styles.tokenOn : null,
+                        selected && pressed ? styles.tokenPressed : null,
+                      ]}
+                    >
+                      <View style={[styles.tokenFace, selected ? styles.tokenFaceOn : null]}>
+                        <PixelIcon name={icon as PixelIconName} color={ink} />
+                      </View>
+                    </View>
+                    <Text style={[styles.tabLabel, selected ? styles.tabLabelOn : null, { color: ink }]}>{label}</Text>
+                  </>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}
     </View>
@@ -280,30 +319,97 @@ const styles = StyleSheet.create({
     fontSize: type.section,
     fontWeight: "700",
   },
+  menu: {
+    gap: spacing.s,
+    paddingHorizontal: spacing.l,
+    paddingTop: spacing.s,
+  },
   menuTrigger: {
-    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.disabledFace,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
     minHeight: minTarget,
     paddingHorizontal: spacing.m,
+  },
+  menuValue: {
+    color: colors.text,
+    fontSize: type.body,
+    fontWeight: "700",
+  },
+  menuChevron: {
+    color: colors.subtle,
+    fontSize: type.body,
+  },
+  menuList: {
+    backgroundColor: colors.card,
+    borderColor: colors.disabledFace,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
   },
   menuRow: {
-    justifyContent: "center",
+    alignItems: "center",
+    borderBottomColor: colors.track,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
     minHeight: minTarget,
     paddingHorizontal: spacing.m,
   },
+  menuRowLast: {
+    borderBottomWidth: 0,
+  },
+  menuRowOn: {
+    backgroundColor: colors.highlight,
+  },
+  tabTray: {
+    backgroundColor: colors.raisedEdge,
+    paddingBottom: 4,
+  },
   tabs: {
-    borderTopColor: colors.track,
-    borderTopWidth: 1,
+    backgroundColor: colors.track,
     flexDirection: "row",
+    gap: spacing.s,
+    paddingHorizontal: spacing.s,
+    paddingVertical: spacing.s,
   },
   tab: {
     alignItems: "center",
     flex: 1,
+    gap: 4,
     justifyContent: "center",
     minHeight: minTarget,
   },
-  tabOn: {
-    color: colors.text,
+  token: {
+    borderRadius: 14,
+    paddingBottom: 4,
+    width: "100%",
+  },
+  tokenPressed: {
+    paddingBottom: 0,
+    transform: [{ translateY: 4 }],
+  },
+  tokenOn: {
+    backgroundColor: colors.raisedEdge,
+  },
+  tokenFace: {
+    alignItems: "center",
+    borderRadius: 14,
+    justifyContent: "center",
+    minHeight: 36,
+    paddingVertical: 4,
+  },
+  tokenFaceOn: {
+    backgroundColor: colors.raisedFace,
+  },
+  tabLabel: {
     fontSize: type.body,
+  },
+  tabLabelOn: {
     fontWeight: "700",
   },
 });

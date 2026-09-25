@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, like } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import type { Clock } from "../../core/clock";
 import { ECONOMY, METERS } from "../../core/config";
@@ -8,7 +8,9 @@ import {
   billsForDay,
   checkPurchase,
   dayCloseMeterDeltas,
+  itemMeterEffects,
   planKept,
+  unpaidBillFlags,
   validatePlan,
   type CatalogItem,
   type DayBills,
@@ -59,7 +61,7 @@ export interface DaySummaryView {
   facts: { mandatoryCovered: boolean; withinPlan: boolean; deposited: boolean };
   plan: PlanBuckets;
   actual: PlanBuckets;
-  meterDeltas: { care: number; mood: number };
+  meterDeltas: { care: number; mood: number; missedNeed: number; overspend: number };
   stage: Stage;
   previousStage: Stage;
   stageExplanation: string | null;
@@ -429,8 +431,12 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     const events = conn
       .select()
       .from(tables.meterEvents)
-      .where(and(eq(tables.meterEvents.dayId, dayId), eq(tables.meterEvents.source, "day_close")))
+      .where(and(eq(tables.meterEvents.dayId, dayId), like(tables.meterEvents.source, "day_close%")))
       .all();
+    const sum = (meter: "care" | "mood", source?: string) =>
+      events
+        .filter((event) => event.meter === meter && (source == null || event.source === source))
+        .reduce((total, event) => total + event.delta, 0);
     return {
       dayId: day.id,
       n: day.n,
@@ -443,8 +449,10 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       plan: planBuckets(planForDay(conn, dayId)),
       actual: actualForDay(conn, dayId),
       meterDeltas: {
-        care: events.filter((event) => event.meter === "care").reduce((sum, event) => sum + event.delta, 0),
-        mood: events.filter((event) => event.meter === "mood").reduce((sum, event) => sum + event.delta, 0),
+        care: sum("care"),
+        mood: sum("mood"),
+        missedNeed: sum("mood", "day_close_need"),
+        overspend: sum("mood", "day_close_overspend"),
       },
       stage,
       previousStage,
@@ -677,7 +685,9 @@ export function createGameRepository(db: GameDb, clock: Clock) {
             createdAt: nowMs(),
           })
           .run();
-        applyMeter(tx, profileId, dayId, item.effect.meter, item.effect.delta, `purchase:${item.id}`);
+        for (const effect of itemMeterEffects(item)) {
+          applyMeter(tx, profileId, dayId, effect.meter, effect.delta, `purchase:${item.id}`);
+        }
         if (asActive) clearGoals(tx, profileId);
         return { status: "ok" as const };
       });
@@ -829,7 +839,9 @@ export function createGameRepository(db: GameDb, clock: Clock) {
             createdAt: nowMs(),
           })
           .run();
-        applyMeter(tx, profileId, dayId, item.effect.meter, item.effect.delta, `purchase:${item.id}`);
+        for (const effect of itemMeterEffects(item)) {
+          applyMeter(tx, profileId, dayId, effect.meter, effect.delta, `purchase:${item.id}`);
+        }
         clearGoals(tx, profileId);
         return { status: "ok" as const };
       });
@@ -1052,13 +1064,16 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         const optionalSpend = bought
           .filter((row) => row.kind === "optional" && row.paidFrom !== "savings")
           .reduce((sum, row) => sum + row.price, 0);
+        const unpaid = unpaidBillFlags(mandatoryIds, boughtIds, catalog);
         const deltas = dayCloseMeterDeltas({
-          missedMandatory: !mandatoryCovered,
+          missedFood: unpaid.missedFood,
+          missedOtherBill: unpaid.missedOtherBill,
           optionalSpend,
           optionalPlan: confirmed ? confirmed.optional : null,
         });
-        applyMeter(tx, profileId, day.id, "care", deltas.care, "day_close");
-        applyMeter(tx, profileId, day.id, "mood", deltas.mood, "day_close");
+        if (deltas.care) applyMeter(tx, profileId, day.id, "care", deltas.care, "day_close_food");
+        if (deltas.missedNeed) applyMeter(tx, profileId, day.id, "mood", deltas.missedNeed, "day_close_need");
+        if (deltas.overspend) applyMeter(tx, profileId, day.id, "mood", deltas.overspend, "day_close_overspend");
         const previous = tx
           .select()
           .from(tables.dayScores)

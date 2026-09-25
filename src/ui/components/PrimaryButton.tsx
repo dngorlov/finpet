@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, Text, View, type PressableProps } from "react-native";
+import { buttonIcon } from "../buttonIcon";
 import { colors, minTarget, spacing, type } from "../theme";
+import { PixelIcon } from "./Pictogram";
 
 const EDGE = 4;
 
@@ -24,7 +26,8 @@ export function PrimaryButton({
       ]}
     >
       <View style={[styles.face, disabled ? styles.faceDisabled : styles.faceRaised]}>
-        <Text style={styles.label}>{label}</Text>
+        <PixelIcon name={buttonIcon(label)} color={disabled ? colors.subtle : colors.onRaised} />
+        <Text style={[styles.label, disabled ? styles.labelDisabled : null]}>{label}</Text>
       </View>
     </Pressable>
   );
@@ -48,6 +51,8 @@ const styles = StyleSheet.create({
   face: {
     alignItems: "center",
     borderRadius: 12,
+    flexDirection: "row",
+    gap: spacing.s,
     justifyContent: "center",
     minHeight: minTarget,
     paddingHorizontal: spacing.m,
@@ -61,7 +66,11 @@ const styles = StyleSheet.create({
   },
   label: {
     color: colors.onRaised,
+    flexShrink: 1,
     fontSize: type.button,
     fontWeight: "700",
+  },
+  labelDisabled: {
+    color: colors.subtle,
   },
 });

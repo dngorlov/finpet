@@ -21,6 +21,7 @@ const lunch: CatalogItem = {
   kind: "mandatory",
   price: 12,
   effect: { meter: "care", delta: 10 },
+  also: { meter: "mood", delta: 5 },
 };
 const toy: CatalogItem = {
   id: "toy",
@@ -231,13 +232,13 @@ describe("plan validation", () => {
 });
 
 describe("debit", () => {
-  it("writes the purchase and history, raises Забота, and refuses an over-balance buy", () => {
+  it("writes the purchase and history, raises Сытость, and refuses an over-balance buy", () => {
     const { game, sqlite, profileId } = seed();
     const opened = game.openDay(profileId);
     if (opened.status !== "opened") throw new Error("expected opened");
 
     expect(game.purchase(profileId, opened.dayId, lunch)).toEqual({ status: "ok" });
-    expect(game.getProfile(profileId)).toMatchObject({ balance: 108, care: 60 });
+    expect(game.getProfile(profileId)).toMatchObject({ balance: 108, care: 60, mood: 55 });
     expect(sums(sqlite, profileId)).toMatchObject({ balance: 108, txSum: 108 });
 
     const purchase = sqlite
@@ -245,10 +246,13 @@ describe("debit", () => {
       .get(profileId) as { itemId: string; price: number };
     expect(purchase).toEqual({ itemId: "lunch", price: 12 });
 
-    const event = sqlite
-      .prepare("SELECT meter, delta, source FROM meterEvents WHERE profileId = ?")
-      .get(profileId) as { meter: string; delta: number; source: string };
-    expect(event).toEqual({ meter: "care", delta: 10, source: "purchase:lunch" });
+    const events = sqlite
+      .prepare("SELECT meter, delta, source FROM meterEvents WHERE profileId = ? ORDER BY meter")
+      .all(profileId) as { meter: string; delta: number; source: string }[];
+    expect(events).toEqual([
+      { meter: "care", delta: 10, source: "purchase:lunch" },
+      { meter: "mood", delta: 5, source: "purchase:lunch" },
+    ]);
 
     const cheap: CatalogItem = { ...toy, price: 200 };
     expect(game.purchase(profileId, opened.dayId, cheap)).toEqual({ status: "blocked", missing: 92 });
@@ -611,7 +615,7 @@ describe("day and journal reads", () => {
 });
 
 describe("Счета and a kept План", () => {
-  const medicine: CatalogItem = { id: "medicine", kind: "mandatory", price: 15, effect: { meter: "care", delta: 20 } };
+  const medicine: CatalogItem = { id: "medicine", kind: "mandatory", price: 15, effect: { meter: "mood", delta: 20 } };
   const catalogWithMedicine: CatalogItem[] = [...tinyCatalog, medicine];
   const bills = [{ items: ["lunch"] }, { items: ["lunch", "medicine"], note: "Питомец простыл" }];
 

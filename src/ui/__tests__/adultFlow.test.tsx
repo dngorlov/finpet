@@ -62,7 +62,7 @@ describe("Взрослый раздел contents and persistence", () => {
 
     expect(screen.getByLabelText("Баланс 103")).toBeOnTheScreen();
     expect(screen.getByText("15 / 90")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Забота 60")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Сытость 60")).toBeOnTheScreen();
     expect(ports.game.listTaskProgress(childId)).toEqual([
       { taskKey: "budget_what", status: "completed", rewardPaid: true, bestReward: 10 },
     ]);
@@ -73,7 +73,7 @@ describe("Взрослый раздел contents and persistence", () => {
     expect(screen.getByLabelText("Баланс 103")).toBeOnTheScreen();
     expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
     expect(screen.getByText("15 / 90")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Забота 60")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Сытость 60")).toBeOnTheScreen();
     expect(screen.getByLabelText(/Питомец Пух/)).toBeOnTheScreen();
     expect(ports.game.listTaskProgress(childId)).toEqual([
       { taskKey: "budget_what", status: "completed", rewardPaid: true, bestReward: 10 },
@@ -93,12 +93,12 @@ describe("Взрослый раздел contents and persistence", () => {
     await user.type(screen.getByRole("textbox", { name: "Введи: удалить" }), "удалить");
     await user.press(screen.getByRole("button", { name: "Готово" }));
 
-    expect(screen.getByText("Питомец")).toBeOnTheScreen();
+    expect(screen.getByText("Заголовок 1")).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Магазин" })).not.toBeOnTheScreen();
 
     await view.unmount();
     await render(<FinPetApp ports={ports} />);
-    expect(screen.getByText("Питомец")).toBeOnTheScreen();
+    expect(screen.getByText("Заголовок 1")).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Магазин" })).not.toBeOnTheScreen();
   });
 

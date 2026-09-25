@@ -15,10 +15,14 @@ describe("plan from Main", () => {
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Деньги" }));
+    expect(screen.getAllByText("Копилка").length).toBeGreaterThan(0);
+    expect(screen.getByText("▼", { includeHiddenElements: true })).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Раздел денег" }));
+    expect(screen.getByText("▲", { includeHiddenElements: true })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Копилка" })).toBeSelected();
     const planTile = screen.getByRole("button", { name: "План" });
-    expect(planTile).toBeSelected();
-    expect(screen.getByText("Составь план дня")).toBeOnTheScreen();
+    expect(planTile).not.toBeSelected();
+    expect(screen.queryByText("Составь план дня")).not.toBeOnTheScreen();
 
     await user.press(planTile);
     expect(screen.getByText("Сегодня пришло: +120")).toBeOnTheScreen();
@@ -62,8 +66,9 @@ describe("plan from Main", () => {
     expect(screen.queryByText(/вчера \d+/)).not.toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Раздел денег" }));
-    expect(screen.getByText("План готов")).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "План" })).not.toBeSelected();
+    expect(screen.getByRole("button", { name: "План" })).toBeSelected();
+    expect(screen.queryByText("План готов")).not.toBeOnTheScreen();
+    expect(screen.queryByText("Составь план дня")).not.toBeOnTheScreen();
     expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
   });

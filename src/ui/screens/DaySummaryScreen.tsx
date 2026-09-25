@@ -13,7 +13,7 @@ import { StatusStrip } from "../components/StatusStrip";
 import type { RootStackParamList } from "../navigation/types";
 import { PetView } from "../pet/PetView";
 import { useSession } from "../session/SessionProvider";
-import { strings } from "../strings";
+import { dayCloseLines, strings } from "../strings";
 import { colors, spacing, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DaySummary">;
@@ -27,17 +27,8 @@ function ScoreRow({ word, points, earned }: { word: string; points: number; earn
   );
 }
 
-function meterReason(summary: DaySummaryView): { care: string; mood: string } {
-  return {
-    care:
-      summary.meterDeltas.care < 0
-        ? strings.meterReasonSkippedMandatory(summary.meterDeltas.care)
-        : strings.meterReasonUnchanged(strings.care),
-    mood:
-      summary.meterDeltas.mood < 0
-        ? strings.meterReasonMoodOverspend
-        : strings.meterReasonUnchanged(strings.mood),
-  };
+function meterReason(summary: DaySummaryView): string[] {
+  return dayCloseLines(summary.meterDeltas, true);
 }
 
 export default function DaySummaryScreen({ navigation }: Props) {
@@ -69,7 +60,7 @@ export default function DaySummaryScreen({ navigation }: Props) {
         petName={profile.petName}
         care={profile.care}
         mood={profile.mood}
-        pose={summary.meterDeltas.care < 0 ? "sad" : undefined}
+        pose={summary.meterDeltas.care < 0 || summary.meterDeltas.mood < 0 ? "sad" : undefined}
       />
       <Card>
         <Text style={styles.section}>{strings.bucketMandatory}</Text>
@@ -85,8 +76,11 @@ export default function DaySummaryScreen({ navigation }: Props) {
         <ScoreRow word={strings.scoreDeposit} points={summary.facts.deposited ? 1 : 0} earned={summary.facts.deposited} />
       </Card>
       <Card>
-        <Text style={styles.body}>{reasons.care}</Text>
-        <Text style={styles.body}>{reasons.mood}</Text>
+        {reasons.map((line) => (
+          <Text key={line} style={styles.body}>
+            {line}
+          </Text>
+        ))}
       </Card>
       {summary.stageExplanation ? (
         <Card>

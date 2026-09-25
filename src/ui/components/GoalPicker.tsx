@@ -75,6 +75,7 @@ export function GoalPicker({
       kind: item.kind,
       price: item.price,
       effect: item.effect,
+      also: item.also,
       once: item.once,
     });
     setPending(null);

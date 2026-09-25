@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, Text, type PressableProps } from "react-native";
+import { buttonIcon } from "../buttonIcon";
 import { colors, minTarget, spacing, type } from "../theme";
+import { PixelIcon } from "./Pictogram";
 
 export function TextButton({
   label,
@@ -17,7 +19,8 @@ export function TextButton({
       onPress={onPress}
       style={styles.button}
     >
-      <Text style={styles.label}>{label}</Text>
+      <PixelIcon name={buttonIcon(label)} color={disabled ? colors.subtle : colors.accentText} />
+      <Text style={[styles.label, disabled ? styles.labelDisabled : null]}>{label}</Text>
     </Pressable>
   );
 }
@@ -25,13 +28,19 @@ export function TextButton({
 const styles = StyleSheet.create({
   button: {
     alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.s,
     justifyContent: "center",
     minHeight: minTarget,
     paddingHorizontal: spacing.m,
   },
   label: {
     color: colors.accentText,
+    flexShrink: 1,
     fontSize: type.button,
     fontWeight: "700",
+  },
+  labelDisabled: {
+    color: colors.subtle,
   },
 });

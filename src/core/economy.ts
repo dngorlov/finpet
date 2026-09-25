@@ -97,18 +97,51 @@ export function checkPurchase(balance: number, price: number): PurchaseCheck {
 export type MeterKind = "care" | "mood";
 
 /** Catalog item as seen by the engine (validated copy comes from data/content). */
+export interface MeterEffect {
+  meter: MeterKind;
+  delta: number;
+}
+
 export interface CatalogItem {
   id: string;
   kind: "mandatory" | "optional";
   price: number;
-  effect: { meter: MeterKind; delta: number };
+  effect: MeterEffect;
+  /** Обед also raises Настроение. Absent on every other item. */
+  also?: MeterEffect;
   /** One-shot Желаемые leave Магазин after any purchase. */
   once?: boolean;
 }
 
-/** On-line purchase effect: purchase raises the meter by the item's effect (§2.2). */
-export function purchaseMeterEffect(item: CatalogItem): { meter: MeterKind; delta: number } {
-  return item.effect;
+/** Meter moves a purchase applies. Обед returns both Сытость and Настроение. */
+export function itemMeterEffects(item: Pick<CatalogItem, "effect" | "also">): MeterEffect[] {
+  return item.also ? [item.effect, item.also] : [item.effect];
+}
+
+/** Care and mood deltas for a FeedbackCard. A missing meter stays unset. */
+export function meterDeltaMap(item: Pick<CatalogItem, "effect" | "also">): { care?: number; mood?: number } {
+  const deltas: { care?: number; mood?: number } = {};
+  for (const effect of itemMeterEffects(item)) deltas[effect.meter] = effect.delta;
+  return deltas;
+}
+
+/** A due item feeds Сытость when one of its effects is care. Anything else is a non-food Счёт. */
+export function unpaidBillFlags(
+  dueIds: readonly string[],
+  boughtIds: ReadonlySet<string>,
+  catalog: readonly Pick<CatalogItem, "id" | "effect" | "also">[],
+): { missedFood: boolean; missedOtherBill: boolean } {
+  const byId = new Map(catalog.map((item) => [item.id, item]));
+  let missedFood = false;
+  let missedOtherBill = false;
+  for (const id of dueIds) {
+    if (boughtIds.has(id)) continue;
+    const item = byId.get(id);
+    const feedsSatiety = item != null && itemMeterEffects(item).some((effect) => effect.meter === "care");
+    if (feedsSatiety) missedFood = true;
+    else missedOtherBill = true;
+  }
+  return { missedFood, missedOtherBill };
 }
 
 /** Meters stay in 0–100 (§2.2). */
@@ -117,19 +150,27 @@ export function applyMeterDelta(current: number, delta: number): number {
 }
 
 export interface DayCloseMeters {
-  /** −15 when the day ends with any unpurchased mandatory item. */
-  missedMandatory: boolean;
+  /** Today's Обед was due and not bought. */
+  missedFood: boolean;
+  /** Some other due Счёт was not bought. One drop, however many. */
+  missedOtherBill: boolean;
   optionalSpend: number;
   /** Confirmed Желаемые bucket; null if the day had no confirmed plan. */
   optionalPlan: number | null;
 }
 
 /** Meter deltas applied at Итоги дня — not silent, always sourced as day-close. */
-export function dayCloseMeterDeltas(input: DayCloseMeters): { care: number; mood: number } {
-  const care = input.missedMandatory ? -METERS.missedMandatoryCarePenalty : 0;
-  const mood =
+export function dayCloseMeterDeltas(input: DayCloseMeters): {
+  care: number;
+  mood: number;
+  missedNeed: number;
+  overspend: number;
+} {
+  const care = input.missedFood ? -METERS.missedFoodPenalty : 0;
+  const missedNeed = input.missedOtherBill ? -METERS.missedOtherBillPenalty : 0;
+  const overspend =
     input.optionalPlan !== null && input.optionalSpend > input.optionalPlan
       ? -METERS.overspendMoodPenalty
       : 0;
-  return { care, mood };
+  return { care, mood: missedNeed + overspend, missedNeed, overspend };
 }

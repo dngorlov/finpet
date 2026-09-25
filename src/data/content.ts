@@ -1,5 +1,6 @@
 import { z } from "zod";
 import catalogJson from "../../assets/content/catalog.json";
+import introJson from "../../assets/content/intro.json";
 import tasksJson from "../../assets/content/tasks.json";
 import termsJson from "../../assets/content/terms.json";
 
@@ -16,6 +17,8 @@ const catalogItemSchema = z.object({
   kind: z.enum(["mandatory", "optional"]),
   price: z.number().int().nonnegative(),
   effect: meterEffectSchema,
+  /** Обед also raises Настроение. */
+  also: meterEffectSchema.optional(),
   description: z.string().min(1),
   once: z.boolean().optional().default(false),
 });
@@ -64,6 +67,32 @@ const termsFileSchema = z.object({
   contentVersion: z.literal(CONTENT_VERSION),
   terms: z.array(termSchema).length(11),
 });
+
+const INTRO_IDS = ["welcome", "goal", "decisions", "appearance", "name", "budget"] as const;
+
+const introCardSchema = z.object({
+  id: z.enum(INTRO_IDS),
+  title: z.string().min(1),
+  body: z.string().min(1),
+});
+
+/** Six static cards that open Первый запуск, before Питомец. Order is fixed. */
+const introFileSchema = z
+  .object({
+    contentVersion: z.literal(CONTENT_VERSION),
+    cards: z.array(introCardSchema).length(INTRO_IDS.length),
+  })
+  .superRefine((file, ctx) => {
+    INTRO_IDS.forEach((id, index) => {
+      if (file.cards[index]?.id !== id) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["cards", index, "id"],
+          message: `Карточка ${index + 1} должна быть «${id}»`,
+        });
+      }
+    });
+  });
 
 const taskEffectObjectSchema = z.object({
   meter: z.enum(["care", "mood"]).optional(),
@@ -186,6 +215,7 @@ export type CatalogItemContent = z.infer<typeof catalogItemSchema>;
 export type DayBillsContent = z.infer<typeof dayBillsSchema>;
 export type GoalContent = z.infer<typeof goalSchema>;
 export type TermContent = z.infer<typeof termSchema>;
+export type IntroCardContent = z.infer<typeof introCardSchema>;
 export type TaskFileContent = z.infer<typeof taskSchema>;
 
 export interface GameContent {
@@ -195,13 +225,16 @@ export interface GameContent {
   bills: DayBillsContent[];
   goals: GoalContent[];
   terms: TermContent[];
+  /** Opening cards of Первый запуск, before Питомец. */
+  intro: IntroCardContent[];
   tasks: TaskFileContent[];
 }
 
-/** Loads and validates catalog, terms, and tasks. Цели are derived from optional catalog rows. */
+/** Loads and validates catalog, terms, opening cards, and tasks. Цели are derived from optional catalog rows. */
 export function loadContent(): GameContent {
   const catalog = catalogFileSchema.parse(catalogJson);
   const terms = termsFileSchema.parse(termsJson);
+  const intro = introFileSchema.parse(introJson);
   const tasks = tasksFileSchema.parse(tasksJson);
 
   return {
@@ -217,6 +250,7 @@ export function loadContent(): GameContent {
         description: item.description,
       })),
     terms: terms.terms,
+    intro: intro.cards,
     tasks: tasks.tasks,
   };
 }

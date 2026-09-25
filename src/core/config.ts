@@ -21,8 +21,10 @@ export const METERS = {
   /** Initial meter values at profile creation (not settled in ROADMAP; midpoint chosen). */
   initialCare: 50,
   initialMood: 50,
-  /** Забота penalty when a day closes with an unpurchased mandatory item (§2.2). */
-  missedMandatoryCarePenalty: 15,
+  /** Сытость penalty when a day closes with today's Обед unpaid. */
+  missedFoodPenalty: 15,
+  /** Настроение penalty when a day closes with another unpaid Счёт. Once, not per item. */
+  missedOtherBillPenalty: 15,
   /** Настроение penalty when actual optional spend exceeds the plan bucket (§2.2). */
   overspendMoodPenalty: 5,
 } as const;

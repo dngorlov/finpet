@@ -17,7 +17,7 @@ Team-owned deliverables (presentation PPTX, demo video, RuStore card) are **out 
 - **RU-only UI.** All user-facing strings in Russian, ages 7–11 register: short phrases, no shaming, complex terms only from Словарик.
 - **No real money, no ads, no purchases, no social, no external links** (see `HP` in REQUIREMENTS.md).
 - **Balance never changes silently.** Every coin movement goes through the feedback card (source + amount).
-- **Safe errors.** A wrong decision lowers Забота/Настроение and spawns a timed correction Задание — never progress reset, never pet death/illness (no exceptional events in v1).
+- **Safe errors.** A wrong decision lowers Сытость/Настроение and spawns a timed correction Задание — never progress reset, never pet death/illness (no exceptional events in v1).
 - **Content decoupled.** Catalog, tasks, and glossary = versioned JSON in `assets/content/`, zod-validated at load, never hardcoded in components. Цели are catalog Желаемые, not a parallel content file. Bump `contentVersion`; new tasks ship without touching app logic.
 - **Injectable clock.** All "today" reads go through a `Clock` port; Демо-режим swaps in a manual clock (ADR-0002).
 - **Accessibility.** Touch targets ≥48×48 dp; body text ≥16 sp; verdicts/status shown as icon+text, never color alone; animations toggleable in settings; destructive actions double-confirmed.
@@ -32,7 +32,7 @@ These were decided in the planning interview; do not re-derive them. If a number
 | Parameter | Value |
 |---|---|
 | Currency | Монеты (coins), integer only |
-| Стартовый бюджет | 100, granted once at profile creation, with no explanation screen |
+| Стартовый бюджет | 100, granted once at profile creation, with no feedback card. The sixth opening card introduces it before Питомец |
 | Пособие (allowance) | +20, credited on first open of a new Игровой день |
 | Счета (day bills) | `catalog.json` `bills` cycle, day n = bills[(n − 1) mod 5]: Обед+Проезд 20 · +Школьные 30 · +Лекарство 35 («простыл») · +Школьные 30 · Обед+Проезд 20 |
 | Task reward | up to the Задание's `reward` (10/15 by difficulty) × share of first-try answers (right 1, «с ценой» ½, wrong 0); a replay pays only the improvement over the best run (`taskProgress.bestReward`) |
@@ -42,10 +42,10 @@ These were decided in the planning interview; do not re-derive them. If a number
 
 | # | Item | Kind | Price | Pet effect |
 |---|---|---|---|---|
-| 1 | Обед (lunch) | mandatory | 12 | Забота +10; skipping the day's lunch shows Забота drop |
-| 2 | Школьные принадлежности | mandatory | 10 | Забота +5 |
-| 3 | Проезд (transport) | mandatory | 8 | Забота +5 |
-| 4 | Лекарство (medicine) | mandatory | 15 | Забота +20 |
+| 1 | Обед (lunch) | mandatory | 12 | Сытость +10 and Настроение +5; skipping the day's lunch drops Сытость by 15 |
+| 2 | Школьные принадлежности | mandatory | 10 | Настроение +5 |
+| 3 | Проезд (transport) | mandatory | 8 | Настроение +5 |
+| 4 | Лекарство (medicine) | mandatory | 15 | Настроение +20 |
 | 5 | Конфета (candy) | optional | 5 | Настроение +5 |
 | 6 | Стикеры (stickers) | optional | 7 | Настроение +6 |
 | 7 | Кино (cinema visit) | optional | 20 | Настроение +12 |
@@ -64,9 +64,9 @@ These were decided in the planning interview; do not re-derive them. If a number
 
 - **Identity:** the profile "character" **is** the pet. Appearance = Вид (species) + Окрас (color) + Аксессуар (accessory): **3 × 3 × 3 = 27 combinations** (≥9 required), designer's PNG bundle.
 - Species/color/accessory keys: `sp1|sp2|sp3`, `c1|c2|c3`, `a1|a2|a3`. Display names come from the team with the asset drop; placeholders until then.
-- **Meters (the "key status indicators"):** Забота and Настроение, 0–100, rendered as icon + bar (never color alone).
-  - Забота: +N on mandatory purchases (values above); −15 when a day ends with an unpurchased mandatory item.
-  - Настроение: +N on optional purchases (including a Цель bought from Копилка or Баланс); −5 when actual optional spending exceeds the plan bucket. Reaching the Цель price does not move Настроение.
+- **Meters (the "key status indicators"):** Сытость and Настроение, 0–100, rendered as icon + bar (never color alone).
+  - Сытость: +10 when Обед is bought; −15 when a day ends with that Обед unpaid. A drumstick marks the meter.
+  - Настроение: +5 from Обед, plus the item's number from every other purchase (including a Цель bought from Копилка or Баланс). −15 once when another of today's Счета is unpaid, and −5 when actual optional spending exceeds the plan bucket. Both mood drops can land on the same day. A smile marks the meter. Reaching the Цель price does not move Настроение.
 - **Этапы (stages):** Новичок → Друг → Мастер. Per-day score: **+2** all of today's Счета bought · **+1** «по плану» — Желаемые spend ≤ plan **and** Копилка deposits ≥ plan **and** purchases ≤ Обязательные + Желаемые · **+1** savings deposit made. Stage = rolling sum over the last 3 closed days: **<3 Новичок, 3–8 Друг, ≥9 Мастер**. Recomputed at every day close; any change shows a kid-worded explanation. Visuals faked programmatically (scale/glow tint) — see the asset contract in §5.4.
 - **Reactions/recovery (R9 slot):** no illness/death events in v1. Negative meters only cause sad pose + explanation + timed correction task. The doc's "unforeseen medical expense" exists solely as the Лекарство catalog item (event variant is stretch, §2.6).
 
@@ -82,9 +82,9 @@ These were decided in the planning interview; do not re-derive them. If a number
 
 ### 2.5 Первый запуск & help (R1, R11)
 
-- Первый запуск is ordered Питомец → Имя. Appearance and the pet name remain an in-memory draft until valid Имя «Дальше»; that writes the Профиль ребёнка (leftover persistence `name` equals `petName`) and opens Main. Стартовый бюджет is granted in that write and has no explanation screen.
+- Первый запуск opens with six static cards from `intro.json` (welcome, Цель, the three decision types, appearance, name, Стартовый бюджет), then Питомец → Имя. Cards 1–5 use «Дальше»; card 6 uses «Готово» and opens Питомец. Top row: back icon «Назад», progress bar, `1/6`…`6/6`. Back on card 1 leaves the app; later cards step back. No skip. The cards do not write a profile and do not grant coins. Appearance and the pet name remain an in-memory draft until valid Имя «Дальше»; that writes the Профиль ребёнка (leftover persistence `name` equals `petName`) and opens Main. Стартовый бюджет is granted in that write and has no feedback card. Closing the app before that write restarts at card 1. (ADR-0003)
 - There is no «Как играть» walkthrough. The first Пособие card on Main is the ordinary feedback card: chip «Начало игрового дня», «Понятно», no dim, and it does not start a tour.
-- Help re-access: Словарик is a button on Карта. Tab «Слова» is the 11 terms with kid definitions: Баланс, Копилка, Цель, Пособие, План, Обязательные расходы, Желаемые расходы, Забота, Настроение, Этап, Игровой день (one-to-one with `CONTEXT.md`). Tab «Уроки» is the unscored cards of open уроки, with `{pet}` replaced, and no coins, questions, «скоро», or correction tasks. Closed уроки are absent. Демо-режим lists every playable урок. No replay button.
+- Help re-access: Словарик is a button on Карта. Tab «Слова» is the 11 terms with kid definitions: Баланс, Копилка, Цель, Пособие, План, Обязательные расходы, Желаемые расходы, Сытость, Настроение, Этап, Игровой день (one-to-one with `CONTEXT.md`). Tab «Уроки» is the unscored cards of open уроки, with `{pet}` replaced, and no coins, questions, «скоро», or correction tasks. Closed уроки are absent. Демо-режим lists every playable урок. No replay button.
 
 ### 2.6 Stretch tier (build only after M6; never blocks the mandatory scope)
 
@@ -121,7 +121,7 @@ docs/
 
 ### 3.1 Navigation map
 
-`FirstRun (Питомец → Имя) → Main`. The first Пособие card is ordinary «Понятно» and does not start a walkthrough. Main is a three-tab shell (ADR-0004): Дом, Карта, Деньги. A fresh launch opens Дом with Деньги on Копилка. While the app stays open it keeps the current tab and the current Деньги choice. The bottom bar is only those three roots; pushed screens hide it. Android Back pops one screen; from Карта or Деньги with nothing pushed it opens Дом; from Дом with nothing pushed it leaves the app. Screen-by-screen specifications and flows: §4.
+`FirstRun (six cards → Питомец → Имя) → Main`. The first Пособие card is ordinary «Понятно» and does not start a walkthrough. Main is a three-tab shell (ADR-0004): Дом, Карта, Деньги. A fresh launch opens Дом with Деньги on Копилка. While the app stays open it keeps the current tab and the current Деньги choice. The bottom bar is only those three roots; pushed screens hide it. Android Back pops one screen; from Карта or Деньги with nothing pushed it opens Дом; from Дом with nothing pushed it leaves the app. Screen-by-screen specifications and flows: §4.
 
 ### 3.2 Storage schema (Drizzle/SQLite; R13 slot)
 
@@ -149,7 +149,7 @@ Invariants (unit-tested): `profiles.balance == Σ transactions.amount` for every
 
 ### 3.3 Flow of a purchase (reference for all coin movements)
 
-Catalog tap → item sheet (price, category, pet impact estimate) → confirm → `core/economy` validates balance (else blocked screen: what's missing + options: wait for Пособие, do a Задание, «Сделать целью» for a Желаемое / «Отложить» for an Обязательное) → debit → transaction + purchase rows → meter event → FeedbackCard: «Баланс −12 · Забота +10 · причина и следующий шаг». Buying the active Цель from Копилка is a separate intent: pot − price, purchase + item meter, Баланс unchanged.
+Catalog tap → item sheet (price, category, pet impact estimate) → confirm → `core/economy` validates balance (else blocked screen: what's missing + options: wait for Пособие, do a Задание, «Сделать целью» for a Желаемое / «Отложить» for an Обязательное) → debit → transaction + purchase rows → meter event → FeedbackCard: «Баланс −12 · Сытость +10 · причина и следующий шаг». Buying the active Цель from Копилка is a separate intent: pot − price, purchase + item meter, Баланс unchanged.
 
 ## 4. Design flow — screens
 
@@ -161,7 +161,7 @@ Written for 360 dp portrait, RU copy, ages 7–11. Conventions for every screen:
 
 ```
 Launch
- ├─ first run ──→ FirstRun [Питомец → Имя] ─→ Main ─┐
+ ├─ first run ──→ FirstRun [cards → Питомец → Имя] ─→ Main ─┐
  └─ returning ──────────────────────────────────────────────────→ Main ◄─────┘
 
 Main ── bottom bar: Дом · Карта · Деньги
@@ -181,13 +181,13 @@ Main ── bottom bar: Дом · Карта · Деньги
 
 ### 4.2 Screen specifications
 
-**1–2. FirstRun.** *Purpose:* let the child make the pet theirs before the live hub is explained, without writing a partial profile (R1, R2). One controlled journey owns an in-memory draft through phases Питомец and Имя. *Питомец:* a complete default pet is selected; live preview plus bead sliders for «Вид» (3), «Окрас» (3), and «Аксессуар» (3); the selected stop is the accent bead in its circle, not a Chip check. *Имя:* no on-screen title; compact speech cloud above a centered pet, tail pointing down; the cloud is «Меня зовут» plus a name-tag chip (placeholder «____», trailing pencil pictogram, accessible name «Меня зовут») that accepts 1–20 visible characters after trimming; «Дальше» stays disabled until that name is valid; disabled primary is flat grey. Visible and Android Back traverse the draft without losing choices; Back from Питомец may exit, and reopening restarts from defaults. Valid Имя «Дальше» atomically creates the profile (leftover persistence `name` equals `petName`, both the trimmed pet name), then leaves for Main; on failure the draft remains and «Не получилось начать игру. Попробуй ещё раз.» offers retry. No profile row is written earlier. On «Имя», TalkBack names the chip «Меня зовут» and the pet image describes appearance without a name.
+**1–2. FirstRun.** *Purpose:* let the child make the pet theirs before the live hub is explained, without writing a partial profile (R1, R2). One controlled journey opens with six static cards, then owns an in-memory draft through phases Питомец and Имя. *Cards:* title and body from `intro.json`, in order welcome → goal → decisions → appearance → name → budget. Top row is a back icon whose accessible name is «Назад», then a progress bar filled to the current card out of 6, then the text `1/6`…`6/6`. Cards 1–5 pin «Дальше»; card 6 pins «Готово», which opens Питомец. Back on card 1 leaves the app the same way Android Back does; later cards return to the previous card. No «Пропустить». The cards grant nothing and write nothing. *Питомец:* a complete default pet is selected; live preview plus bead sliders for «Вид» (3), «Окрас» (3), and «Аксессуар» (3); the selected stop is the accent bead in its circle, not a Chip check. *Имя:* no on-screen title; compact speech cloud above a centered pet, tail pointing down; the cloud is «Меня зовут» plus a name-tag chip (placeholder «____», trailing pencil pictogram, accessible name «Меня зовут») that accepts 1–20 visible characters after trimming; «Дальше» stays disabled until that name is valid; disabled primary is flat grey. Visible and Android Back traverse the draft without losing choices; Back from Питомец may exit and does not return to the cards. Reopening before the profile exists restarts at card 1 and discards the draft. Valid Имя «Дальше» atomically creates the profile (leftover persistence `name` equals `petName`, both the trimmed pet name), then leaves for Main; on failure the draft remains and «Не получилось начать игру. Попробуй ещё раз.» offers retry. No profile row is written earlier. On «Имя», TalkBack names the chip «Меня зовут» and the pet image describes appearance without a name.
 
-**Как играть.** Removed. Do not restore a spotlight walkthrough, a Стартовый бюджет explanation screen, or a Словарик replay.
+**Как играть.** Removed. Do not restore a spotlight walkthrough or a Словарик replay. The six opening cards are the intro.
 
-**3. StartingBudget.** Removed. The +100 grant still happens inside profile creation. There is no explanation screen.
+**3. StartingBudget.** Removed as a grant screen. The +100 grant still happens inside profile creation, with no feedback card. The sixth opening card introduces Стартовый бюджет before Питомец.
 
-**4. Main (three tabs).** *Purpose:* the pet, the map, and the money tools each have one place (R3, ADR-0004). The status strip is the compact Забота and Настроение meters (icon + bar, numbers in the accessible name), Баланс, Этап, and ⚙ «Настройки». There is no second pair of chunky bars, no active-Задание card, and no «Закончить день». *Дом, top→bottom under the strip:* large centered pet; «Демо: дни идут подряд» when Демо-режим; Пособие ribbon when that visit credited it (same profile); Цель card (name, accumulated/cost, remaining — display only); «Итоги»; «Магазин». A FeedbackCard for Пособие or a вклад that came due covers Дом only on the open that credits them. *Карта:* title «Карта заданий», no Back, «Словарик» in the title row. *Деньги:* dropdown trigger «Раздел денег» with Копилка, План, Журнал, and Банк (Банк hidden until `savings_where`, always present in Демо-режим). Cold start and a fresh provider open Копилка. The last choice is remembered while the app stays open; a locked Банк falls back to Копилка. Switching the dropdown drops an unfinished confirm; a saved План draft stays. While the open day has no confirmed plan, the План row is selected and shows a check plus «Составь план дня»; a confirmed plan shows «План готов» and is not selected. *Waiting day:* banner «Новый день откроется завтра» on Дом after the pet and the demo line, Магазин disabled, and План / Копилка / Банк show «Откроется завтра» and take no coins. Журнал, Карта, Словарик, and Итоги stay usable. Демо-режим never waits.
+**4. Main (three tabs).** *Purpose:* the pet, the map, and the money tools each have one place (R3, ADR-0004). The status strip is the compact Сытость and Настроение meters (icon + bar, numbers in the accessible name), Баланс, Этап, and ⚙ «Настройки». There is no second pair of chunky bars, no active-Задание card, and no «Закончить день». *Дом, top→bottom under the strip:* large centered pet; «Демо: дни идут подряд» when Демо-режим; Пособие ribbon when that visit credited it (same profile); Цель card (name, accumulated/cost, remaining — display only); «Итоги»; «Магазин». A FeedbackCard for Пособие or a вклад that came due covers Дом only on the open that credits them. *Карта:* title «Карта заданий», no Back, «Словарик» in the title row. *Деньги:* dropdown trigger «Раздел денег» with Копилка, План, Журнал, and Банк (Банк hidden until `savings_where`, always present in Демо-режим). Cold start and a fresh provider open Копилка. The last choice is remembered while the app stays open; a locked Банк falls back to Копилка. Switching the dropdown drops an unfinished confirm; a saved План draft stays. The closed control shows the current section and a dropdown arrow. The open list is its own panel, and the current section is the marked row. *Waiting day:* banner «Новый день откроется завтра» on Дом after the pet and the demo line, Магазин disabled, and План / Копилка / Банк show «Откроется завтра» and take no coins. Журнал, Карта, Словарик, and Итоги stay usable. Демо-режим never waits.
 
 **5. Plan (План).** Embedded in Деньги: no Back and no own status strip. While the day is closed the body is the title plus «Откроется завтра» and the steppers are absent. *Purpose:* promise today's split across 3 areas without moving coins (R5). *Zones:* «Сегодня пришло: +N» (today's income: Пособие, Задания; day 1 includes Стартовый бюджет); available amount header (balance incl. today's Пособие); promise line «Это обещание на сегодня. Монеты пока в Балансе.»; card «Счета на сегодня» (optional note, e.g. «Питомец простыл…», and «Обед 12 · Проезд 8 = 20»; if Баланс < Счета, «На все счета не хватает N…»); three bucket rows in decision order — Обязательные, Копилка, Желаемые — each with the integer, a horizontal track 0…available, −/+ (tap ±1, hold repeats), and a pictogram; Обязательные start at today's Счета on a fresh draft and cannot go below them («Обязательных не меньше N — это счета.»; floor clamped to Баланс); Копилка extra «Положишь их отдельно — в Копилке.» plus a live Цель forecast («Скейтборд: накопишь через N дней, если откладывать столько каждый день.» / «Если ничего не отложить, Скейтборд не станет ближе.»); Желаемые hint «Хватит на: …» (cheapest-first items that fit); on later days a draft-only «вчера N» per row from last closed actuals (purchases / `savings_in`), including «вчера 0»; remainder line «Останется свободных: N»; validation line when total > available (blocks confirm); Обязательные below Счета also blocks confirm; «Подтвердить план». After confirm, leftover follow-through is on Магазин (open tab) and Копилка home, not on this screen, Main, or the status strip. *States:* draft (editable; yesterday hint when a closed day exists) → confirmed (locked; confirmation sheet repeats that this is a promise: coins stay in Баланс until Магазин / Копилка, then the plan cannot change; no yesterday; no track) → during-day view adds plan-vs-actual columns (план / потрачено per bucket) → day closed (title and «Откроется завтра» only). *Leaves:* the Деньги tab.
 
@@ -211,11 +211,11 @@ Main ── bottom bar: Дом · Карта · Деньги
 
 **15. Settings (⚙).** *Zones:* app name and version; «Взрослый раздел» in every build. Opened from the play-screen strip ⚙ (accessible name «Настройки»). *Leaves:* Main, or AdultGate.
 
-**16. FeedbackCard (component, centered sheet).** *Zones:* delta rows with icons (Баланс ±N · Копилка ±N · Забота ±N · Настроение ±N); a full-screen tap-catch so the hub behind is inert. Пособие uses chip «Начало игрового дня» (never «награда») instead of a «потому что» sentence. Every card, including the first Пособие, confirms with «Понятно» and does not dim the hub. Purchase / savings / task cards keep cause + next-step lines. Every row is also appended to Журнал. Used after: grant, Пособие, purchase (Баланс or from Копилка), blocked purchase (variation), transfer, withdrawal, task reward, parent bonus (stretch). Reaching the Цель price is Celebration only — no FeedbackCard and no Настроение row until the item is bought.
+**16. FeedbackCard (component, centered sheet).** *Zones:* delta rows with icons (Баланс ±N · Копилка ±N · Сытость ±N · Настроение ±N); a full-screen tap-catch so the hub behind is inert. Пособие uses chip «Начало игрового дня» (never «награда») instead of a «потому что» sentence. Every card, including the first Пособие, confirms with «Понятно» and does not dim the hub. Purchase / savings / task cards keep cause + next-step lines. Every row is also appended to Журнал. Used after: grant, Пособие, purchase (Баланс or from Копилка), blocked purchase (variation), transfer, withdrawal, task reward, parent bonus (stretch). Reaching the Цель price is Celebration only — no FeedbackCard and no Настроение row until the item is bought.
 
 ### 4.3 Key flows
 
-- **First launch (Appendix A 1–4):** Launch → FirstRun Питомец → Имя (profile created) → Дом → ordinary Пособие «Понятно». Force-quit before profile creation discards the draft and restarts at Питомец. Force-quit after Имя reopens Дом with no walkthrough.
+- **First launch (Appendix A 1–4):** Launch → six opening cards → FirstRun Питомец → Имя (profile created) → Дом → ordinary Пособие «Понятно». Force-quit before profile creation discards the draft and restarts at card 1. Force-quit after Имя reopens Дом with no walkthrough.
 - **Day loop (normal & demo):** day opens on entering Main after unlock → Пособие +20 via FeedbackCard → Plan confirmed from Деньги → free play (Магазин / Карта / Копилка; plan-vs-actual live on Plan). Nothing in the shell closes a day. After a day has closed, normal play waits until the next calendar morning (banner on Дом, Магазин disabled, План / Копилка / Банк frozen); Демо-режим opens the next day on the next visit to Main. Журнал, Карта, Словарик, and Итоги stay available. The stored record is Итоги.
 - **Insufficient funds (Appendix A 7):** Магазин → buy Игрушка (25) at balance < 25 → BlockedSheet (needs N more; options) → a way out exists in-app (Задание now, Пособие tomorrow, or «Сделать целью»).
 - **Savings withdrawal (R7):** Копилка → «Забрать» → amount → WithdrawPreview (pot after, date shift) → separate confirm → FeedbackCard.
@@ -241,7 +241,7 @@ Eleven items. Optional boolean `once` defaults false; true only on Скейтб�
 
 ### 5.2 `terms.json`
 
-Catalog optional rows are the only Цель source (`id`, `name`, `cost` = price, `description`; `once` as above). Do not restore a parallel `goals.json` presets file. Terms: the 11 glossary entries including План. Do not restore `hint.json` or a «Как играть» overlay.
+Catalog optional rows are the only Цель source (`id`, `name`, `cost` = price, `description`; `once` as above). Do not restore a parallel `goals.json` presets file. Terms: the 11 glossary entries including План. Do not restore `hint.json` or a «Как играть» overlay. `intro.json` is the six opening cards (`welcome`, `goal`, `decisions`, `appearance`, `name`, `budget`), each with `title` and `body`. Shipped strings are placeholders.
 
 ### 5.3 `tasks.json` — task node schema
 
@@ -282,7 +282,7 @@ Verdicts: `good` ✅ / `warn` 🤔 / `bad` ⚠️ — always with icon, text, an
 ### 6.1 «Первый план» — budget_first_plan
 Intro: «Сегодня школьная ярмарка! У питомца нет обеда, а ты хочешь мороженое. У тебя 20 монет.»
 - **N1 «С чего начнёшь?»**
-  - ✅ «Купить обед (10)» → Забота +5 → N2. «Обязательные расходы — самое важное. Сначала нужды, потом мечты.»
+  - ✅ «Купить обед (10)» → Сытость +5 → N2. «Обязательные расходы — самое важное. Сначала нужды, потом мечты.»
   - ⚠️ «Сначала мороженое (7)» → retry. «На обед больше не хватает. Желаемое подождёт, а питомец — нет.»
   - ⚠️ «Всё в копилку (20)» → retry. «Копить хорошо, но питомец остался голодным. Обязательное важнее.»
 - **N2 «Обед куплен. Сколько отложить в копилку?»** (осталось 10)
@@ -294,7 +294,7 @@ Intro: «Сегодня школьная ярмарка! У питомца не�
 Intro: «У питомца порвался рюкзак. Починка — 8 монет. Но ты уже запланировал киндер-яйцо за 8!»
 - **N1 «Что делать?»**
   - ✅ «Починить рюкзак, яйцо — потом» → exit. «Отложить желаемое — тоже решение. Рюкзак важнее.»
-  - ⚠️ «Сначала яйцо» → Настроение +5, затем Забота −15, **spawnTask «Почини рюкзак»** → exit. «Обязательный ремонт нельзя пропускать. Вот задание, чтобы всё исправить.»
+  - ⚠️ «Сначала яйцо» → **spawnTask «Почини рюкзак»** → exit. The answer does not move Сытость or Настроение. «Обязательный ремонт нельзя пропускать. Вот задание, чтобы всё исправить.»
   - 🤔 «Взять из копилки» → preview: дата мечты +1 день → exit. «Можно, но копилка — для мечты, и дата отодвинулась. В следующий раз лучше отложить желаемое.»
 
 ### 6.3 «Копилка мечты» — savings_dream_jar
@@ -337,7 +337,7 @@ Each milestone ends with a demoable increment. Do not start a stretch item (§2.
   *AC:* release APK builds and installs on an Android 8.0 (API 26) emulator; portrait locked; cold launch → Main ≤5 s.
 - **M1 — Domain core (Days 1–2).** `core/` modules + Clock port; content loader with zod; repositories + schema (§3.2) with invariants. Jest suite covering the four mandated areas: **budgeting, debiting, savings, progress/stages** + day gating.
   *AC:* `npm test` green; no UI yet.
-- **M2 — Первый запуск, pet, shell (Days 2–4).** Screens per §4.2 #1–4: FirstRun state machine (3×3×3 pet customization → «Имя» for the Питомец only → atomic profile creation); Стартовый бюджет granted at profile creation with no feedback card; three-tab Main (Дом, Карта, Деньги) with the strip meters and the Цель card; Словарик on Карта and no walkthrough.
+- **M2 — Первый запуск, pet, shell (Days 2–4).** Screens per §4.2 #1–4: FirstRun state machine (six opening cards → 3×3×3 pet customization → «Имя» for the Питомец only → atomic profile creation); Стартовый бюджет granted at profile creation with no feedback card; three-tab Main (Дом, Карта, Деньги) with the strip meters and the Цель card; Словарик on Карта and no walkthrough.
   *AC:* Appendix A steps 1–4 passable end-to-end on device.
 - **M3 — Economy loop UI (Days 4–6).** Screens per §4.2 #5–7, 11, 16: План (3 buckets, total ≤ available, remainder shown, editable until confirmed, plan-vs-actual); Магазин (catalog, pre-purchase sheet, confirm, insufficient-funds block with options); Копилка (one catalog Цель, deposits that fund without spending, buy from pot, withdrawal with double confirm + before/after + date shift); Журнал; FeedbackCard on every coin/meter movement.
   *AC:* steps 5–9 passable; a wrong-path purchase demonstrates the safe-error rule (no dead ends).

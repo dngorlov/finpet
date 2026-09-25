@@ -32,15 +32,16 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Купить" }));
 
     expect(screen.getByText("Баланс -12")).toBeOnTheScreen();
-    expect(screen.getByText("Забота +10")).toBeOnTheScreen();
+    expect(screen.getByText("Сытость +10")).toBeOnTheScreen();
+    expect(screen.getByText("Настроение +5")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     expect(screen.getByText("Куплено")).toBeOnTheScreen();
     expect(screen.getByLabelText("Баланс 108")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Забота 60")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Сытость 60")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
     expect(screen.getByLabelText("Баланс 108")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Забота 60")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Сытость 60")).toBeOnTheScreen();
   });
 
   it("buys an optional item from the Желаемое tab", async () => {

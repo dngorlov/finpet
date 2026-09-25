@@ -1,0 +1,11 @@
+{
+  "contentVersion": 1,
+  "cards": [
+    { "id": "welcome", "title": "Заголовок 1", "body": "Описание 1" },
+    { "id": "goal", "title": "Заголовок 2", "body": "Описание 2" },
+    { "id": "decisions", "title": "Заголовок 3", "body": "Описание 3" },
+    { "id": "appearance", "title": "Заголовок 4", "body": "Описание 4" },
+    { "id": "name", "title": "Заголовок 5", "body": "Описание 5" },
+    { "id": "budget", "title": "Заголовок 6", "body": "Описание 6" }
+  ]
+}

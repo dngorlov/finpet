@@ -7,7 +7,7 @@ A single-context project: an offline Android game that teaches kids 7–11 basic
 ### Profiles & modes
 
 **Первый запуск (First run)**:
-The one-time journey in which a child creates a Профиль ребёнка.
+The one-time journey in which a child creates a Профиль ребёнка. It opens with six static explanation cards, then the child chooses the Питомец.
 _Avoid_: онбординг, туториал, обучение
 
 **Профиль ребёнка (Child profile)**:
@@ -61,7 +61,7 @@ The reopenable record of the last closed Игровой день — its score, 
 _Avoid_: Прогресс, отчёт, итоги дня
 
 **Обязательные расходы (Mandatory expenses)**:
-Purchases the pet needs (food, school supplies, transport, medicine). Skipping today's Счета hurts Забота, unless Магазин is Закрыто.
+Purchases the pet needs (food, school supplies, transport, medicine). Skipping today's Обед hurts Сытость. Skipping any other of today's Счета hurts Настроение once. Neither happens while Магазин is Закрыто.
 
 **Счета (Day bills)**:
 The mandatory items due on a given Game Day, from a fixed content cycle. The План's Обязательные cannot be set below them, unless Магазин is Закрыто.
@@ -113,12 +113,12 @@ _Avoid_: цвет, окрас кожи, skin
 The extra item the pet wears — one of the three designer accessories.
 _Avoid_: украшение, шапка, hat
 
-**Забота (Care)**:
-The pet meter fed by buying Обязательные расходы on time.
-_Avoid_: здоровье, сытость
+**Сытость (Satiety)**:
+The pet meter fed by buying Обед.
+_Avoid_: здоровье, забота, голод
 
 **Настроение (Mood)**:
-The pet meter fed by Желаемые расходы.
+The pet meter fed by Желаемые расходы, by Обязательные other than Обед, and by Обед.
 _Avoid_: счастье, радость
 
 **Этап (Stage)**:

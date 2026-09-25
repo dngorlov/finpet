@@ -9,7 +9,7 @@ import { Badge } from "../components/Badge";
 import { GlyphLabel, Pictogram } from "../components/Pictogram";
 import { Card } from "../components/Card";
 import { useSession } from "../session/SessionProvider";
-import { strings } from "../strings";
+import { dayCloseLines, strings } from "../strings";
 import { colors, spacing, type } from "../theme";
 
 function journalLabel(
@@ -33,11 +33,7 @@ function journalLabel(
 }
 
 function meterReasonLines(deltas: DaySummaryView["meterDeltas"]): string[] {
-  const lines: string[] = [];
-  if (deltas.care < 0) lines.push(strings.meterReasonSkippedMandatory(deltas.care));
-  if (deltas.mood < 0) lines.push(strings.meterReasonOptionalOverspend(deltas.mood));
-  if (lines.length === 0) lines.push(strings.meterReasonNoChange);
-  return lines;
+  return dayCloseLines(deltas, false);
 }
 
 function useRecord() {
@@ -118,7 +114,10 @@ export function ResultsBody() {
       <Card>
         <Text style={styles.section}>{strings.resultsLastDay(lastClosed.n)}</Text>
         <Text style={styles.body}>{strings.resultsScore(lastClosed.score)}</Text>
-        <FactLine icon={strings.careIcon} label={strings.resultsScoreMandatory(lastClosed.facts.mandatoryCovered)} />
+        <FactLine
+          icon={lastClosed.facts.mandatoryCovered ? strings.scoreYesIcon : strings.needsMissedIcon}
+          label={strings.resultsScoreMandatory(lastClosed.facts.mandatoryCovered)}
+        />
         <FactLine icon={strings.navPlanPictogram} label={strings.resultsScoreWithinPlan(lastClosed.facts.withinPlan)} />
         <FactLine icon={strings.savingsIcon} label={strings.scoreDeposited(lastClosed.facts.deposited)} />
         <BucketLine

@@ -61,24 +61,15 @@ export const font = {
   pixel: "PressStart2P_400Regular",
 } as const;
 
-const PIXEL_SCREEN_TITLES = new Set([
-  "План",
-  "Магазин",
-  "Копилка",
-  "Задания",
-  "Итоги",
-  "Питомец",
-  "Банк",
-  "Словарик",
-  "ФинПет",
-]);
+/** Titles that stay the phone font. Press Start 2P is too wide for this line. */
+const PHONE_SCREEN_TITLES = new Set(["Карта заданий"]);
 
-/** Pixel face for the short one-line screen titles. Null keeps the phone font. */
+/** Pixel face for screen titles. Long lines use 16 sp so they still fit. */
 export function screenTitleStyle(label: string) {
-  if (!PIXEL_SCREEN_TITLES.has(label)) return null;
+  if (PHONE_SCREEN_TITLES.has(label)) return null;
   return {
     fontFamily: font.pixel,
-    fontSize: 24,
+    fontSize: label.length > 12 ? 16 : 24,
     fontWeight: "400" as const,
   };
 }

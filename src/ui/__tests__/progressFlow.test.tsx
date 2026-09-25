@@ -79,7 +79,7 @@ describe("Прогресс", () => {
     expect(screen.getByText("план 12 · потрачено 12")).toBeOnTheScreen();
     expect(screen.getByText("план 5 · потрачено 5")).toBeOnTheScreen();
     expect(screen.getByText("план 15 · потрачено 15")).toBeOnTheScreen();
-    expect(screen.getByText("Забота и настроение без изменений")).toBeOnTheScreen();
+    expect(screen.getByText("Сытость и настроение без изменений")).toBeOnTheScreen();
     expect(screen.getByText("Этап Друг")).toBeOnTheScreen();
     expect(screen.getByText("Питомец доверяет тебе: теперь ты Друг!")).toBeOnTheScreen();
     expect(screen.getByText("Игровых дней: 1")).toBeOnTheScreen();

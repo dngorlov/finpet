@@ -18,6 +18,7 @@ import { usePlayChrome } from "../navigation/playChrome";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, type } from "../theme";
+import { meterDeltaMap } from "../../core/economy";
 import { confirmedLeftover, leftoverAfterTap } from "./planLeftover";
 
 type Phase =
@@ -28,7 +29,7 @@ type Phase =
   | { name: "celebration" };
 
 function engineItem(item: CatalogItemContent) {
-  return { id: item.id, kind: item.kind, price: item.price, effect: item.effect, once: item.once };
+  return { id: item.id, kind: item.kind, price: item.price, effect: item.effect, also: item.also, once: item.once };
 }
 
 export default function SavingsScreen() {
@@ -143,8 +144,7 @@ export default function SavingsScreen() {
     setFeedback({
       deltas: {
         savings: -activeItem.price,
-        care: activeItem.effect.meter === "care" ? activeItem.effect.delta : undefined,
-        mood: activeItem.effect.meter === "mood" ? activeItem.effect.delta : undefined,
+        ...meterDeltaMap(activeItem),
       },
       cause: strings.feedbackCausePurchase,
       nextStep: strings.feedbackNextGoal,

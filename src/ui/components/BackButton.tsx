@@ -2,6 +2,7 @@ import { useNavigation } from "@react-navigation/native";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { strings } from "../strings";
 import { colors, minTarget, spacing, type } from "../theme";
+import { PixelIcon } from "./Pictogram";
 
 export function BackButton() {
   const navigation = useNavigation();
@@ -12,6 +13,7 @@ export function BackButton() {
       onPress={() => navigation.goBack()}
       style={styles.button}
     >
+      <PixelIcon name="arrow-left" color={colors.text} />
       <Text style={styles.label}>{strings.back}</Text>
     </Pressable>
   );
@@ -19,7 +21,10 @@ export function BackButton() {
 
 const styles = StyleSheet.create({
   button: {
+    alignItems: "center",
     alignSelf: "flex-start",
+    flexDirection: "row",
+    gap: spacing.s,
     justifyContent: "center",
     minHeight: minTarget,
     minWidth: minTarget,

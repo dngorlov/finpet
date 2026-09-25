@@ -10,7 +10,7 @@
 - Onboarding: brief intro to the game's purpose + the three decision types (spend on required item / spend on desired item / postpone)
 - Guest mode, no mandatory registration; child profile = game name + selected character
 - The intro hint is returnable at any time
-- **Resolved:** Первый запуск is ordered Питомец → Имя. The child first chooses the pet's Вид, Окрас, and Аксессуар, then names only the Питомец on «Имя» (compact in-cloud chip). Valid Имя «Дальше» writes the Профиль ребёнка (leftover `name` equals `petName`) and opens Main. The first Пособие card is the ordinary one (chip «Начало игрового дня», «Понятно», no dim). There is no «Как играть» walkthrough and no replay from Словарик. Profile = the pet (name + appearance); no account; Первый запуск does not collect a name for the ребёнка. (ROADMAP §2.5, §4.2)
+- **Resolved:** Первый запуск opens with six static cards (welcome, Цель, the three decision types, appearance, name, Стартовый бюджет), then Питомец → Имя. The cards do not write a profile, do not grant coins, cannot be skipped, and are not replayed. Closing the app before the profile exists restarts at the first card. The child then chooses the pet's Вид, Окрас, and Аксессуар, then names only the Питомец on «Имя» (compact in-cloud chip). Valid Имя «Дальше» writes the Профиль ребёнка (leftover `name` equals `petName`) and opens Main. The first Пособие card is the ordinary one (chip «Начало игрового дня», «Понятно», no dim). There is no «Как играть» walkthrough and no replay from Словарик. Profile = the pet (name + appearance); no account; Первый запуск does not collect a name for the ребёнок. (ROADMAP §2.5, §4.2; ADR-0003)
 
 ## 2. Pet Creation
 - Pet appearance customization
@@ -21,14 +21,14 @@
 ## 3. Main Screen
 - Simultaneously visible without complex navigation: pet, available balance, current goal, key status indicators
 - Reachable from the play shell: budget plan, tasks, purchases, savings, the day record, adult section
-- **Resolved:** three-tab shell (ADR-0004). Bottom bar on the roots only: Дом, Карта, Деньги. Fresh launch opens Дом; Деньги opens on Копилка and remembers the last choice while the app stays open. The strip carries compact Забота and Настроение meters, Баланс, Этап, and ⚙ Настройки. Дом, under the strip: pet, the demo line when Демо-режим, the Пособие ribbon when credited this visit, the Цель card (display only), Итоги, Магазин. Карта is Карта заданий plus Словарик. Деньги dropdown: Копилка, План, Журнал, Банк (Банк after `savings_where`, always in Демо-режим). Взрослый раздел is in Настройки in every build, behind the arithmetic gate. Key status indicators = Забота and Настроение, and they are the strip meters. (ROADMAP §4.2; ADR-0004)
+- **Resolved:** three-tab shell (ADR-0004). Bottom bar on the roots only: Дом, Карта, Деньги. Fresh launch opens Дом; Деньги opens on Копилка and remembers the last choice while the app stays open. The strip carries compact Сытость and Настроение meters, Баланс, Этап, and ⚙ Настройки. Дом, under the strip: pet, the demo line when Демо-режим, the Пособие ribbon when credited this visit, the Цель card (display only), Итоги, Магазин. Карта is Карта заданий plus Словарик. Деньги dropdown: Копилка, План, Журнал, Банк (Банк after `savings_where`, always in Демо-режим). Взрослый раздел is in Настройки in every build, behind the arithmetic gate. Key status indicators = Сытость and Настроение, and they are the strip meters. (ROADMAP §4.2; ADR-0004)
 
 ## 4. Game Currency & Income
 - Only in-game currency (no real money anywhere)
 - Income from completing tasks and/or a clear recurring income (doc's example: daily login)
 - Every accrual shows source + amount; balance never changes without an explanation to the user
 - Starting budget granted at profile setup (game loop step 4)
-- **Resolved:** currency = монеты. Стартовый бюджет **100** granted at profile creation. The grant has no explanation screen. Пособие **+20** per Игровой день (recurring income; raised from 10 on 2026-09-22 so Счета and a Цель both fit the 5-day demo). Task reward: up to the Задание's max (10–15) scaled by first-try answers; replays pay only the improvement. Every movement goes through a feedback card (source + amount). (ROADMAP §2.1, §4.2)
+- **Resolved:** currency = монеты. Стартовый бюджет **100** granted at profile creation. The sixth opening card introduces it; the grant itself has no feedback card. Пособие **+20** per Игровой день (recurring income; raised from 10 on 2026-09-22 so Счета and a Цель both fit the 5-day demo). Task reward: up to the Задание's max (10–15) scaled by first-try answers; replays pay only the improvement. Every movement goes through a feedback card (source + amount). (ROADMAP §2.1, §4.2; ADR-0003)
 
 ## 5. Budget Planning
 - Before each game period: distribute available amount across **≥3 areas** — mandatory expenses, optional expenses, savings
@@ -41,7 +41,7 @@
 - Pre-purchase display: price, category, estimated impact on the pet
 - Purchase requires confirmation → deducts balance → recorded in current-period history
 - Block negative balance & insufficient-funds purchases; instead explain what's missing and what options exist
-- **Resolved:** 11 items — mandatory: Обед 12 (Забота +10), Школьные принадлежности 10 (Забота +5), Проезд 8 (Забота +5), Лекарство 15 (Забота +20); optional (rebuyable): Конфета 5 (Настроение +5), Стикеры 7 (Настроение +6), Кино 20 (Настроение +12), Игрушка 25 (Настроение +10); optional (`once`): Скейтборд 90 (Настроение +12), Телескоп 160 (Настроение +15), Велосипед 240 (Настроение +18). Mandatory items are not all due every day: each Игровой день has **Счета** — the mandatory items due that day, from the `bills` cycle in `catalog.json` (Обед + Проезд daily, Школьные every other day, Лекарство only on the «простыл» day). Blocked purchase shows a sheet: how much is missing + options (wait for Пособие / do a Задание / «Сделать целью» for a Желаемое, «Отложить» for an Обязательное). (ROADMAP §2.1, §4.2)
+- **Resolved:** 11 items — mandatory: Обед 12 (Сытость +10 and Настроение +5), Школьные принадлежности 10 (Настроение +5), Проезд 8 (Настроение +5), Лекарство 15 (Настроение +20); optional (rebuyable): Конфета 5 (Настроение +5), Стикеры 7 (Настроение +6), Кино 20 (Настроение +12), Игрушка 25 (Настроение +10); optional (`once`): Скейтборд 90 (Настроение +12), Телескоп 160 (Настроение +15), Велосипед 240 (Настроение +18). Unpaid Обед drops Сытость by 15. Any other unpaid Счёт drops Настроение by 15 once. Желаемые overspend still drops Настроение by 5, and the two mood drops stack. Mandatory items are not all due every day: each Игровой день has **Счета** — the mandatory items due that day, from the `bills` cycle in `catalog.json` (Обед + Проезд daily, Школьные every other day, Лекарство only on the «простыл» day). Blocked purchase shows a sheet: how much is missing + options (wait for Пособие / do a Задание / «Сделать целью» for a Желаемое, «Отложить» for an Обязательное). (ROADMAP §2.1, §4.2)
 
 ## 7. Savings & Goals
 - Goals with a clear cost, or goal creation from preset parameters — minimum **3 goals**
@@ -65,7 +65,7 @@
 - Feedback explains cause-and-effect in simple terms + suggests the next step
 - Unsuccessful decision: explanation of consequences + a correction path (new task, adjust next plan, cancel an optional purchase)
 - Safe-error rule: an unsuccessful choice creates a clear, timed game task and does **not** reset progress; no pet death/illness/injury except specially planned cases (doc's example: unforeseen medical expenses)
-- **Resolved:** every action shows a feedback card: Баланс ±, Копилка ±, Забота/Настроение ± with icons, a cause line, and a «Что дальше» next-step line (strings from content JSON). No illness/death/recovery events in v1: negative outcomes only lower meters, switch the pet pose to sad, and spawn a timed correction Задание (`spawnTask`) or a next-day plan-adjust hint. The doc's "unforeseen medical expense" exists solely as the Лекарство catalog item; an event variant is stretch. (ROADMAP §2.2, §2.6, §4.2)
+- **Resolved:** every action shows a feedback card: Баланс ±, Копилка ±, Сытость/Настроение ± with icons, a cause line, and a «Что дальше» next-step line (strings from content JSON). No illness/death/recovery events in v1: negative outcomes only lower meters, switch the pet pose to sad, and spawn a timed correction Задание (`spawnTask`) or a next-day plan-adjust hint. The doc's "unforeseen medical expense" exists solely as the Лекарство catalog item; an event variant is stretch. (ROADMAP §2.2, §2.6, §4.2)
 
 ## 10. Pet Progress & Development
 - Minimum **3 development stages/states**
@@ -76,7 +76,7 @@
 ## 11. History & Learning Progress
 - Visible: completed tasks, progress toward current goal, results of the last game period
 - Short help section explaining key terms
-- **Resolved:** no Прогресс screen (ADR-0004). Итоги on Дом is the reopenable record (last closed day + overall counts). Журнал is a Деньги section. Словарик on Карта has «Слова» (the 11 terms) and «Уроки» (unscored cards of open уроки). Key terms: Баланс, Копилка, Цель, Пособие, План, Обязательные расходы, Желаемые расходы, Забота, Настроение, Этап, Игровой день — one-to-one with `CONTEXT.md`, kid-worded definitions. (ROADMAP §2.5, §4.2; ADR-0004)
+- **Resolved:** no Прогресс screen (ADR-0004). Итоги on Дом is the reopenable record (last closed day + overall counts). Журнал is a Деньги section. Словарик on Карта has «Слова» (the 11 terms) and «Уроки» (unscored cards of open уроки). Key terms: Баланс, Копилка, Цель, Пособие, План, Обязательные расходы, Желаемые расходы, Сытость, Настроение, Этап, Игровой день — one-to-one with `CONTEXT.md`, kid-worded definitions. (ROADMAP §2.5, §4.2; ADR-0004)
 
 ## 12. Adult Section
 - Entry barrier: simple adult gate (doc's examples: hold a button, solve an arithmetic problem)
@@ -94,7 +94,7 @@
 ## 14. End-to-End Game Loop (acceptance flow — Appendix A)
 Steps 1–10 form the loop; 11–12 verify persistence and the adult section:
 1. First launch + customize pet → 2. Name the Питомец on «Имя», creating the local profile → 3. Main and the ordinary Пособие card → 4. Current goal, available tasks → 5. Distribute funds (mandatory/optional/savings) → 6. Complete a task, earn currency (with result explanation) → 7. Make ≥1 mandatory + ≥1 optional purchase (must include an attempted insufficient-funds purchase) → 8. Select a goal, replenish savings → 9. Feedback on balance, plan completion, pet status → 10. Transition to next period; progress/stage changes after a series of decisions → 11. Close & relaunch (progress confirmed saved) → 12. Enter adult section, reset/delete test profile
-- **Resolved:** the concrete sequence is specified screen-by-screen in ROADMAP §4 (design flow: screen map, per-screen specs, and the key flows including the day loop, insufficient-funds staging, correction path, demo walkthrough, and relaunch persistence). Appendix A step 2 is the pet-only «Имя» phase that writes the profile. Step 3 is Main with the ordinary Пособие card. There is no «Как играть» tour. Acceptance = milestone ACs (ROADMAP §7) + the scripted manual cases (ROADMAP §8). (ROADMAP §4, §7, §8)
+- **Resolved:** the concrete sequence is specified screen-by-screen in ROADMAP §4 (design flow: screen map, per-screen specs, and the key flows including the day loop, insufficient-funds staging, correction path, demo walkthrough, and relaunch persistence). Appendix A step 1 starts with the six opening cards, then pet customization. Step 2 is the pet-only «Имя» phase that writes the profile. Step 3 is Main with the ordinary Пособие card. There is no «Как играть» tour. Acceptance = milestone ACs (ROADMAP §7) + the scripted manual cases (ROADMAP §8). (ROADMAP §4, §7, §8; ADR-0003)
 
 ---
 

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, userEvent } from "@testing-library/react-native";
+import { BackHandler } from "react-native";
 import { loadContent } from "../../data/content";
 import { FinPetApp } from "../FinPetApp";
 import { strings } from "../strings";
@@ -13,8 +14,20 @@ async function renderApp(ports = createFakePorts()) {
   return { user, ports, view };
 }
 
-async function finishName(user: ReturnType<typeof userEvent.setup>) {
+async function leaveOpeningCards(user: ReturnType<typeof userEvent.setup>) {
+  for (let step = 0; step < 5; step += 1) {
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+  }
+  await user.press(screen.getByRole("button", { name: "Готово" }));
+}
+
+async function reachName(user: ReturnType<typeof userEvent.setup>) {
+  await leaveOpeningCards(user);
   await user.press(screen.getByRole("button", { name: "Дальше" }));
+}
+
+async function finishName(user: ReturnType<typeof userEvent.setup>) {
+  await reachName(user);
   await user.type(screen.getByRole("textbox", { name: "Меня зовут" }), "Пух");
   await user.press(screen.getByRole("button", { name: "Дальше" }));
 }
@@ -53,9 +66,9 @@ function expectMainChrome() {
   expect(screen.getByLabelText("Этап Новичок")).toBeOnTheScreen();
   expect(screen.getByText("Новичок")).toBeOnTheScreen();
   expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
-  expect(screen.getByLabelText("Забота 50")).toBeOnTheScreen();
+  expect(screen.getByLabelText("Сытость 50")).toBeOnTheScreen();
   expect(screen.getByLabelText("Настроение 50")).toBeOnTheScreen();
-  expect(screen.queryByText("Забота 50")).not.toBeOnTheScreen();
+  expect(screen.queryByText("Сытость 50")).not.toBeOnTheScreen();
   expect(screen.queryByText("Настроение 50")).not.toBeOnTheScreen();
   expect(screen.getByRole("button", { name: "Магазин" })).toBeOnTheScreen();
   expect(screen.getByRole("button", { name: "Итоги" })).toBeOnTheScreen();
@@ -74,7 +87,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     Object.defineProperty(globalThis, "crypto", { configurable: true, value: undefined });
     try {
       await renderApp();
-      expect(screen.getByText("Питомец")).toBeOnTheScreen();
+      expect(screen.getByText("Заголовок 1")).toBeOnTheScreen();
     } finally {
       if (descriptor) {
         Object.defineProperty(globalThis, "crypto", descriptor);
@@ -102,8 +115,44 @@ describe("first-run flow (Appendix A 1–4)", () => {
     }
   });
 
+  it("walks six opening cards before Питомец", async () => {
+    const ports = createFakePorts();
+    const complete = jest.spyOn(ports.firstRun, "complete");
+    const exit = jest.spyOn(BackHandler, "exitApp").mockImplementation(() => undefined);
+    try {
+      const { user } = await renderApp(ports);
+
+      expect(screen.getByText("Заголовок 1")).toBeOnTheScreen();
+      expect(screen.getByText("Описание 1")).toBeOnTheScreen();
+      expect(screen.getByText("1/6")).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: "Дальше" })).toBeOnTheScreen();
+      expect(screen.queryByRole("button", { name: "Готово" })).not.toBeOnTheScreen();
+      expect(screen.queryByRole("button", { name: "Пропустить" })).not.toBeOnTheScreen();
+      expect(screen.queryByText("Питомец")).not.toBeOnTheScreen();
+
+      await user.press(screen.getByRole("button", { name: "Назад" }));
+      expect(exit).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("Заголовок 1")).toBeOnTheScreen();
+
+      await user.press(screen.getByRole("button", { name: "Дальше" }));
+      expect(screen.getByText("Заголовок 2")).toBeOnTheScreen();
+      expect(screen.getByText("2/6")).toBeOnTheScreen();
+      await user.press(screen.getByRole("button", { name: "Назад" }));
+      expect(exit).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("Заголовок 1")).toBeOnTheScreen();
+
+      await leaveOpeningCards(user);
+      expect(screen.getByText("Питомец")).toBeOnTheScreen();
+      expect(screen.queryByText("6/6")).not.toBeOnTheScreen();
+      expect(complete).not.toHaveBeenCalled();
+    } finally {
+      exit.mockRestore();
+    }
+  });
+
   it("starts with pet customization before Имя", async () => {
     const { user } = await renderApp();
+    await leaveOpeningCards(user);
 
     expect(screen.getByText("Питомец")).toBeOnTheScreen();
     expect(screen.queryByLabelText("Этап Новичок")).not.toBeOnTheScreen();
@@ -142,6 +191,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     const ports = createFakePorts();
     const complete = jest.spyOn(ports.firstRun, "complete");
     const { user } = await renderApp(ports);
+    await leaveOpeningCards(user);
 
     await user.press(screen.getByRole("button", { name: "Вид 2" }));
     expectSelectedAppearanceOption("Вид 2");
@@ -175,10 +225,11 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByLabelText(/Питомец Пух.*Вид 2.*спокойный/)).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Деньги" }));
+    expect(screen.getAllByText("Копилка").length).toBeGreaterThan(0);
     await user.press(screen.getByRole("button", { name: "Раздел денег" }));
-    expect(screen.getByText("Составь план дня")).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Копилка" })).toBeSelected();
     const planRow = screen.getByRole("button", { name: "План" });
-    expect(planRow).toBeSelected();
+    expect(planRow).not.toBeSelected();
     await user.press(planRow);
     expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Назад" })).not.toBeOnTheScreen();
@@ -204,6 +255,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
 
     await user.press(screen.getByRole("button", { name: "Карта" }));
     await user.press(screen.getByRole("button", { name: "Словарик" }));
+    expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
     expect(content.terms).toHaveLength(11);
     expect(content.terms.map((term) => term.term)).toContain("План");
     for (const term of content.terms) {
@@ -219,6 +271,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     const ports = createFakePorts();
     const complete = jest.spyOn(ports.firstRun, "complete");
     const { user } = await renderApp(ports);
+    await leaveOpeningCards(user);
 
     await user.press(screen.getByRole("button", { name: "Вид 2" }));
     await user.press(screen.getByRole("button", { name: "Дальше" }));
@@ -246,6 +299,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
   it("validates the pet name after blur and restarts an abandoned draft", async () => {
     const ports = createFakePorts();
     const { user, view } = await renderApp(ports);
+    await leaveOpeningCards(user);
     await user.press(screen.getByRole("button", { name: "Вид 2" }));
     await user.press(screen.getByRole("button", { name: "Дальше" }));
 
@@ -257,15 +311,18 @@ describe("first-run flow (Appendix A 1–4)", () => {
     expect(screen.getByRole("button", { name: "Дальше" })).toBeDisabled();
 
     await view.unmount();
+    const again = userEvent.setup();
     await render(<FinPetApp ports={ports} />);
-    expect(screen.getByText("Питомец")).toBeOnTheScreen();
+    expect(screen.getByText("Заголовок 1")).toBeOnTheScreen();
+    expect(screen.queryByText("Питомец")).not.toBeOnTheScreen();
+    await leaveOpeningCards(again);
     expect(screen.getByRole("button", { name: "Вид 1" })).toBeSelected();
   });
 
   it("counts visible graphemes and trims the pet name before saving", async () => {
     const ports = createFakePorts();
     const { user } = await renderApp(ports);
-    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await reachName(user);
     const petName = nameField();
     const family = "👨‍👩‍👧‍👦";
 
@@ -293,7 +350,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
         throw new Error("write failed");
       });
     const { user } = await renderApp(ports);
-    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    await reachName(user);
     await user.type(nameField(), "Пух");
 
     await user.press(screen.getByRole("button", { name: "Дальше" }));

@@ -22,6 +22,7 @@ import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, minTarget, spacing, type } from "../theme";
+import { itemMeterEffects, meterDeltaMap } from "../../core/economy";
 import { confirmedLeftover, leftoverAfterTap } from "./planLeftover";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Shop">;
@@ -36,7 +37,11 @@ type Phase =
   | { name: "blockedAlreadyGoal"; item: CatalogItemContent; missing: number };
 
 function engineItem(item: CatalogItemContent) {
-  return { id: item.id, kind: item.kind, price: item.price, effect: item.effect, once: item.once };
+  return { id: item.id, kind: item.kind, price: item.price, effect: item.effect, also: item.also, once: item.once };
+}
+
+function impactLabel(effect: { meter: "care" | "mood"; delta: number }) {
+  return strings.shopImpact(effect.meter === "care" ? strings.care : strings.mood, effect.delta);
 }
 
 export default function ShopScreen({ navigation }: Props) {
@@ -113,8 +118,7 @@ export default function ShopScreen({ navigation }: Props) {
     setFeedback({
       deltas: {
         balance: -item.price,
-        care: item.effect.meter === "care" ? item.effect.delta : undefined,
-        mood: item.effect.meter === "mood" ? item.effect.delta : undefined,
+        ...meterDeltaMap(item),
       },
       cause: strings.feedbackCausePurchase,
       nextStep: strings.feedbackNextPurchase,
@@ -136,8 +140,7 @@ export default function ShopScreen({ navigation }: Props) {
     setFeedback({
       deltas: {
         savings: -item.price,
-        care: item.effect.meter === "care" ? item.effect.delta : undefined,
-        mood: item.effect.meter === "mood" ? item.effect.delta : undefined,
+        ...meterDeltaMap(item),
       },
       cause: strings.feedbackCausePurchase,
       nextStep: strings.feedbackNextPurchase,
@@ -316,14 +319,14 @@ export default function ShopScreen({ navigation }: Props) {
                     labelStyle={styles.body}
                   />
                   <Text style={styles.body}>{strings.shopPrice(item.price)}</Text>
-                  <GlyphLabel
-                    glyph={item.effect.meter === "care" ? strings.careIcon : strings.moodIcon}
-                    label={strings.shopImpact(
-                      item.effect.meter === "care" ? strings.care : strings.mood,
-                      item.effect.delta,
-                    )}
-                    labelStyle={styles.body}
-                  />
+                  {itemMeterEffects(item).map((effect) => (
+                    <GlyphLabel
+                      key={effect.meter}
+                      glyph={effect.meter === "care" ? strings.careIcon : strings.moodIcon}
+                      label={impactLabel(effect)}
+                      labelStyle={styles.body}
+                    />
+                  ))}
                   <Text style={styles.body}>{strings.shopAfterBuy(balance - item.price)}</Text>
                   {item.once ? <Text style={styles.body}>{strings.shopOnceLabel}</Text> : null}
                   {bought.includes(item.id) ? (
@@ -341,12 +344,11 @@ export default function ShopScreen({ navigation }: Props) {
           <Text style={styles.section}>{phase.item.name}</Text>
           <Text style={styles.body}>{phase.item.description}</Text>
           <Text style={styles.body}>{strings.shopPrice(phase.item.price)}</Text>
-          <Text style={styles.body}>
-            {strings.shopImpact(
-              phase.item.effect.meter === "care" ? strings.care : strings.mood,
-              phase.item.effect.delta,
-            )}
-          </Text>
+          {itemMeterEffects(phase.item).map((effect) => (
+            <Text key={effect.meter} style={styles.body}>
+              {impactLabel(effect)}
+            </Text>
+          ))}
           {phase.item.once ? <Text style={styles.body}>{strings.shopOnceLabel}</Text> : null}
         </Card>
       ) : null}

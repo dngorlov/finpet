@@ -4,7 +4,9 @@ import {
   billsForDay,
   checkPurchase,
   dayCloseMeterDeltas,
+  itemMeterEffects,
   planKept,
+  unpaidBillFlags,
   validatePlan,
   type CatalogItem,
   type PlanBuckets,
@@ -320,10 +322,9 @@ export function createFakePorts(): SessionPorts {
           paidFrom: "balance",
           boughtAsActiveGoal: asActive,
         });
-        if (item.effect.meter === "care") {
-          row.care = applyMeterDelta(row.care, item.effect.delta);
-        } else {
-          row.mood = applyMeterDelta(row.mood, item.effect.delta);
+        for (const effect of itemMeterEffects(item)) {
+          if (effect.meter === "care") row.care = applyMeterDelta(row.care, effect.delta);
+          else row.mood = applyMeterDelta(row.mood, effect.delta);
         }
         appendJournal(row, {
           amount: -item.price,
@@ -351,10 +352,9 @@ export function createFakePorts(): SessionPorts {
           paidFrom: "savings",
           boughtAsActiveGoal: true,
         });
-        if (item.effect.meter === "care") {
-          row.care = applyMeterDelta(row.care, item.effect.delta);
-        } else {
-          row.mood = applyMeterDelta(row.mood, item.effect.delta);
+        for (const effect of itemMeterEffects(item)) {
+          if (effect.meter === "care") row.care = applyMeterDelta(row.care, effect.delta);
+          else row.mood = applyMeterDelta(row.mood, effect.delta);
         }
         appendJournal(row, {
           amount: 0,
@@ -560,8 +560,10 @@ export function createFakePorts(): SessionPorts {
         const optionalSpend = bought
           .filter((item) => item.kind === "optional" && item.paidFrom !== "savings")
           .reduce((sum, item) => sum + item.price, 0);
+        const unpaid = unpaidBillFlags(mandatoryIds, boughtIds, catalog);
         const meterDeltas = dayCloseMeterDeltas({
-          missedMandatory: !mandatoryCovered,
+          missedFood: unpaid.missedFood,
+          missedOtherBill: unpaid.missedOtherBill,
           optionalSpend,
           optionalPlan: confirmed ? confirmed.optional : null,
         });

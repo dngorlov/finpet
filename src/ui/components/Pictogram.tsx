@@ -7,6 +7,8 @@ import { colors, spacing } from "../theme";
 const GLYPH_ICON: Record<string, PixelIconName> = {
   "←": "arrow-left",
   "☀": "sun",
+  "☺": "smile",
+  "!": "square-alert",
   "★": "star",
   "☆": "star",
   "⚙": "gear",
@@ -49,6 +51,18 @@ export function Pictogram({
       </Text>
     );
   }
+  return <PixelIcon name={name} size={size} color={color} />;
+}
+
+export function PixelIcon({
+  name,
+  size = 24,
+  color = colors.text,
+}: {
+  name: PixelIconName;
+  size?: number;
+  color?: string;
+}) {
   return (
     <View {...hidden}>
       <SvgXml xml={PIXEL_ICON_XML[name].replaceAll("currentColor", color)} width={size} height={size} />

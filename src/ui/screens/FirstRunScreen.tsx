@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { BackHandler, StyleSheet, Text, TextInput, View, type Role } from "react-native";
+import { BackHandler, Pressable, StyleSheet, Text, TextInput, View, type Role } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { IntroCardContent } from "../../data/content";
 import { createLocalId } from "../../data/localId";
 import { BeadSlider } from "../components/BeadSlider";
+import { Pictogram } from "../components/Pictogram";
+import { ScreenTitle } from "../components/ScreenTitle";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { TextButton } from "../components/TextButton";
@@ -21,7 +24,7 @@ import { strings } from "../strings";
 import { colors, minTarget, radius, spacing, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "FirstRun">;
-type Phase = "pet" | "name";
+type Phase = "cards" | "pet" | "name";
 type FirstRunDraft = {
   profileId: string;
   species: SpeciesKey;
@@ -34,7 +37,8 @@ const TEXTBOX_ROLE = "textbox" as Role;
 
 export default function FirstRunScreen({ navigation }: Props) {
   const { content, firstRun } = useSession();
-  const [phase, setPhase] = useState<Phase>("pet");
+  const [phase, setPhase] = useState<Phase>("cards");
+  const [cardIndex, setCardIndex] = useState(0);
   const [draft, setDraft] = useState<FirstRunDraft>(() => ({
     profileId: createLocalId("profile"),
     species: "sp1",
@@ -48,12 +52,17 @@ export default function FirstRunScreen({ navigation }: Props) {
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (phase === "cards") {
+        if (cardIndex === 0) return false;
+        setCardIndex((current) => current - 1);
+        return true;
+      }
       if (phase === "pet") return false;
       setPhase("pet");
       return true;
     });
     return () => subscription.remove();
-  }, [phase]);
+  }, [phase, cardIndex]);
 
   const completeFirstRun = () => {
     if (saving) return;
@@ -83,6 +92,23 @@ export default function FirstRunScreen({ navigation }: Props) {
     }
   };
 
+  if (phase === "cards") {
+    return (
+      <OpeningCards
+        cards={content.intro}
+        index={cardIndex}
+        onBack={() => {
+          if (cardIndex === 0) BackHandler.exitApp();
+          else setCardIndex((current) => current - 1);
+        }}
+        onNext={() => {
+          if (cardIndex >= content.intro.length - 1) setPhase("pet");
+          else setCardIndex((current) => current + 1);
+        }}
+      />
+    );
+  }
+
   if (phase === "pet") {
     return (
       <PetPhase
@@ -107,6 +133,43 @@ export default function FirstRunScreen({ navigation }: Props) {
   );
 }
 
+function OpeningCards({
+  cards,
+  index,
+  onBack,
+  onNext,
+}: {
+  cards: IntroCardContent[];
+  index: number;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  const card = cards[index];
+  if (!card) return null;
+  const last = index >= cards.length - 1;
+  const fraction = `${((index + 1) / cards.length) * 100}%` as const;
+
+  return (
+    <Screen
+      header={
+        <View style={styles.chrome}>
+          <Pressable role="button" aria-label={strings.back} onPress={onBack} style={styles.back}>
+            <Pictogram glyph={strings.backIcon} />
+          </Pressable>
+          <View accessibilityElementsHidden style={styles.track}>
+            <View style={[styles.fill, { width: fraction }]} />
+          </View>
+          <Text style={styles.step}>{`${index + 1}/${cards.length}`}</Text>
+        </View>
+      }
+      footer={<PrimaryButton label={last ? strings.done : strings.next} onPress={onNext} />}
+    >
+      <ScreenTitle style={styles.title}>{card.title}</ScreenTitle>
+      <Text style={styles.body}>{card.body}</Text>
+    </Screen>
+  );
+}
+
 function PetPhase({
   draft,
   onChange,
@@ -118,7 +181,7 @@ function PetPhase({
 }) {
   return (
     <Screen footer={<PrimaryButton label={strings.next} onPress={onNext} />}>
-      <Text style={styles.title}>{strings.firstRunPet}</Text>
+      <ScreenTitle style={styles.title}>{strings.firstRunPet}</ScreenTitle>
       <PetView
         species={draft.species}
         color={draft.color}
@@ -207,9 +270,9 @@ function NamePhase({
                 onBlur={onPetNameBlur}
                 style={styles.chipInput}
               />
-              <Text aria-hidden pointerEvents="none" style={styles.pen}>
-                {strings.namePen}
-              </Text>
+              <View pointerEvents="none" style={styles.pen}>
+                <Pictogram glyph={strings.namePen} />
+              </View>
             </View>
           </View>
           <View aria-hidden accessibilityElementsHidden style={styles.cloudTail} />
@@ -246,6 +309,35 @@ function isValidName(value: string): boolean {
 }
 
 const styles = StyleSheet.create({
+  chrome: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.s,
+    paddingHorizontal: spacing.l,
+    paddingTop: spacing.l,
+  },
+  track: {
+    backgroundColor: colors.track,
+    borderRadius: radius.card,
+    flex: 1,
+    height: spacing.s,
+    overflow: "hidden",
+  },
+  fill: {
+    backgroundColor: colors.fill,
+    height: spacing.s,
+  },
+  step: {
+    color: colors.text,
+    fontSize: type.body,
+    fontWeight: "700",
+  },
+  back: {
+    alignItems: "center",
+    height: minTarget,
+    justifyContent: "center",
+    width: minTarget,
+  },
   title: {
     color: colors.text,
     fontSize: type.title,

@@ -55,7 +55,8 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       expect(screen.getByText("Обязательные 0")).toBeOnTheScreen();
       expect(screen.getByText("По плану 0")).toBeOnTheScreen();
       expect(screen.getByText("Копилка 0")).toBeOnTheScreen();
-      expect(screen.getByText("Забота -15: пропущены обязательные расходы")).toBeOnTheScreen();
+      expect(screen.getByText("Сытость -15: пропущен обед")).toBeOnTheScreen();
+      expect(screen.getByText("Настроение -15: пропущены обязательные расходы")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
       await user.press(screen.getByRole("button", { name: "Карта" }));

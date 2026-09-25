@@ -7,7 +7,7 @@ import { STAGE_CODES, STAGE_NAMES, type Stage } from "../../core/stages";
 import { META_KEYS } from "../../data/metaKeys";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
-import { colors, minTarget, radius, spacing, type } from "../theme";
+import { colors, font, minTarget, radius, spacing, type } from "../theme";
 import { MeterBar } from "./MeterBar";
 import { Pictogram } from "./Pictogram";
 
@@ -92,14 +92,19 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     flexDirection: "row",
     gap: spacing.s,
-    minHeight: minTarget,
+    height: minTarget,
+    justifyContent: "center",
     paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
   },
   balanceValue: {
     color: colors.text,
-    fontSize: type.section,
-    fontWeight: "700",
+    fontFamily: font.pixel,
+    fontSize: 16,
+    fontWeight: "400",
+    includeFontPadding: false,
+    lineHeight: 24,
+    textAlign: "center",
+    textAlignVertical: "center",
   },
   stage: {
     alignItems: "center",
