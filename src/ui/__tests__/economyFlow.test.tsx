@@ -30,13 +30,13 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     await openTab(user, "Дом");
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
-    await user.press(screen.getByRole("button", { name: "Обед" }));
+    await user.press(screen.getByRole("button", { name: /^Обед/ }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText("Баланс -12")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
-    await user.press(screen.getByRole("button", { name: "Конфета" }));
+    await user.press(screen.getByRole("button", { name: /^Конфета/ }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText("Настроение +5")).toBeOnTheScreen();
@@ -51,9 +51,8 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
-    await user.press(screen.getByRole("button", { name: "Игрушка" }));
-    await user.press(screen.getByRole("button", { name: "Купить" }));
-    await user.press(screen.getByRole("button", { name: "Купить" }));
+    await user.press(screen.getByRole("button", { name: /^Игрушка/ }));
+    expect(screen.queryByRole("button", { name: "Купить" })).not.toBeOnTheScreen();
     expect(screen.getByText(/Не хватает/)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Дождаться пособия" }));
     expect(screen.getByText(/Пособие придёт/)).toBeOnTheScreen();
@@ -62,9 +61,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     await user.press(screen.getByRole("button", { name: "Дом" }));
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
-    await user.press(screen.getByRole("button", { name: "Игрушка" }));
-    await user.press(screen.getByRole("button", { name: "Купить" }));
-    await user.press(screen.getByRole("button", { name: "Купить" }));
+    await user.press(screen.getByRole("button", { name: /^Игрушка/ }));
     await user.press(screen.getByRole("button", { name: "Сделать целью" }));
     expect(screen.getByText(/Цель станет Игрушка/)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Закрыть" }));
@@ -96,7 +93,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
       const { user } = await renderApp(ports);
 
       await user.press(screen.getByRole("button", { name: "Магазин" }));
-      expect(screen.queryByText("Осталось 1")).not.toBeOnTheScreen();
+      expect(screen.queryByText("В плане осталось 1")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
       await confirmTinyPlan(user);
@@ -104,23 +101,23 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
 
       await user.press(screen.getByRole("button", { name: "Магазин" }));
       // Обязательные start at today's Счета (Обед 12 + Проезд 8) + 1 from confirmTinyPlan.
-      expect(screen.getByText("Осталось 21")).toBeOnTheScreen();
-      expect(screen.getByLabelText("Обязательные: осталось 21")).toBeOnTheScreen();
-      expect(screen.getAllByText(/^Осталось \d+$/)).toHaveLength(1);
+      expect(screen.getByText("В плане осталось 21")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Обязательные: в плане осталось 21")).toBeOnTheScreen();
+      expect(screen.getAllByText(/^В плане осталось \d+$/)).toHaveLength(1);
 
-      await user.press(screen.getByRole("button", { name: "Обед" }));
+      await user.press(screen.getByRole("button", { name: /^Обед/ }));
       await user.press(screen.getByRole("button", { name: "Купить" }));
       expect(screen.getByText("в плане останется 9")).toBeOnTheScreen();
       expect(screen.queryByText("Это сверх плана.")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Купить" }));
       await user.press(screen.getByRole("button", { name: "Понятно" }));
-      expect(screen.getByLabelText("Обязательные: осталось 9")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Обязательные: в плане осталось 9")).toBeOnTheScreen();
 
       await user.press(screen.getByRole("button", { name: "Желаемое" }));
-      expect(screen.getByLabelText("Желаемые: осталось 1")).toBeOnTheScreen();
-      expect(screen.queryByLabelText("Обязательные: осталось 9")).not.toBeOnTheScreen();
+      expect(screen.getByLabelText("Желаемые: в плане осталось 1")).toBeOnTheScreen();
+      expect(screen.queryByLabelText("Обязательные: в плане осталось 9")).not.toBeOnTheScreen();
 
-      await user.press(screen.getByRole("button", { name: "Конфета" }));
+      await user.press(screen.getByRole("button", { name: /^Конфета/ }));
       await user.press(screen.getByRole("button", { name: "Купить" }));
       expect(screen.getByText("в плане останется -4")).toBeOnTheScreen();
       expect(screen.getByText("Это сверх плана.")).toBeOnTheScreen();
@@ -133,8 +130,8 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
       await openMoney(user, "Копилка");
-      expect(screen.getByText("Осталось 1")).toBeOnTheScreen();
-      expect(screen.getByLabelText("Копилка: осталось 1")).toBeOnTheScreen();
+      expect(screen.getByText("В плане осталось 1")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Копилка: в плане осталось 1")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Положить" }));
       await user.press(screen.getByRole("button", { name: "Сумма, больше" }));
       expect(screen.getByText("в плане останется 0")).toBeOnTheScreen();

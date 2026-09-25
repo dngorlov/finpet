@@ -128,10 +128,13 @@ export const strings = {
   shopMandatoryTab: "Обязательное",
   shopOptionalTab: "Желаемое",
   shopPrice: (n: number) => `${n} монет`,
-  shopCategory: (kind: "mandatory" | "optional") =>
-    kind === "mandatory" ? "Обязательные" : "Желаемые",
   shopAfterBuy: (n: number) => `после покупки: ${n} монет`,
-  shopImpact: (meter: string, delta: number) => `эффект: ${meter} +${delta}`,
+  shopMeterDelta: (n: number) => `+${n}`,
+  shopMeterA11y: (meter: string, delta: number) => `${meter} +${delta}`,
+  shopBillChip: "Счёт",
+  shopGoalChip: "Цель",
+  shopOnceChip: "Один раз",
+  shopShortfall: (n: number) => `Не хватает ${n}`,
   shopBought: "Куплено",
   shopBuy: "Купить",
   shopPostpone: "Отложить",
@@ -143,7 +146,6 @@ export const strings = {
     `Цель станет ${name}. В копилке останется ${pot}.`,
   shopBuyActiveGoalWarn: (pot: number) =>
     `Это твоя Цель. После покупки Цель снимется, в копилке останется ${pot}.`,
-  shopBlocked: (n: number) => `Не хватает ${n} монет`,
   shopBlockedAlreadyGoal: "Это уже твоя Цель. Копи дальше в Копилке.",
   shopWaitAllowance: "Дождаться пособия",
   shopDoTask: "Выполнить задание",
@@ -230,10 +232,10 @@ export const strings = {
   confirmPlanBody:
     "Это обещание. Монеты останутся в Балансе, пока ты не купишь в Магазине или не положишь в Копилку. Потом план не меняется.",
   planYesterday: (n: number) => `вчера ${n}`,
-  planLeftover: (n: number) => `Осталось ${n}`,
+  planLeftover: (n: number) => `В плане осталось ${n}`,
   planOvershoot: (n: number) => `сверх плана ${n}`,
   planLeftoverA11y: (label: string, leftover: number) =>
-    leftover >= 0 ? `${label}: осталось ${leftover}` : `${label}: сверх плана ${Math.abs(leftover)}`,
+    leftover >= 0 ? `${label}: в плане осталось ${leftover}` : `${label}: сверх плана ${Math.abs(leftover)}`,
   planAfterTap: (n: number) => `в плане останется ${n}`,
   planOverWarn: "Это сверх плана.",
   planColPlan: "план",

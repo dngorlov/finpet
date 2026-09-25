@@ -1,12 +1,11 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
 import type { CatalogItemContent } from "../../data/content";
 import type { DayState, SavingsView } from "../../data/repositories/gameRepository";
-import { Badge } from "../components/Badge";
-import { GlyphLabel } from "../components/Pictogram";
+import { GlyphLabel, Pictogram } from "../components/Pictogram";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Card";
@@ -21,8 +20,8 @@ import { usePlayChrome } from "../navigation/playChrome";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
-import { colors, minTarget, spacing, type } from "../theme";
-import { itemMeterEffects, meterDeltaMap } from "../../core/economy";
+import { colors, font, minTarget, radius, spacing, type } from "../theme";
+import { billsForDay, itemMeterEffects, meterDeltaMap } from "../../core/economy";
 import { confirmedLeftover, leftoverAfterTap } from "./planLeftover";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Shop">;
@@ -32,16 +31,83 @@ type Phase =
   | { name: "item"; item: CatalogItemContent }
   | { name: "confirm"; item: CatalogItemContent }
   | { name: "confirmActiveGoalBuy"; item: CatalogItemContent }
-  | { name: "confirmReplaceGoal"; item: CatalogItemContent }
-  | { name: "blocked"; item: CatalogItemContent; missing: number }
-  | { name: "blockedAlreadyGoal"; item: CatalogItemContent; missing: number };
+  | { name: "confirmReplaceGoal"; item: CatalogItemContent };
 
 function engineItem(item: CatalogItemContent) {
   return { id: item.id, kind: item.kind, price: item.price, effect: item.effect, also: item.also, once: item.once };
 }
 
-function impactLabel(effect: { meter: "care" | "mood"; delta: number }) {
-  return strings.shopImpact(effect.meter === "care" ? strings.care : strings.mood, effect.delta);
+function meterWord(meter: "care" | "mood") {
+  return meter === "care" ? strings.care : strings.mood;
+}
+
+function meterGlyph(meter: "care" | "mood") {
+  return meter === "care" ? strings.careIcon : strings.moodIcon;
+}
+
+function rowAnnouncement(item: CatalogItemContent, balance: number, flags: { due: boolean; goal: boolean; bought: boolean }) {
+  const parts = [item.name, strings.shopPrice(item.price)];
+  for (const effect of itemMeterEffects(item)) {
+    parts.push(strings.shopMeterA11y(meterWord(effect.meter), effect.delta));
+  }
+  if (flags.due) parts.push(strings.shopBillChip);
+  if (flags.goal) parts.push(strings.shopGoalChip);
+  if (flags.bought) parts.push(strings.shopBought);
+  if (item.once) parts.push(strings.shopOnceChip);
+  if (balance < item.price) parts.push(strings.shopShortfall(item.price - balance));
+  return parts.join(". ");
+}
+
+function CoinPrice({ amount }: { amount: number }) {
+  return (
+    <View style={styles.price}>
+      <Text style={styles.priceNumber}>{amount}</Text>
+      <Text style={styles.priceWord}>монет</Text>
+    </View>
+  );
+}
+
+function ItemHead({ item, shortfall }: { item: CatalogItemContent; shortfall: number | null }) {
+  return (
+    <View style={styles.itemTop}>
+      <Text style={[styles.section, styles.name]}>{item.name}</Text>
+      <View style={styles.priceCol}>
+        <CoinPrice amount={item.price} />
+        {shortfall != null ? <Text style={styles.body}>{strings.shopShortfall(shortfall)}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+function MeterLines({ item, announce }: { item: CatalogItemContent; announce: boolean }) {
+  return (
+    <>
+      {itemMeterEffects(item).map((effect) => {
+        const spoken = strings.shopMeterA11y(meterWord(effect.meter), effect.delta);
+        return (
+          <View
+            key={effect.meter}
+            accessible={announce}
+            accessibilityLabel={announce ? spoken : undefined}
+            aria-hidden={announce ? undefined : true}
+            accessibilityElementsHidden={announce ? undefined : true}
+            importantForAccessibility={announce ? undefined : "no-hide-descendants"}
+          >
+            <GlyphLabel glyph={meterGlyph(effect.meter)} label={strings.shopMeterDelta(effect.delta)} labelStyle={styles.body} />
+          </View>
+        );
+      })}
+    </>
+  );
+}
+
+function StateChip({ label, icon }: { label: string; icon?: string }) {
+  return (
+    <View style={styles.chip}>
+      {icon ? <Pictogram glyph={icon} /> : null}
+      <Text style={styles.chipText}>{label}</Text>
+    </View>
+  );
 }
 
 export default function ShopScreen({ navigation }: Props) {
@@ -81,8 +147,14 @@ export default function ShopScreen({ navigation }: Props) {
     }, [load]),
   );
 
+  const backToList = () => {
+    setWaiting(false);
+    setPhase({ name: "list" });
+  };
+
   const activeKey = savings?.activeGoal?.key ?? null;
   const pot = savings?.pot ?? 0;
+  const dueIds = new Set(day ? billsForDay(day.n, content.bills).items : []);
 
   const items = content.catalog.filter((item) => {
     if (item.kind !== tab) return false;
@@ -103,12 +175,7 @@ export default function ShopScreen({ navigation }: Props) {
     const wasActiveGoal = game.savingsState(profileId).activeGoal?.key === item.id;
     const result = game.purchase(profileId, day.dayId, engineItem(item));
     if (result.status === "blocked") {
-      const stillActive = game.savingsState(profileId).activeGoal?.key === item.id;
-      if (item.kind === "optional" && stillActive) {
-        setPhase({ name: "blockedAlreadyGoal", item, missing: result.missing });
-      } else {
-        setPhase({ name: "blocked", item, missing: result.missing });
-      }
+      setPhase({ name: "item", item });
       setWaiting(false);
       return;
     }
@@ -131,7 +198,7 @@ export default function ShopScreen({ navigation }: Props) {
     const day = game.dayState(profileId);
     const result = game.purchaseFromSavings(profileId, day.dayId, engineItem(item));
     if (result.status === "blocked") {
-      setPhase({ name: "blocked", item, missing: result.missing });
+      setPhase({ name: "item", item });
       return;
     }
     load();
@@ -176,36 +243,51 @@ export default function ShopScreen({ navigation }: Props) {
     setPhase({ name: "confirm", item });
   };
 
-  const footer = (() => {
-    if (phase.name === "item") {
-      const isActive = activeKey === phase.item.id;
-      const canBuyFromPot = isActive && pot >= phase.item.price;
+  const itemActions = (item: CatalogItemContent): ReactNode => {
+    const isActive = activeKey === item.id;
+    const canPayBalance = balance >= item.price;
+    const canPayPot = isActive && pot >= item.price;
+    if (canPayBalance) {
       return (
         <>
-          <TextButton label={strings.shopPostpone} onPress={() => setPhase({ name: "list" })} />
-          {phase.item.kind === "optional" && !isActive ? (
-            <TextButton
-              label={strings.shopMakeGoal}
-              onPress={() => makeGoal(phase.item)}
-            />
+          <TextButton label={strings.shopPostpone} onPress={backToList} />
+          {item.kind === "optional" && !isActive ? (
+            <TextButton label={strings.shopMakeGoal} onPress={() => makeGoal(item)} />
           ) : null}
-          {canBuyFromPot ? (
-            <PrimaryButton
-              label={strings.shopBuyFromSavings}
-              onPress={() => buyFromSavings(phase.item)}
-            />
-          ) : null}
-          <PrimaryButton
-            label={strings.shopBuy}
-            onPress={() => requestBuy(phase.item)}
-          />
+          {canPayPot ? <TextButton label={strings.shopBuy} onPress={() => requestBuy(item)} /> : null}
+          {canPayPot ? (
+            <PrimaryButton label={strings.shopBuyFromSavings} onPress={() => buyFromSavings(item)} />
+          ) : (
+            <PrimaryButton label={strings.shopBuy} onPress={() => requestBuy(item)} />
+          )}
         </>
       );
     }
+    const gold = canPayPot ? (
+      <PrimaryButton label={strings.shopBuyFromSavings} onPress={() => buyFromSavings(item)} />
+    ) : item.kind === "optional" && !isActive ? (
+      <PrimaryButton label={strings.shopMakeGoal} onPress={() => makeGoal(item)} />
+    ) : isActive ? (
+      <PrimaryButton label={strings.gotIt} onPress={backToList} />
+    ) : (
+      <PrimaryButton label={strings.shopPostpone} onPress={backToList} />
+    );
+    return (
+      <>
+        <TextButton label={strings.shopWaitAllowance} onPress={() => setWaiting(true)} />
+        <TextButton label={strings.shopDoTask} onPress={openMap} />
+        {canPayPot ? <TextButton label={strings.gotIt} onPress={backToList} /> : null}
+        {gold}
+      </>
+    );
+  };
+
+  const footer = (() => {
+    if (phase.name === "item") return itemActions(phase.item);
     if (phase.name === "confirm" || phase.name === "confirmActiveGoalBuy") {
       return (
         <>
-          <TextButton label={strings.shopPostpone} onPress={() => setPhase({ name: "list" })} />
+          <TextButton label={strings.shopPostpone} onPress={backToList} />
           <PrimaryButton label={strings.shopBuy} onPress={() => buy(phase.item)} />
         </>
       );
@@ -213,44 +295,8 @@ export default function ShopScreen({ navigation }: Props) {
     if (phase.name === "confirmReplaceGoal") {
       return (
         <>
-          <TextButton label={strings.close} onPress={() => setPhase({ name: "list" })} />
-          <PrimaryButton
-            label={strings.shopMakeGoal}
-            onPress={() => confirmMakeGoal(phase.item)}
-          />
-        </>
-      );
-    }
-    if (phase.name === "blocked") {
-      const optionalCta =
-        phase.item.kind === "optional" ? (
-          <PrimaryButton
-            label={strings.shopMakeGoal}
-            onPress={() => makeGoal(phase.item)}
-          />
-        ) : (
-          <PrimaryButton label={strings.shopPostpone} onPress={() => setPhase({ name: "list" })} />
-        );
-      return (
-        <>
-          <TextButton label={strings.shopWaitAllowance} onPress={() => setWaiting(true)} />
-          <TextButton
-            label={strings.shopDoTask}
-            onPress={openMap}
-          />
-          {optionalCta}
-        </>
-      );
-    }
-    if (phase.name === "blockedAlreadyGoal") {
-      return (
-        <>
-          <TextButton label={strings.shopWaitAllowance} onPress={() => setWaiting(true)} />
-          <TextButton
-            label={strings.shopDoTask}
-            onPress={openMap}
-          />
-          <PrimaryButton label={strings.gotIt} onPress={() => setPhase({ name: "list" })} />
+          <TextButton label={strings.close} onPress={backToList} />
+          <PrimaryButton label={strings.shopMakeGoal} onPress={() => confirmMakeGoal(phase.item)} />
         </>
       );
     }
@@ -302,54 +348,57 @@ export default function ShopScreen({ navigation }: Props) {
             </Text>
           ) : null}
           {items.map((item) => {
-            const row = (
+            const shortfall = balance < item.price ? item.price - balance : null;
+            const flags = {
+              due: dueIds.has(item.id),
+              goal: activeKey === item.id,
+              bought: bought.includes(item.id),
+            };
+            return (
               <Pressable
+                key={item.id}
                 role="button"
-                aria-label={item.name}
+                aria-label={rowAnnouncement(item, balance, flags)}
                 onPress={() => {
+                  setWaiting(false);
                   setPhase({ name: "item", item });
                 }}
                 style={styles.itemHit}
               >
                 <Card>
-                  <Text style={styles.section}>{item.name}</Text>
-                  <GlyphLabel
-                    glyph={item.kind === "mandatory" ? strings.navPlanPictogram : strings.navShopPictogram}
-                    label={strings.shopCategory(item.kind)}
-                    labelStyle={styles.body}
-                  />
-                  <Text style={styles.body}>{strings.shopPrice(item.price)}</Text>
-                  {itemMeterEffects(item).map((effect) => (
-                    <GlyphLabel
-                      key={effect.meter}
-                      glyph={effect.meter === "care" ? strings.careIcon : strings.moodIcon}
-                      label={impactLabel(effect)}
-                      labelStyle={styles.body}
-                    />
-                  ))}
-                  <Text style={styles.body}>{strings.shopAfterBuy(balance - item.price)}</Text>
-                  {item.once ? <Text style={styles.body}>{strings.shopOnceLabel}</Text> : null}
-                  {bought.includes(item.id) ? (
-                    <Badge icon={strings.selectedCheck} word={strings.shopBought} value="" />
-                  ) : null}
+                  <ItemHead item={item} shortfall={shortfall} />
+                  <MeterLines item={item} announce={false} />
+                  <View style={styles.chips}>
+                    {flags.due ? <StateChip label={strings.shopBillChip} /> : null}
+                    {flags.goal ? <StateChip label={strings.shopGoalChip} /> : null}
+                    {flags.bought ? <StateChip label={strings.shopBought} icon={strings.selectedCheck} /> : null}
+                    {item.once ? <StateChip label={strings.shopOnceChip} /> : null}
+                  </View>
                 </Card>
               </Pressable>
             );
-            return <View key={item.id}>{row}</View>;
           })}
         </>
       ) : null}
       {phase.name === "item" ? (
         <Card>
-          <Text style={styles.section}>{phase.item.name}</Text>
+          <ItemHead item={phase.item} shortfall={null} />
           <Text style={styles.body}>{phase.item.description}</Text>
-          <Text style={styles.body}>{strings.shopPrice(phase.item.price)}</Text>
-          {itemMeterEffects(phase.item).map((effect) => (
-            <Text key={effect.meter} style={styles.body}>
-              {impactLabel(effect)}
-            </Text>
-          ))}
+          <MeterLines item={phase.item} announce />
+          <View style={styles.chips}>
+            {dueIds.has(phase.item.id) ? <StateChip label={strings.shopBillChip} /> : null}
+            {activeKey === phase.item.id ? <StateChip label={strings.shopGoalChip} /> : null}
+          </View>
+          {balance >= phase.item.price ? (
+            <Text style={styles.body}>{strings.shopAfterBuy(balance - phase.item.price)}</Text>
+          ) : (
+            <Text style={styles.body}>{strings.shopShortfall(phase.item.price - balance)}</Text>
+          )}
           {phase.item.once ? <Text style={styles.body}>{strings.shopOnceLabel}</Text> : null}
+          {balance < phase.item.price && activeKey === phase.item.id ? (
+            <Text style={styles.body}>{strings.shopBlockedAlreadyGoal}</Text>
+          ) : null}
+          {waiting && balance < phase.item.price ? <Text style={styles.body}>{strings.shopWaitExplain}</Text> : null}
         </Card>
       ) : null}
       {phase.name === "confirm" ? (
@@ -378,15 +427,6 @@ export default function ShopScreen({ navigation }: Props) {
       {phase.name === "confirmReplaceGoal" ? (
         <Card>
           <Text style={styles.section}>{strings.shopConfirmReplaceGoal(phase.item.name, pot)}</Text>
-        </Card>
-      ) : null}
-      {phase.name === "blocked" || phase.name === "blockedAlreadyGoal" ? (
-        <Card>
-          <Text style={styles.section}>{strings.shopBlocked(phase.missing)}</Text>
-          {phase.name === "blockedAlreadyGoal" ? (
-            <Text style={styles.body}>{strings.shopBlockedAlreadyGoal}</Text>
-          ) : null}
-          {waiting ? <Text style={styles.body}>{strings.shopWaitExplain}</Text> : null}
         </Card>
       ) : null}
       {feedback ? (
@@ -420,6 +460,55 @@ const styles = StyleSheet.create({
   body: {
     color: colors.text,
     fontSize: type.body,
+  },
+  name: {
+    flex: 1,
+  },
+  itemTop: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: spacing.s,
+  },
+  priceCol: {
+    alignItems: "flex-end",
+    gap: spacing.s,
+  },
+  price: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.s,
+  },
+  priceNumber: {
+    color: colors.text,
+    fontFamily: font.pixel,
+    fontSize: 16,
+    fontWeight: "400",
+    includeFontPadding: false,
+    lineHeight: 24,
+  },
+  priceWord: {
+    color: colors.text,
+    fontSize: type.body,
+  },
+  chips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.s,
+  },
+  chip: {
+    alignItems: "center",
+    backgroundColor: colors.badgeFill,
+    borderRadius: radius.card,
+    flexDirection: "row",
+    gap: spacing.s,
+    minHeight: 32,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+  },
+  chipText: {
+    color: colors.text,
+    fontSize: type.body,
+    fontWeight: "700",
   },
   tabs: {
     flexDirection: "row",

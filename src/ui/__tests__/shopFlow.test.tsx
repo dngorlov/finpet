@@ -23,10 +23,18 @@ describe("Магазин", () => {
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     expect(screen.getByRole("button", { name: "Обязательное" })).toBeSelected();
-    expect(screen.getByRole("button", { name: "Обед" })).toBeOnTheScreen();
+    expect(
+      screen.getByRole("button", { name: "Обед. 12 монет. Сытость +10. Настроение +5. Счёт" }),
+    ).toBeOnTheScreen();
+    expect(screen.getAllByText("Счёт")).toHaveLength(2);
+    expect(screen.queryByText("Обязательные")).not.toBeOnTheScreen();
+    expect(screen.queryByText(/после покупки/)).not.toBeOnTheScreen();
+    expect(screen.getByText("12")).toHaveStyle({ fontFamily: "PressStart2P_400Regular" });
 
-    await user.press(screen.getByRole("button", { name: "Обед" }));
+    await user.press(screen.getByRole("button", { name: /^Обед/ }));
     expect(screen.getByText(lunch.description)).toBeOnTheScreen();
+    expect(screen.getByLabelText("Сытость +10")).toBeOnTheScreen();
+    expect(screen.getByText("после покупки: 108 монет")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText("Купить Обед за 12?")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Купить" }));
@@ -51,7 +59,7 @@ describe("Магазин", () => {
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
-    await user.press(screen.getByRole("button", { name: candy.name }));
+    await user.press(screen.getByRole("button", { name: new RegExp(`^${candy.name}`) }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText("Баланс -5")).toBeOnTheScreen();
@@ -70,8 +78,12 @@ describe("Магазин", () => {
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
-    expect(screen.getByRole("button", { name: "Скейтборд" })).toBeOnTheScreen();
-    expect(screen.getAllByText("Можно купить один раз").length).toBeGreaterThanOrEqual(3);
+    expect(screen.getByRole("button", { name: /^Скейтборд/ })).toBeOnTheScreen();
+    expect(screen.getAllByText("Один раз").length).toBeGreaterThanOrEqual(3);
+    expect(screen.queryByText("Можно купить один раз")).not.toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: /^Скейтборд/ }));
+    expect(screen.getByText("Можно купить один раз")).toBeOnTheScreen();
+    expect(screen.getByText("Цель")).toBeOnTheScreen();
   });
 
   it("blocks Игрушка when short of coins and offers Сделать целью", async () => {
@@ -92,11 +104,9 @@ describe("Магазин", () => {
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
-    await user.press(screen.getByRole("button", { name: "Игрушка" }));
-    await user.press(screen.getByRole("button", { name: "Купить" }));
-    await user.press(screen.getByRole("button", { name: "Купить" }));
-
-    expect(screen.getByText("Не хватает 5 монет")).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: /^Игрушка/ }));
+    expect(screen.queryByRole("button", { name: "Купить" })).not.toBeOnTheScreen();
+    expect(screen.getByText("Не хватает 5")).toBeOnTheScreen();
     expect(ports.game.getProfile(profileId).balance).toBe(20);
 
     await user.press(screen.getByRole("button", { name: "Дождаться пособия" }));
@@ -106,11 +116,10 @@ describe("Магазин", () => {
     expect(screen.getByText(/Цель станет Игрушка/)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Сделать целью" }));
     expect(ports.game.savingsState(profileId).activeGoal?.key).toBe("toy");
-    expect(screen.getByRole("button", { name: "Игрушка" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: /^Игрушка/ })).toBeOnTheScreen();
 
-    await user.press(screen.getByRole("button", { name: "Игрушка" }));
-    await user.press(screen.getByRole("button", { name: "Купить" }));
-    await user.press(screen.getByRole("button", { name: "Купить" }));
+    await user.press(screen.getByRole("button", { name: /^Игрушка/ }));
+    expect(screen.queryByRole("button", { name: "Купить" })).not.toBeOnTheScreen();
     expect(screen.getByText("Это уже твоя Цель. Копи дальше в Копилке.")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Выполнить задание" }));
     expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
@@ -125,13 +134,15 @@ describe("Магазин", () => {
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
-    await user.press(screen.getByRole("button", { name: "Скейтборд" }));
+    await user.press(screen.getByRole("button", { name: /^Скейтборд/ }));
+    const payNames = screen.getAllByRole("button").map((node) => String(node.props.accessibilityLabel ?? ""));
+    expect(payNames.indexOf("Купить из копилки")).toBeGreaterThan(payNames.indexOf("Купить"));
     await user.press(screen.getByRole("button", { name: "Купить из копилки" }));
     expect(screen.getByText("Настроение +12")).toBeOnTheScreen();
     expect(screen.getByText("Копилка -90")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     expect(screen.getByRole("button", { name: "Выбрать новую цель" })).toBeOnTheScreen();
-    expect(screen.queryByRole("button", { name: "Скейтборд" })).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: /^Скейтборд/ })).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Назад" }));
     await openMoney(user, "Журнал");
     expect(screen.getByText("Покупка: Скейтборд -90")).toBeOnTheScreen();
@@ -150,12 +161,12 @@ describe("Магазин", () => {
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
-    await user.press(screen.getByRole("button", { name: "Скейтборд" }));
+    await user.press(screen.getByRole("button", { name: /^Скейтборд/ }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText("Настроение +12")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
-    expect(screen.queryByRole("button", { name: "Скейтборд" })).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: /^Скейтборд/ })).not.toBeOnTheScreen();
 
     ports.game.closeDay(profileId, content.catalog);
     await user.press(screen.getByRole("button", { name: "Назад" }));
@@ -168,12 +179,14 @@ describe("Магазин", () => {
     const profileId = seedReturningChild(ports);
     const { user } = await renderApp(ports);
 
+    ports.game.clearActiveGoal(profileId);
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
-    await user.press(screen.getByRole("button", { name: candy.name }));
+    await user.press(screen.getByRole("button", { name: new RegExp(`^${candy.name}`) }));
     await user.press(screen.getByRole("button", { name: "Сделать целью" }));
-    await user.press(screen.getByRole("button", { name: "Сделать целью" }));
-    await user.press(screen.getByRole("button", { name: candy.name }));
+    expect(screen.queryByText(/Цель станет/)).not.toBeOnTheScreen();
+    expect(ports.game.savingsState(profileId).activeGoal?.key).toBe(candy.id);
+    await user.press(screen.getByRole("button", { name: new RegExp(`^${candy.name}`) }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText("Настроение +5")).toBeOnTheScreen();
