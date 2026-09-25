@@ -56,6 +56,7 @@ export default function TaskListScreen({ navigation }: Props) {
   const [progress, setProgress] = useState<TaskProgressView[]>([]);
   const [isDemo, setIsDemo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mapWidth, setMapWidth] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -104,11 +105,21 @@ export default function TaskListScreen({ navigation }: Props) {
       <BackButton />
       <Text style={styles.title}>{strings.mapTitle}</Text>
       <Text style={styles.body}>{strings.mapHint}</Text>
-      <View style={styles.map}>
+      <View
+        style={styles.map}
+        onLayout={(event) => setMapWidth(event.nativeEvent.layout.width)}
+      >
+        {/* Explicit width/height: on iOS an absolute-fill Image kept its
+            828×1104 intrinsic size and spilled far past the box. */}
         <Image
           source={MAP_IMAGE}
-          style={StyleSheet.absoluteFill}
-          resizeMode="stretch"
+          style={[
+            styles.mapImage,
+            mapWidth > 0
+              ? { width: mapWidth, height: mapWidth / MAP_ASPECT }
+              : null,
+          ]}
+          resizeMode="contain"
           accessibilityIgnoresInvertColors
         />
         {missions.map((task) => {
@@ -327,6 +338,14 @@ const styles = StyleSheet.create({
   },
   map: {
     aspectRatio: MAP_ASPECT,
+    overflow: "hidden",
+    width: "100%",
+  },
+  mapImage: {
+    height: "100%",
+    left: 0,
+    position: "absolute",
+    top: 0,
     width: "100%",
   },
   dot: {

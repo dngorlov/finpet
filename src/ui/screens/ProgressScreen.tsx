@@ -35,6 +35,8 @@ function journalLabel(
   if (entry.labelKey === "allowance") return strings.journalAllowance;
   if (entry.labelKey === "savings_in") return strings.journalSavingsIn;
   if (entry.labelKey === "savings_out") return strings.journalSavingsOut;
+  if (entry.labelKey === "bank_in") return strings.journalBankIn;
+  if (entry.labelKey === "bank_out") return strings.journalBankOut;
   if (entry.labelKey.startsWith("purchase:")) return strings.journalPurchase(itemName(entry.itemId));
   if (entry.labelKey === "task_scene") return strings.journalTaskScene;
   if (entry.labelKey.startsWith("task_reward:")) {

@@ -80,6 +80,10 @@ _Avoid_: витрина, инвентарь
 The pot of coins set aside from Баланс toward the Цель. Coins leave it only by confirmed withdrawal or by buying that Цель.
 _Avoid_: накопления, депозит, вклад
 
+**Банк (Bank)** / **Вклад (Deposit)**:
+Separate from Копилка and opened after the lesson «Где живут накопления?»: a вклад takes coins out of Баланс for a fixed number of Игровые дни and returns them with interest when the term ends. No early withdrawal.
+_Avoid_: депозит, счёт, копилка (for the bank)
+
 **Цель (Goal)**:
 The one Желаемое from Магазин that Копилка is accumulating toward. There is at most one at a time; Обязательные cannot be a Цель.
 _Avoid_: ачивка, мечта, произвольная цель

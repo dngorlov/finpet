@@ -7,6 +7,7 @@ export type RootStackParamList = {
   Plan: undefined;
   Shop: undefined;
   Savings: undefined;
+  Bank: undefined;
   Progress: undefined;
   Settings: undefined;
   DaySummary: undefined;
