@@ -62,6 +62,8 @@ export function GoalPicker({
       ...game.purchasedItemIds(profileId, day.dayId),
     ]);
     return content.goals.filter((goal) => goal.stage === stage && !owned.has(goal.id));
+    // `visible` is not read: it re-reads the journal each time the picker opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content.goals, game, profileId, visible]);
 
   const close = () => {

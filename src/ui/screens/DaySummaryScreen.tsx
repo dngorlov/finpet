@@ -31,16 +31,6 @@ export default function DaySummaryScreen({ navigation }: Props) {
   const summary = profileId ? game.lastClosedDay(profileId) : null;
   const profile = profileId ? game.getProfile(profileId) : null;
 
-  if (!summary || !profile) {
-    return (
-      <Screen header={<StatusStrip />}>
-        <BackButton />
-        <ScreenTitle style={styles.title}>{strings.daySummaryTitle}</ScreenTitle>
-      </Screen>
-    );
-  }
-
-  const reasons = meterReason(summary);
   const beginNextDay = useCallback(() => {
     setTab("home");
     if (navigation.canGoBack()) {
@@ -59,6 +49,17 @@ export default function DaySummaryScreen({ navigation }: Props) {
       return () => subscription.remove();
     }, [beginNextDay]),
   );
+
+  if (!summary || !profile) {
+    return (
+      <Screen header={<StatusStrip />}>
+        <BackButton />
+        <ScreenTitle style={styles.title}>{strings.daySummaryTitle}</ScreenTitle>
+      </Screen>
+    );
+  }
+
+  const reasons = meterReason(summary);
 
   return (
     <Screen header={<StatusStrip />} footer={<PrimaryButton label={strings.nextDay} onPress={beginNextDay} />}>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { CatalogItemContent, GoalContent } from "../../data/content";
@@ -89,9 +89,11 @@ export default function SavingsScreen() {
     }, [load]),
   );
 
-  useEffect(() => {
+  const [seenFocus, setSeenFocus] = useState<typeof focus>(null);
+  if (focus !== seenFocus) {
+    setSeenFocus(focus);
     if (focus?.kind === "goal") setPickerOpen(true);
-  }, [focus]);
+  }
 
   if (!savings) {
     return (

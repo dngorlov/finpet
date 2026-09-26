@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Modal, StyleSheet, View } from "react-native";
 import { meterDeltaMap } from "../../core/economy";
 import { META_KEYS } from "../../data/metaKeys";
@@ -26,9 +26,12 @@ export function BuyGoalPrompt() {
   const goalId = task?.kind === "buy-goal" ? task.goalId : null;
   const goal = goalId ? content.goals.find((item) => item.id === goalId) : undefined;
 
-  useEffect(() => {
+  // A new «купить цель» focus shows the prompt again (state adjusted during render, not in an effect).
+  const [seenFocus, setSeenFocus] = useState<typeof focus>(null);
+  if (focus !== seenFocus) {
+    setSeenFocus(focus);
     if (focus?.kind === "buy-goal") setHiddenKey(null);
-  }, [focus]);
+  }
 
   const dismiss = () => {
     if (goal) setHiddenKey(goal.id);
