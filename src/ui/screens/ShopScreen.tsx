@@ -1,16 +1,14 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useState, type ReactNode } from "react";
+import { StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
 import type { CatalogItemContent } from "../../data/content";
 import type { DayState, SavingsView } from "../../data/repositories/gameRepository";
-import { Pictogram } from "../components/Pictogram";
 import { CoinText } from "../components/CoinText";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { BackButton } from "../components/BackButton";
-import { Card } from "../components/Card";
-import { Chip } from "../components/Chip";
+import { BottomSheet } from "../components/BottomSheet";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { GoalPicker, ownedOnceItemIds } from "../components/GoalPicker";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -21,176 +19,65 @@ import { usePlayChrome } from "../navigation/playChrome";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
-import { colors, font, minTarget, radius, spacing, type } from "../theme";
-import { METERS } from "../../core/config";
-import { billsForDay, itemMeterEffects, meterDeltaMap } from "../../core/economy";
+import { shopStrings } from "../stringsShop";
+import { colors, spacing, type } from "../theme";
+import { billsForDay, meterDeltaMap } from "../../core/economy";
 import { confirmedLeftover, leftoverAfterTap } from "./planLeftover";
+import {
+  DrawerHead,
+  hiddenFromReader,
+  ItemEffects,
+  ItemTags,
+  SegmentedTabs,
+  ShopRow,
+  skipLine,
+  type RowFlags,
+} from "./shopParts";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Shop">;
 type Tab = "mandatory" | "optional";
-type Phase =
-  | { name: "list" }
-  | { name: "item"; item: CatalogItemContent }
-  | { name: "confirm"; item: CatalogItemContent }
-  | { name: "confirmActiveGoalBuy"; item: CatalogItemContent };
+/**
+ * Bottom drawer for one item. `buy` shows details and the confirm;
+ * `goalWarn` is the extra step before spending Баланс on the active Цель;
+ * `postpone` explains what waiting costs.
+ */
+type Drawer =
+  | { name: "closed" }
+  | { name: "buy"; item: CatalogItemContent }
+  | { name: "goalWarn"; item: CatalogItemContent }
+  | { name: "postpone"; item: CatalogItemContent };
+
+const TABS: readonly { value: Tab; label: string }[] = [
+  { value: "mandatory", label: strings.shopMandatoryTab },
+  { value: "optional", label: strings.shopOptionalTab },
+];
 
 function engineItem(item: CatalogItemContent) {
   return { id: item.id, kind: item.kind, price: item.price, effect: item.effect, also: item.also, once: item.once };
 }
 
-function meterWord(meter: "care" | "mood") {
-  return meter === "care" ? strings.care : strings.mood;
-}
-
-function meterGlyph(meter: "care" | "mood") {
-  return meter === "care" ? strings.careIcon : strings.moodIcon;
-}
-
-function feedsSatiety(item: CatalogItemContent) {
-  return itemMeterEffects(item).some((effect) => effect.meter === "care");
-}
-
-function skipLine(item: CatalogItemContent) {
-  const food = feedsSatiety(item);
-  const meter = food ? strings.care : strings.mood;
-  const delta = food ? METERS.missedFoodPenalty : METERS.missedOtherBillPenalty;
-  return {
-    meter: food ? ("care" as const) : ("mood" as const),
-    delta,
-    spoken: strings.shopSkipA11y(item.name, meter, delta, !food),
-  };
-}
-
-function rowAnnouncement(item: CatalogItemContent, balance: number, flags: { due: boolean; goal: boolean; bought: boolean }) {
-  const parts = [item.name, strings.shopPrice(item.price)];
-  for (const effect of itemMeterEffects(item)) {
-    parts.push(strings.shopMeterA11y(meterWord(effect.meter), effect.delta));
-  }
-  if (flags.due && !flags.bought) parts.push(skipLine(item).spoken);
-  if (flags.goal) parts.push(strings.shopGoalChip);
-  if (flags.bought) parts.push(strings.shopBought);
-  if (item.once) parts.push(strings.shopOnceChip);
-  if (balance < item.price) parts.push(strings.shopShortfall(item.price - balance));
-  return parts.join(". ");
-}
-
-function CoinPrice({ amount }: { amount: number }) {
-  return (
-    <View style={styles.price}>
-      <Text style={styles.priceNumber}>{amount}</Text>
-      <Pictogram glyph={strings.balanceIcon} />
-    </View>
-  );
-}
-
-function ItemHead({ item, shortfall }: { item: CatalogItemContent; shortfall: number | null }) {
-  return (
-    <View style={styles.itemTop}>
-      <Text {...hiddenFromReader} style={styles.emoji}>
-        {item.icon}
-      </Text>
-      <Text style={[styles.section, styles.name]}>{item.name}</Text>
-      <View style={styles.priceCol}>
-        <CoinPrice amount={item.price} />
-        {shortfall != null ? (
-          <CoinText coin labelled={false} text={strings.shopShortfall(shortfall)} style={styles.body} />
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
-function EffectChips({
-  item,
-  due,
-  bought,
-  announce,
-}: {
-  item: CatalogItemContent;
-  due: boolean;
-  bought: boolean;
-  announce: boolean;
-}) {
-  const skip = due && !bought ? skipLine(item) : null;
-  return (
-    <View style={styles.chips} {...(announce ? {} : hiddenFromReader)}>
-      {itemMeterEffects(item).map((effect) => {
-        const spoken = strings.shopMeterA11y(meterWord(effect.meter), effect.delta);
-        return (
-          <View key={effect.meter} style={styles.chip} accessible={announce} accessibilityLabel={announce ? spoken : undefined}>
-            <Pictogram glyph={meterGlyph(effect.meter)} />
-            <Text style={styles.chipText}>{strings.shopMeterDelta(effect.delta)}</Text>
-          </View>
-        );
-      })}
-      {skip ? (
-        <View style={styles.chip} accessible={announce} accessibilityLabel={announce ? skip.spoken : undefined}>
-          <Pictogram glyph={meterGlyph(skip.meter)} />
-          <Text style={styles.chipText}>{strings.shopSkipDelta(skip.delta)}</Text>
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-function StateChips({
-  goal,
-  bought,
-  once,
-  hidden,
-}: {
-  goal: boolean;
-  bought: boolean;
-  once: boolean;
-  hidden?: boolean;
-}) {
-  if (!goal && !bought && !once) return null;
-  return (
-    <View style={styles.chips} {...(hidden ? hiddenFromReader : {})}>
-      {goal ? <StateChip label={strings.shopGoalChip} /> : null}
-      {bought ? <StateChip label={strings.shopBought} icon={strings.selectedCheck} /> : null}
-      {once ? <StateChip label={strings.shopOnceChip} /> : null}
-    </View>
-  );
-}
-
-const hiddenFromReader = {
-  "aria-hidden": true as const,
-  accessibilityElementsHidden: true as const,
-  importantForAccessibility: "no-hide-descendants" as const,
-};
-
-function StateChip({ label, icon }: { label: string; icon?: string }) {
-  return (
-    <View style={styles.chip}>
-      {icon ? <Pictogram glyph={icon} /> : null}
-      <Text style={styles.chipText}>{label}</Text>
-    </View>
-  );
-}
-
 export default function ShopScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
   const { setTab: setPlayTab, focus } = usePlayChrome();
-  const openMap = () => {
-    setPlayTab("map");
-    navigation.navigate("Main");
-  };
   const [tab, setTab] = useState<Tab>("mandatory");
   const [day, setDay] = useState<DayState | null>(null);
   const [balance, setBalance] = useState(0);
   const [bought, setBought] = useState<string[]>([]);
   const [ownedOnce, setOwnedOnce] = useState<Set<string>>(new Set());
   const [savings, setSavings] = useState<SavingsView | null>(null);
-  const [phase, setPhase] = useState<Phase>({ name: "list" });
+  const [postponed, setPostponed] = useState<Set<string>>(new Set());
+  const [drawer, setDrawer] = useState<Drawer>({ name: "closed" });
   const [waiting, setWaiting] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [offerPickGoal, setOfferPickGoal] = useState(false);
 
-  useEffect(() => {
+  // A new «оплатить Счета» hint turns the list back to Обязательное.
+  const [seenFocus, setSeenFocus] = useState(focus);
+  if (focus !== seenFocus) {
+    setSeenFocus(focus);
     if (focus?.kind === "shop-bills") setTab("mandatory");
-  }, [focus]);
+  }
 
   const load = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
@@ -207,17 +94,45 @@ export default function ShopScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       load();
+      // Отложено lasts for one visit to Магазин.
+      setPostponed(new Set());
     }, [load]),
   );
 
-  const backToList = () => {
+  const closeDrawer = () => {
     setWaiting(false);
-    setPhase({ name: "list" });
+    setDrawer({ name: "closed" });
+  };
+
+  const openMap = () => {
+    closeDrawer();
+    setPlayTab("map");
+    navigation.navigate("Main");
+  };
+
+  const openDrawer = (name: "buy" | "postpone", item: CatalogItemContent) => {
+    setWaiting(false);
+    setDrawer(name === "buy" ? { name: "buy", item } : { name: "postpone", item });
+  };
+
+  const markPostponed = (item: CatalogItemContent, on: boolean) => {
+    setPostponed((current) => {
+      const next = new Set(current);
+      if (on) next.add(item.id);
+      else next.delete(item.id);
+      return next;
+    });
   };
 
   const activeKey = savings?.activeGoal?.key ?? null;
   const pot = savings?.pot ?? 0;
   const dueIds = new Set(day ? billsForDay(day.n, content.bills).items : []);
+  const flagsFor = (item: CatalogItemContent): RowFlags => ({
+    due: dueIds.has(item.id),
+    goal: activeKey === item.id,
+    bought: bought.includes(item.id),
+    postponed: postponed.has(item.id),
+  });
 
   const items = content.catalog.filter((item) => {
     if (item.kind !== tab) return false;
@@ -226,235 +141,250 @@ export default function ShopScreen({ navigation }: Props) {
   });
   const tabLeftover = confirmedLeftover(day, tab);
   const tabBucketLabel = tab === "mandatory" ? strings.bucketMandatory : strings.bucketOptional;
-  const leftoverAfterBuy =
-    phase.name === "confirm" || phase.name === "confirmActiveGoalBuy"
-      ? leftoverAfterTap(confirmedLeftover(day, phase.item.kind), phase.item.price)
-      : null;
 
-  const buy = (item: CatalogItemContent) => {
-    const profileId = meta.get(META_KEYS.activeProfileId);
-    if (!profileId) return;
-    const day = game.dayState(profileId);
-    const wasActiveGoal = game.savingsState(profileId).activeGoal?.key === item.id;
-    const result = game.purchase(profileId, day.dayId, engineItem(item));
-    if (result.status === "blocked") {
-      setPhase({ name: "item", item });
-      setWaiting(false);
-      return;
-    }
+  const afterPurchase = (item: CatalogItemContent, fromSavings: boolean, offerGoal: boolean) => {
     load();
-    setPhase({ name: "list" });
-    setOfferPickGoal(wasActiveGoal);
+    markPostponed(item, false);
+    closeDrawer();
+    setOfferPickGoal(offerGoal);
     setFeedback({
       deltas: {
-        balance: -item.price,
+        ...(fromSavings ? { savings: -item.price } : { balance: -item.price }),
         ...meterDeltaMap(item),
       },
       cause: strings.feedbackCausePurchase,
       nextStep: strings.feedbackNextPurchase,
     });
+  };
+
+  const buy = (item: CatalogItemContent) => {
+    const profileId = meta.get(META_KEYS.activeProfileId);
+    if (!profileId) return;
+    const today = game.dayState(profileId);
+    const wasActiveGoal = game.savingsState(profileId).activeGoal?.key === item.id;
+    const result = game.purchase(profileId, today.dayId, engineItem(item));
+    if (result.status === "blocked") {
+      openDrawer("buy", item);
+      return;
+    }
+    afterPurchase(item, false, wasActiveGoal);
   };
 
   const buyFromSavings = (item: CatalogItemContent) => {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
-    const day = game.dayState(profileId);
-    const result = game.purchaseFromSavings(profileId, day.dayId, engineItem(item));
+    const today = game.dayState(profileId);
+    const result = game.purchaseFromSavings(profileId, today.dayId, engineItem(item));
     if (result.status === "blocked") {
-      setPhase({ name: "item", item });
+      setDrawer({ name: "buy", item });
       return;
     }
-    load();
-    setPhase({ name: "list" });
-    setOfferPickGoal(true);
-    setFeedback({
-      deltas: {
-        savings: -item.price,
-        ...meterDeltaMap(item),
-      },
-      cause: strings.feedbackCausePurchase,
-      nextStep: strings.feedbackNextPurchase,
-    });
+    afterPurchase(item, true, true);
   };
 
   const requestBuy = (item: CatalogItemContent) => {
     if (activeKey === item.id) {
-      setPhase({ name: "confirmActiveGoalBuy", item });
+      setDrawer({ name: "goalWarn", item });
       return;
     }
-    setPhase({ name: "confirm", item });
+    buy(item);
   };
 
-  const itemActions = (item: CatalogItemContent): ReactNode => {
+  const planLines = (item: CatalogItemContent): ReactNode => {
+    const after = leftoverAfterTap(confirmedLeftover(day, item.kind), item.price);
+    if (after == null) return null;
+    return (
+      <>
+        <CoinText coin text={strings.planAfterTap(after)} style={styles.body} />
+        {after < 0 ? <CoinText text={strings.planOverWarn} style={styles.warn} /> : null}
+      </>
+    );
+  };
+
+  const drawerBody = (): ReactNode => {
+    if (drawer.name === "closed") return null;
+    const item = drawer.item;
+    const flags = flagsFor(item);
+    const head = (
+      <DrawerHead item={item}>
+        <ItemTags item={item} flags={flags} />
+      </DrawerHead>
+    );
+
+    if (drawer.name === "postpone") {
+      const skip = flags.due && !flags.bought ? skipLine(item) : null;
+      const planned = confirmedLeftover(day, item.kind) != null;
+      return (
+        <>
+          {head}
+          <CoinText text={shopStrings.postponeTitle(item.name)} style={styles.section} />
+          {skip ? (
+            <>
+              <ItemEffects item={item} showSkip announce={false} />
+              <CoinText
+                text={shopStrings.postponeDueExplain(item.name, strings[skip.meter], skip.delta, skip.shared)}
+                style={styles.warn}
+              />
+              <CoinText text={shopStrings.postponeDueLater} style={styles.body} />
+            </>
+          ) : (
+            <>
+              <CoinText text={planned ? shopStrings.postponeKeepPlan : shopStrings.postponeKeep} style={styles.body} />
+              <CoinText text={shopStrings.postponeNoEffect} style={styles.body} />
+            </>
+          )}
+        </>
+      );
+    }
+
+    if (drawer.name === "goalWarn") {
+      return (
+        <>
+          {head}
+          <CoinText coin text={strings.shopConfirmBuy(item.name, item.price)} style={styles.section} />
+          <CoinText coin text={strings.shopBuyActiveGoalWarn(pot)} style={styles.body} />
+          {planLines(item)}
+        </>
+      );
+    }
+
+    const canPay = balance >= item.price;
+    return (
+      <>
+        {head}
+        <CoinText text={item.description} style={styles.body} />
+        <ItemEffects item={item} showSkip={flags.due && !flags.bought} announce />
+        {canPay ? (
+          <CoinText text={strings.shopAfterBuy(balance - item.price)} style={styles.body} />
+        ) : (
+          <CoinText coin text={strings.shopShortfall(item.price - balance)} style={styles.warn} />
+        )}
+        {item.once ? <CoinText text={strings.shopOnceLabel} style={styles.body} /> : null}
+        {!canPay && flags.goal ? <CoinText text={strings.shopBlockedAlreadyGoal} style={styles.body} /> : null}
+        {waiting && !canPay ? <CoinText text={strings.shopWaitExplain} style={styles.body} /> : null}
+        {canPay && !flags.goal ? (
+          <View style={styles.confirm}>
+            <CoinText coin text={strings.shopConfirmBuy(item.name, item.price)} style={styles.section} />
+            {planLines(item)}
+          </View>
+        ) : null}
+      </>
+    );
+  };
+
+  const drawerFooter = (): ReactNode => {
+    if (drawer.name === "closed") return null;
+    const item = drawer.item;
+    if (drawer.name === "postpone") {
+      return (
+        <>
+          <PrimaryButton
+            label={shopStrings.postpone}
+            onPress={() => {
+              markPostponed(item, true);
+              closeDrawer();
+            }}
+          />
+          <TextButton label={strings.back} onPress={closeDrawer} />
+        </>
+      );
+    }
+    if (drawer.name === "goalWarn") {
+      return (
+        <>
+          <PrimaryButton label={strings.shopBuy} onPress={() => buy(item)} />
+          <TextButton label={strings.back} onPress={() => setDrawer({ name: "buy", item })} />
+        </>
+      );
+    }
     const isActive = activeKey === item.id;
     const canPayBalance = balance >= item.price;
     const canPayPot = isActive && pot >= item.price;
     if (canPayBalance) {
       return (
         <>
-          <TextButton label={strings.shopPostpone} onPress={backToList} />
-          {canPayPot ? <TextButton label={strings.shopBuy} onPress={() => requestBuy(item)} /> : null}
           {canPayPot ? (
             <PrimaryButton label={strings.shopBuyFromSavings} onPress={() => buyFromSavings(item)} />
           ) : (
             <PrimaryButton label={strings.shopBuy} onPress={() => requestBuy(item)} />
           )}
+          {canPayPot ? <TextButton label={strings.shopBuy} onPress={() => requestBuy(item)} /> : null}
+          <TextButton label={strings.back} onPress={closeDrawer} />
         </>
       );
     }
-    const gold = canPayPot ? (
-      <PrimaryButton label={strings.shopBuyFromSavings} onPress={() => buyFromSavings(item)} />
-    ) : isActive ? (
-      <PrimaryButton label={strings.gotIt} onPress={backToList} />
-    ) : (
-      <PrimaryButton label={strings.shopPostpone} onPress={backToList} />
-    );
     return (
       <>
+        {canPayPot ? (
+          <PrimaryButton label={strings.shopBuyFromSavings} onPress={() => buyFromSavings(item)} />
+        ) : (
+          <PrimaryButton label={strings.gotIt} onPress={closeDrawer} />
+        )}
         <TextButton label={strings.shopWaitAllowance} onPress={() => setWaiting(true)} />
         <TextButton label={strings.shopDoTask} onPress={openMap} />
-        {canPayPot ? <TextButton label={strings.gotIt} onPress={backToList} /> : null}
-        {gold}
+        {canPayPot ? <TextButton label={strings.gotIt} onPress={closeDrawer} /> : null}
       </>
     );
   };
 
-  const footer = (() => {
-    if (phase.name === "item") return itemActions(phase.item);
-    if (phase.name === "confirm" || phase.name === "confirmActiveGoalBuy") {
-      return (
-        <>
-          <TextButton label={strings.shopPostpone} onPress={backToList} />
-          <PrimaryButton label={strings.shopBuy} onPress={() => buy(phase.item)} />
-        </>
-      );
-    }
-    if (offerPickGoal && phase.name === "list" && !feedback) {
-      return (
-        <PrimaryButton
-          label={strings.pickNewGoal}
-          onPress={() => {
-            setOfferPickGoal(false);
-            setPickerOpen(true);
-          }}
-        />
-      );
-    }
-    return null;
-  })();
+  const footer =
+    offerPickGoal && drawer.name === "closed" && !feedback ? (
+      <PrimaryButton
+        label={strings.pickNewGoal}
+        onPress={() => {
+          setOfferPickGoal(false);
+          setPickerOpen(true);
+        }}
+      />
+    ) : null;
+
+  const sheetOpen = drawer.name !== "closed";
+  // Behind an open drawer the page is out of reach, for touch and for the screen reader.
+  const behindSheet = sheetOpen ? hiddenFromReader : {};
 
   return (
-    <Screen header={<StatusStrip />} footer={footer}>
-      <BackButton />
-      <ScreenTitle style={styles.title}>{strings.navShop}</ScreenTitle>
-      {phase.name === "list" ? (
-        <>
-          <View style={styles.tabs}>
-            <Chip
-              label={strings.shopMandatoryTab}
-              pictogram={strings.navPlanPictogram}
-              selected={tab === "mandatory"}
-              onPress={() => {
-                setTab("mandatory");
-              }}
-            />
-            <Chip
-              label={strings.shopOptionalTab}
-              pictogram={strings.navShopPictogram}
-              selected={tab === "optional"}
-              onPress={() => {
-                setTab("optional");
-              }}
-            />
-          </View>
-          {tabLeftover != null ? (
-            <CoinText
-              coin
-              label={strings.planLeftoverA11y(tabBucketLabel, tabLeftover)}
-              text={tabLeftover >= 0 ? strings.planLeftover(tabLeftover) : strings.planOvershoot(Math.abs(tabLeftover))}
-              style={styles.body}
-            />
-          ) : null}
+    <Screen
+      header={
+        <View {...behindSheet}>
+          <StatusStrip />
+        </View>
+      }
+      footer={footer}
+    >
+      <View {...behindSheet} style={styles.page}>
+        <BackButton />
+        <ScreenTitle style={styles.title}>{strings.navShop}</ScreenTitle>
+        <SegmentedTabs options={TABS} value={tab} onChange={setTab} />
+        {tabLeftover != null ? (
+          <CoinText
+            coin
+            label={strings.planLeftoverA11y(tabBucketLabel, tabLeftover)}
+            text={tabLeftover >= 0 ? strings.planLeftover(tabLeftover) : strings.planOvershoot(Math.abs(tabLeftover))}
+            style={styles.leftover}
+          />
+        ) : null}
+        <View style={styles.list}>
           {items.map((item) => {
-            const shortfall = balance < item.price ? item.price - balance : null;
-            const flags = {
-              due: dueIds.has(item.id),
-              goal: activeKey === item.id,
-              bought: bought.includes(item.id),
-            };
-            const marked = focus?.kind === "shop-bills" && flags.due && !flags.bought;
+            const flags = flagsFor(item);
             return (
-              <Pressable
+              <ShopRow
                 key={item.id}
-                role="button"
-                aria-label={rowAnnouncement(item, balance, flags)}
-                aria-selected={marked}
-                onPress={() => {
-                  setWaiting(false);
-                  setPhase({ name: "item", item });
-                }}
-                style={[styles.itemHit, marked ? styles.itemMarked : null]}
-              >
-                <Card>
-                  <ItemHead item={item} shortfall={shortfall} />
-                    <EffectChips item={item} due={flags.due} bought={flags.bought} announce={false} />
-                    <StateChips goal={flags.goal} bought={flags.bought} once={Boolean(item.once)} hidden />
-                </Card>
-              </Pressable>
+                item={item}
+                flags={flags}
+                balance={balance}
+                marked={focus?.kind === "shop-bills" && flags.due && !flags.bought}
+                onOpen={() => openDrawer("buy", item)}
+                onBuy={() => openDrawer("buy", item)}
+                onPostpone={() => openDrawer("postpone", item)}
+                onRestore={() => markPostponed(item, false)}
+              />
             );
           })}
-        </>
-      ) : null}
-      {phase.name === "item" ? (
-        <Card>
-          <ItemHead item={phase.item} shortfall={null} />
-          <CoinText text={phase.item.description} style={styles.body} />
-          <EffectChips
-            item={phase.item}
-            due={dueIds.has(phase.item.id)}
-            bought={bought.includes(phase.item.id)}
-            announce
-          />
-          <StateChips
-            goal={activeKey === phase.item.id}
-            bought={bought.includes(phase.item.id)}
-            once={Boolean(phase.item.once)}
-          />
-          {balance >= phase.item.price ? (
-            <CoinText text={strings.shopAfterBuy(balance - phase.item.price)} style={styles.body} />
-          ) : (
-            <CoinText coin text={strings.shopShortfall(phase.item.price - balance)} style={styles.body} />
-          )}
-          {phase.item.once ? <CoinText text={strings.shopOnceLabel} style={styles.body} /> : null}
-          {balance < phase.item.price && activeKey === phase.item.id ? (
-            <CoinText text={strings.shopBlockedAlreadyGoal} style={styles.body} />
-          ) : null}
-          {waiting && balance < phase.item.price ? <CoinText text={strings.shopWaitExplain} style={styles.body} /> : null}
-        </Card>
-      ) : null}
-      {phase.name === "confirm" ? (
-        <Card>
-          <CoinText coin text={strings.shopConfirmBuy(phase.item.name, phase.item.price)} style={styles.section} />
-          {leftoverAfterBuy != null ? (
-            <>
-              <CoinText coin text={strings.planAfterTap(leftoverAfterBuy)} style={styles.body} />
-              {leftoverAfterBuy < 0 ? <CoinText text={strings.planOverWarn} style={styles.body} /> : null}
-            </>
-          ) : null}
-        </Card>
-      ) : null}
-      {phase.name === "confirmActiveGoalBuy" ? (
-        <Card>
-          <CoinText coin text={strings.shopConfirmBuy(phase.item.name, phase.item.price)} style={styles.section} />
-          <CoinText coin text={strings.shopBuyActiveGoalWarn(pot)} style={styles.body} />
-          {leftoverAfterBuy != null ? (
-            <>
-              <CoinText coin text={strings.planAfterTap(leftoverAfterBuy)} style={styles.body} />
-              {leftoverAfterBuy < 0 ? <CoinText text={strings.planOverWarn} style={styles.body} /> : null}
-            </>
-          ) : null}
-        </Card>
-      ) : null}
+        </View>
+      </View>
+      <BottomSheet visible={sheetOpen} onClose={closeDrawer} footer={drawerFooter()}>
+        {drawerBody()}
+      </BottomSheet>
       {feedback ? (
         <FeedbackCard
           model={feedback}
@@ -463,16 +393,15 @@ export default function ShopScreen({ navigation }: Props) {
           }}
         />
       ) : null}
-      <GoalPicker
-        visible={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        onChanged={load}
-      />
+      <GoalPicker visible={pickerOpen} onClose={() => setPickerOpen(false)} onChanged={load} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  page: {
+    gap: spacing.m,
+  },
   title: {
     color: colors.text,
     fontSize: type.title,
@@ -487,64 +416,23 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: type.body,
   },
-  name: {
-    flex: 1,
-  },
-  itemTop: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: spacing.s,
-  },
-  priceCol: {
-    alignItems: "flex-end",
-    gap: spacing.s,
-  },
-  price: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.s,
-  },
-  priceNumber: {
-    color: colors.text,
-    fontFamily: font.pixel,
-    fontSize: 16,
-    fontWeight: "400",
-    includeFontPadding: false,
-    lineHeight: 24,
-  },
-  emoji: {
-    fontSize: 24,
-  },
-  chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.s,
-  },
-  chip: {
-    alignItems: "center",
-    backgroundColor: colors.badgeFill,
-    borderRadius: radius.card,
-    flexDirection: "row",
-    gap: spacing.s,
-    minHeight: 32,
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
-  },
-  chipText: {
+  warn: {
     color: colors.text,
     fontSize: type.body,
     fontWeight: "700",
   },
-  tabs: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  leftover: {
+    color: colors.subtle,
+    fontSize: type.body,
+    fontWeight: "700",
+  },
+  list: {
+    gap: 12,
+  },
+  confirm: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
     gap: spacing.s,
-  },
-  itemHit: {
-    minHeight: minTarget,
-  },
-  itemMarked: {
-    backgroundColor: colors.highlight,
-    borderRadius: radius.card,
+    padding: spacing.m,
   },
 });

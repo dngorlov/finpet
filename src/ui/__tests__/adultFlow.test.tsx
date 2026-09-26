@@ -33,11 +33,11 @@ describe("Взрослый раздел contents and persistence", () => {
 
     expect(screen.getByLabelText("Баланс 103")).toBeOnTheScreen();
     await passAdultGate(user);
-    expect(screen.getByText("Бюджет: сделано 1 из 2")).toBeOnTheScreen();
+    expect(screen.getByText("Бюджет: сделано 1 из 3")).toBeOnTheScreen();
     expect(screen.getByText("Копилки: ещё впереди")).toBeOnTheScreen();
     expect(screen.getByText("Платежи: ещё впереди")).toBeOnTheScreen();
     expect(screen.getByText("Игровых дней пока нет — это нормально.")).toBeOnTheScreen();
-    expect(screen.getByText("Задания 1/9")).toBeOnTheScreen();
+    expect(screen.getByText("Задания 1/12")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Сбросить прогресс" }));
     expect(screen.getByText("Прогресс сбросится, имена и вид питомца останутся.")).toBeOnTheScreen();

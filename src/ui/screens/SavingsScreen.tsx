@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { CatalogItemContent, GoalContent } from "../../data/content";
 import { applyGoalProgress, estimateDaysToGoal } from "../../core/savings";
 import { META_KEYS } from "../../data/metaKeys";
-import type { DayState, SavingsView } from "../../data/repositories/gameRepository";
+import type { DayState, JournalEntry, SavingsView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
 import { CoinText } from "../components/CoinText";
 import { GlyphLabel } from "../components/Pictogram";
@@ -18,9 +18,27 @@ import { TextButton } from "../components/TextButton";
 import { usePlayChrome } from "../navigation/playChrome";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
-import { colors, type } from "../theme";
+import { moneyStrings } from "../stringsMoney";
+import { colors, spacing, type } from "../theme";
 import { meterDeltaMap } from "../../core/economy";
+import { itemLookup, savingsOps, savingsStats } from "./journalStats";
+import {
+  ActionRow,
+  Amount,
+  HeroCard,
+  MoneyCard,
+  moneyColors,
+  OpRow,
+  ProgressBar,
+  RoundAction,
+  SectionTitle,
+  StatTile,
+  TileRow,
+} from "./moneyParts";
 import { confirmedLeftover, leftoverAfterTap } from "./planLeftover";
+
+/** Rows in the Копилка history. */
+const RECENT_OPS = 6;
 
 type Phase =
   | { name: "home" }
@@ -51,6 +69,7 @@ export default function SavingsScreen() {
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [offerPickGoal, setOfferPickGoal] = useState(false);
+  const [journal, setJournal] = useState<JournalEntry[]>([]);
 
   const load = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
@@ -58,6 +77,7 @@ export default function SavingsScreen() {
     setSavings(game.savingsState(profileId));
     setDay(game.dayState(profileId));
     setBalance(game.getProfile(profileId).balance);
+    setJournal(game.listJournal(profileId));
     touchChrome();
   }, [game, meta, touchChrome]);
 
@@ -90,14 +110,8 @@ export default function SavingsScreen() {
     );
   }
 
-  const deposits = () => {
-    const profileId = meta.get(META_KEYS.activeProfileId);
-    if (!profileId) return [];
-    return game
-      .listJournal(profileId)
-      .filter((row) => row.kind === "savings_in")
-      .map((row) => Math.abs(row.amount));
-  };
+  const deposits = () =>
+    journal.filter((row) => row.kind === "savings_in").map((row) => Math.abs(row.amount));
 
   const goal = savings.activeGoal ? content.goals.find((item) => item.id === savings.activeGoal!.key) : undefined;
   const activeItem = goal
@@ -248,39 +262,32 @@ export default function SavingsScreen() {
       );
     }
     if (phase.name === "home") {
-      return (
-        <>
-          {offerPickGoal ? (
-            <PrimaryButton label={strings.savingsChooseNewGoal} onPress={openPicker} />
-          ) : null}
-          {funded && !offerPickGoal ? (
-            <PrimaryButton
-              highlighted={focus?.kind === "buy-goal"}
-              label={strings.savingsBuyFromSavings}
-              onPress={buyFromSavings}
-            />
-          ) : null}
+      if (offerPickGoal) return <PrimaryButton label={strings.savingsChooseNewGoal} onPress={openPicker} />;
+      if (funded) {
+        return (
           <PrimaryButton
-            label={strings.savingsDeposit}
-            disabled={balance <= 0}
-            onPress={() => setPhase({ name: "deposit", amount: 0 })}
+            highlighted={focus?.kind === "buy-goal"}
+            label={strings.savingsBuyFromSavings}
+            onPress={buyFromSavings}
           />
-          <TextButton
-            label={strings.savingsWithdraw}
-            disabled={savings.pot <= 0}
-            onPress={() => setPhase({ name: "withdraw", amount: 0 })}
-          />
-        </>
-      );
+        );
+      }
     }
     return null;
   })();
 
+  const lookup = itemLookup(content.catalog, content.goals);
+  const ops = savingsOps(journal, lookup).slice(0, RECENT_OPS);
+  const stats = savingsStats(journal);
+  const goalCost = savings.activeGoal?.cost ?? 0;
+  const goalPercent = goalCost > 0 ? Math.min(100, Math.floor((accumulated / goalCost) * 100)) : 0;
+  const home = phase.name === "home";
+  const itemName = (id: string | null) => content.goals.find((entry) => entry.id === id)?.name ?? id ?? "";
+
   return (
     <Screen footer={footer}>
       <ScreenTitle style={styles.title}>{strings.navSavings}</ScreenTitle>
-      <CoinText coin text={strings.savingsPot(savings.pot)} style={styles.pot} />
-      {savingsLeftover != null && phase.name === "home" ? (
+      {savingsLeftover != null && home ? (
         <CoinText
           coin
           label={strings.planLeftoverA11y(strings.bucketSavings, savingsLeftover)}
@@ -292,36 +299,66 @@ export default function SavingsScreen() {
           style={styles.body}
         />
       ) : null}
-      <Card>
+      <HeroCard caption={moneyStrings.savingsCaption} value={savings.pot} label={strings.savingsPot(savings.pot)}>
+        <View style={styles.heroDivider} />
         {savings.activeGoal && activeName ? (
           <>
-            <CoinText text={activeName} style={styles.section} />
-            <CoinText text={strings.shopPrice(savings.activeGoal.cost)} style={styles.body} />
-            <CoinText coin text={strings.goalRatio(accumulated, savings.activeGoal.cost)} style={styles.body} />
-            <CoinText coin text={strings.savingsRemaining(savings.activeGoal.remaining)} style={styles.body} />
-            <CoinText
-              text={
-                savings.estimateDays == null
+            <View style={styles.heroRow}>
+              <View style={styles.heroGoal}>
+                <Text style={styles.heroSmall}>{moneyStrings.savingsGoalCaption}</Text>
+                <Text style={styles.heroGoalName}>{activeName}</Text>
+              </View>
+              <View accessible aria-label={strings.shopPrice(goalCost)}>
+                <Amount value={goalCost} size={16} color={moneyColors.heroText} />
+              </View>
+            </View>
+            <View accessible aria-label={moneyStrings.savingsGoalProgress(accumulated, goalCost, goalPercent)}>
+              <ProgressBar value={accumulated} max={goalCost} on="hero" />
+            </View>
+            <View style={styles.heroRow}>
+              <Text style={styles.heroValue}>{strings.goalRatio(accumulated, goalCost)}</Text>
+              <Text style={styles.heroValue}>{strings.savingsRemaining(savings.activeGoal.remaining)}</Text>
+            </View>
+            <View style={styles.heroRow}>
+              <Text style={styles.heroSmall}>{moneyStrings.savingsForecast}</Text>
+              <Text style={styles.heroValue}>
+                {savings.estimateDays == null
                   ? strings.savingsEstimateNone
-                  : strings.savingsEstimate(savings.estimateDays)
-              }
-              style={styles.body}
-            />
+                  : strings.savingsEstimate(savings.estimateDays)}
+              </Text>
+            </View>
           </>
         ) : (
-          <CoinText text={strings.savingsPickGoal} style={styles.body} />
+          <>
+            <Text style={styles.heroSmall}>{moneyStrings.savingsNoGoal}</Text>
+            <Text style={styles.heroGoalName}>{strings.savingsPickGoal}</Text>
+          </>
         )}
-      </Card>
-      {phase.name === "home" && !offerPickGoal ? (
-        <View>
-          <TextButton
-            label={savings.activeGoal ? strings.savingsChooseGoal : strings.savingsPickGoal}
+      </HeroCard>
+      {home && !offerPickGoal ? (
+        <ActionRow>
+          <RoundAction
+            label={strings.savingsDeposit}
+            icon="arrow-down"
+            disabled={balance <= 0}
+            onPress={() => setPhase({ name: "deposit", amount: 0 })}
+          />
+          <RoundAction
+            label={strings.savingsWithdraw}
+            icon="arrow-up"
+            disabled={savings.pot <= 0}
+            onPress={() => setPhase({ name: "withdraw", amount: 0 })}
+          />
+          <RoundAction
+            label={moneyStrings.actionGoal}
+            icon="target"
+            highlighted={focus?.kind === "goal"}
             onPress={openPicker}
           />
-          {savings.activeGoal ? (
-            <TextButton label={strings.savingsDropGoal} onPress={dropGoal} />
-          ) : null}
-        </View>
+        </ActionRow>
+      ) : null}
+      {home && !offerPickGoal && savings.activeGoal ? (
+        <TextButton label={strings.savingsDropGoal} onPress={dropGoal} />
       ) : null}
       {phase.name === "deposit" ? (
         <Card>
@@ -371,6 +408,53 @@ export default function SavingsScreen() {
           <GlyphLabel glyph={strings.savingsConfetti} label={strings.savingsAchieved} labelStyle={styles.section} />
         </Card>
       ) : null}
+      {home ? (
+        <>
+          <TileRow>
+            <StatTile
+              label={moneyStrings.statTotal}
+              value={stats.total}
+              spoken={moneyStrings.statA11y(moneyStrings.statTotal, stats.total)}
+            />
+            <StatTile
+              label={moneyStrings.statCount}
+              value={stats.count}
+              coin={false}
+              spoken={moneyStrings.statCountA11y(stats.count)}
+            />
+            <StatTile
+              label={moneyStrings.statAverage}
+              value={stats.average}
+              spoken={moneyStrings.statA11y(moneyStrings.statAverage, stats.average)}
+            />
+          </TileRow>
+          <SectionTitle>{moneyStrings.savingsHistory}</SectionTitle>
+          <MoneyCard tight>
+            {ops.length === 0 ? <Text style={styles.empty}>{moneyStrings.savingsHistoryEmpty}</Text> : null}
+            {ops.map((op, index) => {
+              const title =
+                op.kind === "in"
+                  ? moneyStrings.opIn
+                  : op.kind === "out"
+                    ? moneyStrings.opOut
+                    : moneyStrings.opGoal(itemName(op.itemId));
+              const day = moneyStrings.day(op.dayN);
+              return (
+                <OpRow
+                  key={op.id}
+                  icon={op.kind === "in" ? "arrow-down" : op.kind === "out" ? "arrow-up" : "star"}
+                  tint={op.kind === "in" ? moneyColors.plus : op.kind === "out" ? colors.raisedEdge : moneyColors.goal}
+                  title={title}
+                  subtitle={day}
+                  amount={op.amount}
+                  label={moneyStrings.opRowA11y(title, day, op.amount)}
+                  last={index === ops.length - 1}
+                />
+              );
+            })}
+          </MoneyCard>
+        </>
+      ) : null}
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}
       <GoalPicker
         visible={pickerOpen}
@@ -390,11 +474,6 @@ const styles = StyleSheet.create({
     fontSize: type.title,
     fontWeight: "700",
   },
-  pot: {
-    color: colors.text,
-    fontSize: type.title,
-    fontWeight: "700",
-  },
   section: {
     color: colors.text,
     fontSize: type.section,
@@ -403,5 +482,39 @@ const styles = StyleSheet.create({
   body: {
     color: colors.text,
     fontSize: type.body,
+  },
+  empty: {
+    color: colors.subtle,
+    fontSize: type.body,
+    paddingVertical: spacing.s,
+  },
+  heroDivider: {
+    backgroundColor: moneyColors.heroTrack,
+    height: 1,
+    marginVertical: 4,
+  },
+  heroRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.s,
+    justifyContent: "space-between",
+  },
+  heroGoal: {
+    flex: 1,
+    gap: 2,
+  },
+  heroSmall: {
+    color: moneyColors.heroSubtle,
+    fontSize: 14,
+  },
+  heroGoalName: {
+    color: moneyColors.heroText,
+    fontSize: type.section,
+    fontWeight: "700",
+  },
+  heroValue: {
+    color: moneyColors.heroText,
+    fontSize: type.body,
+    fontWeight: "700",
   },
 });

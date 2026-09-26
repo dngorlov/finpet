@@ -11,7 +11,7 @@ import { strings } from "../strings";
 import { currentTaskLabel, resolveCurrentTask } from "../tasks/resolveCurrentTask";
 import { colors, font, minTarget, radius, spacing, type } from "../theme";
 import { MeterBar } from "./MeterBar";
-import { Pictogram } from "./Pictogram";
+import { PixelSprite } from "./PixelSprite";
 
 const STAGE_ORDER: Stage[] = ["novice", "pro", "millionaire"];
 const EDGE = 4;
@@ -79,7 +79,7 @@ export function StatusStrip() {
     <View style={styles.wrap}>
       <View style={styles.status}>
         <View accessible aria-label={strings.balanceBadge(profile.balance)} style={styles.balance}>
-          <Pictogram glyph={strings.balanceIcon} />
+          <PixelSprite name="coin" size={24} />
           <Text aria-hidden style={styles.balanceValue}>
             {profile.balance}
           </Text>
@@ -105,13 +105,13 @@ export function StatusStrip() {
           style={({ pressed }) => [styles.settingsShell, pressed ? styles.settingsPressed : null]}
         >
           <View style={styles.settingsFace}>
-            <Pictogram glyph={strings.settingsIcon} />
+            <PixelSprite name="gear" size={28} />
           </View>
         </Pressable>
       </View>
       <View style={styles.meters}>
-        <MeterBar compact icon={strings.careIcon} label={strings.care} value={profile.care} />
-        <MeterBar compact icon={strings.moodIcon} label={strings.mood} value={profile.mood} />
+        <MeterBar compact sprite="food" icon={strings.careIcon} label={strings.care} value={profile.care} />
+        <MeterBar compact sprite="mood" icon={strings.moodIcon} label={strings.mood} value={profile.mood} />
       </View>
       {task ? (
         <Pressable

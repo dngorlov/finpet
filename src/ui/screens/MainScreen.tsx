@@ -5,23 +5,21 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BANK, ECONOMY, FEATURES } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
-import { Card } from "../components/Card";
-import { CoinText } from "../components/CoinText";
-import { Pictogram, PixelIcon } from "../components/Pictogram";
-import type { PixelIconName } from "../pixelIconXml";
+import { PixelSprite } from "../components/PixelSprite";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
-import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { StatusStrip } from "../components/StatusStrip";
 import type { MoneySection } from "../navigation/playChrome";
 import { usePlayChrome } from "../navigation/playChrome";
 import type { RootStackParamList } from "../navigation/types";
-import { PetView } from "../pet/PetView";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { completedTaskIds } from "../tasks/model";
+import { moneyStrings } from "../stringsMoney";
 import { colors, minTarget, spacing, type } from "../theme";
 import BankScreen from "./BankScreen";
+import { HomeScene } from "./HomeScene";
+import { PillRow } from "./moneyParts";
 import { JournalPanel } from "./progressPanels";
 import PlanScreen from "./PlanScreen";
 import SavingsScreen from "./SavingsScreen";
@@ -43,8 +41,6 @@ type HubModel = {
   bankOpen: boolean;
 };
 
-const HUB_PET_SIZE = 200;
-
 const MONEY_OPTIONS: { id: MoneySection; label: string }[] = [
   { id: "savings", label: strings.navSavings },
   { id: "plan", label: strings.navPlan },
@@ -57,7 +53,6 @@ export default function MainScreen({ navigation }: Props) {
   const { tab, setTab, money, setMoney, revision } = usePlayChrome();
   const [hub, setHub] = useState<HubModel | null>(null);
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const loadHub = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
@@ -122,7 +117,6 @@ export default function MainScreen({ navigation }: Props) {
           BackHandler.exitApp();
           return true;
         }
-        setMenuOpen(false);
         setTab("home");
         return true;
       });
@@ -165,91 +159,30 @@ export default function MainScreen({ navigation }: Props) {
       <StatusStrip />
       <View style={styles.bodySlot}>
         {tab === "home" ? (
-          <Screen>
-            <View style={styles.pet}>
-              <PetView
-                species={hub.profile.species}
-                color={hub.profile.color}
-                accessory={hub.profile.accessory}
-                petName={hub.profile.petName}
-                care={hub.profile.care}
-                mood={hub.profile.mood}
-                size={HUB_PET_SIZE}
-              />
-            </View>
-            <Text style={styles.body}>{strings.journalDay(hub.day.n)}</Text>
-            {waiting ? <Text style={styles.body}>{strings.waitingBanner}</Text> : null}
-            {hub.allowanceCredited ? <CoinText text={strings.allowanceRibbon} style={styles.body} /> : null}
-            <Card>
-              {hub.goalName ? (
-                <>
-                  <CoinText text={hub.goalName} style={styles.cardTitle} />
-                  <CoinText coin text={strings.goalRatio(hub.accumulated, hub.cost)} style={styles.body} />
-                  <CoinText coin text={strings.goalRemaining(hub.remaining)} style={styles.body} />
-                </>
-              ) : (
-                <CoinText text={strings.goalEmptyPrompt} style={styles.cardTitle} />
-              )}
-            </Card>
-            <PrimaryButton label={strings.tabResults} onPress={() => navigation.navigate("Results")} />
-            <PrimaryButton
-              label={strings.navShop}
-              disabled={waiting}
-              accessibilityHint={waiting ? strings.waitingEconomyHint : undefined}
-              onPress={() => navigation.navigate("Shop")}
-            />
-          </Screen>
+          <HomeScene
+            pet={{
+              species: hub.profile.species,
+              color: hub.profile.color,
+              accessory: hub.profile.accessory,
+              petName: hub.profile.petName,
+              care: hub.profile.care,
+              mood: hub.profile.mood,
+            }}
+            day={hub.day.n}
+            waiting={waiting}
+            allowanceCredited={hub.allowanceCredited}
+            goalName={hub.goalName}
+            accumulated={hub.accumulated}
+            cost={hub.cost}
+            onShop={() => navigation.navigate("Shop")}
+            onResults={() => navigation.navigate("Results")}
+          />
         ) : null}
         {tab === "map" ? <TaskListScreen /> : null}
         {tab === "money" ? (
           <View style={styles.money}>
-            <View style={styles.menu}>
-              <Pressable
-                role="button"
-                aria-label={strings.moneyMenu}
-                aria-expanded={menuOpen}
-                onPress={() => setMenuOpen((open) => !open)}
-                style={styles.menuTrigger}
-              >
-                <Text style={styles.menuValue}>{current.label}</Text>
-                <Text
-                  aria-hidden
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
-                  style={styles.menuChevron}
-                >
-                  {menuOpen ? strings.moneyChevronOpen : strings.moneyChevronClosed}
-                </Text>
-              </Pressable>
-              {menuOpen ? (
-                <View style={styles.menuList}>
-                  {options.map((option, index) => {
-                    const selected = option.id === money;
-                    return (
-                      <Pressable
-                        key={option.id}
-                        role="button"
-                        aria-label={option.label}
-                        aria-selected={selected}
-                        onPress={() => {
-                          setMoney(option.id);
-                          setMenuOpen(false);
-                        }}
-                        style={[
-                          styles.menuRow,
-                          index === options.length - 1 ? styles.menuRowLast : null,
-                          selected ? styles.menuRowOn : null,
-                        ]}
-                      >
-                        <Text style={styles.menuValue}>{option.label}</Text>
-                        {selected ? (
-                          <Pictogram glyph={strings.selectedCheck} color={colors.accentText} />
-                        ) : null}
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ) : null}
+            <View style={styles.menu} role="tablist" aria-label={moneyStrings.sections}>
+              <PillRow grow options={options} value={current.id} onChange={setMoney} />
             </View>
             <View style={styles.bodySlot}>
               {money === "savings" ? <SavingsScreen /> : null}
@@ -270,7 +203,7 @@ export default function MainScreen({ navigation }: Props) {
             [
               ["home", strings.tabHome, "home"],
               ["map", strings.tabMap, "map"],
-              ["money", strings.tabMoney, "coins"],
+              ["money", strings.tabMoney, "coin"],
             ] as const
           ).map(([id, label, icon]) => {
             const selected = tab === id;
@@ -281,10 +214,7 @@ export default function MainScreen({ navigation }: Props) {
                 role="button"
                 aria-label={label}
                 aria-selected={selected}
-                onPress={() => {
-                  if (id !== "money") setMenuOpen(false);
-                  setTab(id);
-                }}
+                onPress={() => setTab(id)}
                 style={styles.tab}
               >
                 {({ pressed }) => (
@@ -297,7 +227,9 @@ export default function MainScreen({ navigation }: Props) {
                       ]}
                     >
                       <View style={[styles.tokenFace, selected ? styles.tokenFaceOn : null]}>
-                        <PixelIcon name={icon as PixelIconName} color={ink} />
+                        <View style={selected ? null : styles.spriteIdle}>
+                          <PixelSprite name={icon} size={28} />
+                        </View>
                       </View>
                     </View>
                     <Text style={[styles.tabLabel, selected ? styles.tabLabelOn : null, { color: ink }]}>{label}</Text>
@@ -324,64 +256,13 @@ const styles = StyleSheet.create({
   money: {
     flex: 1,
   },
-  pet: {
-    alignItems: "center",
-  },
   body: {
     color: colors.text,
     fontSize: type.body,
   },
-  cardTitle: {
-    color: colors.text,
-    fontSize: type.section,
-    fontWeight: "700",
-  },
   menu: {
-    gap: spacing.s,
-    paddingHorizontal: spacing.l,
+    paddingHorizontal: spacing.m,
     paddingTop: spacing.s,
-  },
-  menuTrigger: {
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderColor: colors.disabledFace,
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    minHeight: minTarget,
-    paddingHorizontal: spacing.m,
-  },
-  menuValue: {
-    color: colors.text,
-    fontSize: type.body,
-    fontWeight: "700",
-  },
-  menuChevron: {
-    color: colors.subtle,
-    fontSize: type.body,
-  },
-  menuList: {
-    backgroundColor: colors.card,
-    borderColor: colors.disabledFace,
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  menuRow: {
-    alignItems: "center",
-    borderBottomColor: colors.track,
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    minHeight: minTarget,
-    paddingHorizontal: spacing.m,
-  },
-  menuRowLast: {
-    borderBottomWidth: 0,
-  },
-  menuRowOn: {
-    backgroundColor: colors.highlight,
   },
   tabTray: {
     backgroundColor: colors.raisedEdge,
@@ -422,6 +303,9 @@ const styles = StyleSheet.create({
   },
   tokenFaceOn: {
     backgroundColor: colors.raisedFace,
+  },
+  spriteIdle: {
+    opacity: 0.6,
   },
   tabLabel: {
     fontSize: type.body,

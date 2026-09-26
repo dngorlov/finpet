@@ -1,13 +1,14 @@
 import { useCallback, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { factFromSpending } from "../../core/budgetGames";
 import {
   chooseOption,
   earnedReward,
   endsGameDay,
-  sortVerdict,
   startTask,
+  type BudgetSplit,
   type NextRef,
   type TaskEffect,
   type TaskStepResult,
@@ -17,7 +18,6 @@ import { META_KEYS } from "../../data/metaKeys";
 import type { ProfileView } from "../../data/repositories/gameRepository";
 import { BackButton } from "../components/BackButton";
 import { CoinText } from "../components/CoinText";
-import { Pictogram } from "../components/Pictogram";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -26,7 +26,13 @@ import { PetView } from "../pet/PetView";
 import type { PetPose } from "../pet/keys";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
-import { colors, spacing, type } from "../theme";
+import { colors, radius, spacing, type } from "../theme";
+import { AllocateBoard, ReplanBoard } from "../games/BudgetBoard";
+import { CompareBoard } from "../games/CompareBoard";
+import { OptionTiles, SceneTiles, VerdictBanner } from "../games/GameParts";
+import { gameStrings } from "../games/gameStrings";
+import { DreamGame, StepsGame } from "../games/SavingGames";
+import { SortBoard } from "../games/SortBoard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TaskRun">;
 
@@ -50,8 +56,9 @@ export default function TaskRunScreen({ navigation, route }: Props) {
   const [sceneFeedback, setSceneFeedback] = useState<FeedbackModel | null>(null);
   /** First answer per scored unit (choice node id, or node#item for sort) — the score. */
   const [firstVerdicts, setFirstVerdicts] = useState<Record<string, Verdict>>({});
-  const [sortIndex, setSortIndex] = useState(0);
-  const [sortResult, setSortResult] = useState<{ verdict: Verdict; explanation: string } | null>(null);
+  /** План и факт: the child's plan and what the choices spent since. */
+  const [plan, setPlan] = useState<BudgetSplit | null>(null);
+  const [spent, setSpent] = useState<Partial<BudgetSplit>>({});
 
   useFocusEffect(
     useCallback(() => {
@@ -63,8 +70,8 @@ export default function TaskRunScreen({ navigation, route }: Props) {
       setResult(null);
       setSceneFeedback(null);
       setFirstVerdicts({});
-      setSortIndex(0);
-      setSortResult(null);
+      setPlan(null);
+      setSpent({});
     }, [game, meta, task]),
   );
 
@@ -79,7 +86,7 @@ export default function TaskRunScreen({ navigation, route }: Props) {
 
   const node = task.nodes.find((item) => item.id === nodeId);
   const kind = node?.kind ?? "choice";
-  const explaining = result !== null || sortResult !== null;
+  const explaining = result !== null;
   const withPet = (text: string) => text.split("{pet}").join(profile.petName);
 
   const remember = (key: string, verdict: Verdict) => {
@@ -119,8 +126,6 @@ export default function TaskRunScreen({ navigation, route }: Props) {
     }
     setNodeId(next);
     setResult(null);
-    setSortIndex(0);
-    setSortResult(null);
   };
 
   const choose = (optionIndex: number) => {
@@ -131,6 +136,10 @@ export default function TaskRunScreen({ navigation, route }: Props) {
     game.applyTaskStep(profileId, day.dayId, step);
     setProfile(game.getProfile(profileId));
     remember(node.id, step.verdict);
+    const spend = node.options?.[optionIndex]?.spend;
+    if (spend && step.next !== "retry") {
+      setSpent((current) => ({ ...current, [spend.bucket]: (current[spend.bucket] ?? 0) + spend.amount }));
+    }
     setResult(step);
     const coins = coinDelta(step.effects);
     if (coins > 0 && step.next !== "exit") {
@@ -142,34 +151,11 @@ export default function TaskRunScreen({ navigation, route }: Props) {
     }
   };
 
-  const sortInto = (bin: number) => {
-    const item = node?.items?.[sortIndex];
-    if (!node || !item) return;
-    const verdict = sortVerdict(item, bin);
-    remember(`${node.id}#${sortIndex}`, verdict);
-    setSortResult({ verdict, explanation: item.explanation });
-  };
-
   const goNext = () => {
     if (!node) return;
     // Answers were recorded on earlier presses, so state already holds them.
     const verdicts = { ...firstVerdicts };
-    if (kind === "card") {
-      goTo(node.next ?? "exit", null, verdicts);
-      return;
-    }
-    if (kind === "sort") {
-      // A wrong basket is a safe error: try the same item again (score keeps the first answer).
-      if (sortResult?.verdict === "bad") {
-        setSortResult(null);
-        return;
-      }
-      const total = node.items?.length ?? 0;
-      if (sortIndex + 1 < total) {
-        setSortIndex(sortIndex + 1);
-        setSortResult(null);
-        return;
-      }
+    if (kind !== "choice") {
       goTo(node.next ?? "exit", null, verdicts);
       return;
     }
@@ -181,70 +167,129 @@ export default function TaskRunScreen({ navigation, route }: Props) {
     goTo(result.next, result, verdicts);
   };
 
-  const sortItem = kind === "sort" ? node?.items?.[sortIndex] : undefined;
+  const tileMode = kind === "choice" && (node?.options?.every((option) => option.icon) ?? false);
   const footer =
     kind === "card" ? (
       <PrimaryButton label={node?.button ?? strings.taskCardNext} onPress={goNext} />
-    ) : explaining ? (
-      <PrimaryButton label={strings.next} onPress={goNext} />
-    ) : kind === "sort" ? (
-      <>
-        {node?.bins?.map((bin, index) => (
-          <PrimaryButton key={`${node.id}-bin-${index}`} label={bin} onPress={() => sortInto(index)} />
-        ))}
-      </>
-    ) : (
+    ) : kind === "choice" && explaining ? (
+      <PrimaryButton label={result?.next === "retry" ? gameStrings.retry : strings.next} onPress={goNext} />
+    ) : kind === "choice" && !tileMode ? (
       <>
         {node?.options?.map((option, index) => (
           <PrimaryButton key={`${node.id}-${index}`} label={withPet(option.label)} onPress={() => choose(index)} />
         ))}
       </>
-    );
-  const shownVerdict = result?.verdict ?? sortResult?.verdict;
+    ) : null;
+  const shownVerdict = result?.verdict;
+  const isCard = kind === "card";
 
   return (
     <Screen footer={footer}>
-      <BackButton />
-      <PetView
-        species={profile.species}
-        color={profile.color}
-        accessory={profile.accessory}
-        petName={profile.petName}
-        care={profile.care}
-        mood={profile.mood}
-        pose={shownVerdict ? poseForVerdict(shownVerdict) : undefined}
-      />
+      <View style={styles.top}>
+        <BackButton />
+        {node?.title === task.title ? null : (
+          <Text style={styles.taskTitle} numberOfLines={1}>
+            {task.title}
+          </Text>
+        )}
+      </View>
+      <View style={isCard ? styles.cardHero : styles.petRow}>
+        <PetView
+          species={profile.species}
+          color={profile.color}
+          accessory={profile.accessory}
+          petName={profile.petName}
+          care={profile.care}
+          mood={profile.mood}
+          size={isCard ? 120 : 88}
+          pose={shownVerdict ? poseForVerdict(shownVerdict) : undefined}
+        />
+      </View>
       {node?.id === task.nodes[0]?.id && kind === "choice" ? (
         <CoinText text={withPet(task.intro)} style={styles.body} />
       ) : null}
-      {kind === "card" && node ? (
-        <View style={styles.verdict}>
+      {isCard && node ? (
+        <View style={styles.lessonCard}>
           {node.title ? <CoinText text={withPet(node.title)} style={styles.section} /> : null}
           <CoinText text={withPet(node.text)} style={styles.body} />
         </View>
       ) : null}
-      {kind === "choice" && node ? <CoinText text={withPet(node.text)} style={styles.section} /> : null}
-      {kind === "sort" && node ? (
+      {!isCard && node ? (
         <View style={styles.verdict}>
-          <CoinText text={withPet(node.text)} style={styles.section} />
-          <CoinText text={strings.taskSortProgress(sortIndex + 1, node.items?.length ?? 0)} style={styles.body} />
-          {sortItem ? <CoinText text={withPet(sortItem.label)} style={styles.item} /> : null}
-          {sortResult ? null : <CoinText text={strings.taskSortPrompt} style={styles.body} />}
+          {node.title ? <CoinText text={withPet(node.title)} style={styles.section} /> : null}
+          <CoinText text={withPet(node.text)} style={kind === "choice" ? styles.section : styles.body} />
         </View>
       ) : null}
-      {result || sortResult ? (
-        <View
-          accessible
-          role="status"
-          aria-label={strings.verdictLabel((result?.verdict ?? sortResult?.verdict)!)}
-          style={styles.verdict}
-        >
-          <View style={styles.verdictTitle}>
-            <Pictogram glyph={strings.verdictGlyph((result?.verdict ?? sortResult?.verdict)!)} />
-            <CoinText text={strings.verdictLabel((result?.verdict ?? sortResult?.verdict)!)} style={styles.section} />
-          </View>
-          <CoinText text={withPet((result?.explanation ?? sortResult?.explanation)!)} style={styles.body} />
-          {result?.effects.map((effect, index) =>
+      {kind === "choice" && node?.scene ? <SceneTiles tiles={node.scene} /> : null}
+      {tileMode && node?.options && !explaining ? (
+        <OptionTiles options={node.options} onChoose={choose} withPet={withPet} />
+      ) : null}
+      {kind === "sort" && node ? (
+        <SortBoard
+          key={node.id}
+          bins={node.bins ?? []}
+          items={node.items ?? []}
+          withPet={withPet}
+          onAnswer={(index, verdict) => remember(`${node.id}#${index}`, verdict)}
+          onDone={goNext}
+        />
+      ) : null}
+      {kind === "allocate" && node ? (
+        <AllocateBoard
+          key={node.id}
+          total={node.total ?? 100}
+          onDone={(split) => {
+            setPlan(split);
+            setSpent({});
+            goNext();
+          }}
+        />
+      ) : null}
+      {kind === "compare" && node ? (
+        <CompareBoard
+          key={node.id}
+          plan={plan ?? { mandatory: 0, wants: 0, savings: node.total ?? 100 }}
+          fact={factFromSpending(node.total ?? 100, spent)}
+          onDone={goNext}
+        />
+      ) : null}
+      {kind === "replan" && node && node.plan && node.event ? (
+        <ReplanBoard
+          key={node.id}
+          total={node.total ?? 100}
+          plan={node.plan}
+          event={node.event}
+          outcomes={node.outcomes}
+          withPet={withPet}
+          onDone={goNext}
+        />
+      ) : null}
+      {kind === "steps" && node && node.goal ? (
+        <StepsGame
+          key={node.id}
+          goal={node.goal}
+          saved={node.saved ?? 0}
+          amounts={node.amounts ?? [5]}
+          income={node.income ?? 10}
+          temptations={node.temptations}
+          petName={profile.petName}
+          onDone={goNext}
+        />
+      ) : null}
+      {kind === "dream" && node ? (
+        <DreamGame
+          key={node.id}
+          goals={node.goals ?? []}
+          saved={node.saved ?? 0}
+          amounts={node.amounts ?? [5, 10]}
+          days={node.days}
+          onDone={goNext}
+        />
+      ) : null}
+      {result ? (
+        <View style={styles.verdict}>
+          <VerdictBanner verdict={result.verdict} text={withPet(result.explanation)} />
+          {result.effects.map((effect, index) =>
             effect.meter && effect.delta ? (
               <CoinText
                 key={`${effect.meter}-${index}`}
@@ -253,7 +298,7 @@ export default function TaskRunScreen({ navigation, route }: Props) {
               />
             ) : null,
           )}
-          {result?.spawnTask ? <CoinText text={strings.taskSpawned} style={styles.body} /> : null}
+          {result.spawnTask ? <CoinText text={strings.taskSpawned} style={styles.body} /> : null}
         </View>
       ) : null}
       {sceneFeedback ? <FeedbackCard model={sceneFeedback} onDismiss={() => setSceneFeedback(null)} /> : null}
@@ -279,10 +324,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.s,
   },
-  item: {
-    color: colors.text,
-    fontSize: type.title,
+  top: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.s,
+  },
+  taskTitle: {
+    color: colors.subtle,
+    flex: 1,
+    fontSize: type.body,
     fontWeight: "700",
-    textAlign: "center",
+  },
+  petRow: {
+    alignItems: "center",
+  },
+  cardHero: {
+    alignItems: "center",
+    backgroundColor: colors.highlight,
+    borderRadius: radius.card,
+    paddingVertical: spacing.m,
+  },
+  lessonCard: {
+    backgroundColor: colors.card,
+    borderColor: colors.track,
+    borderRadius: radius.card,
+    borderWidth: 2,
+    gap: spacing.s,
+    padding: spacing.m,
   },
 });

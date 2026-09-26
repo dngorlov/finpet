@@ -36,6 +36,7 @@ export const strings = {
   gotIt: "Понятно",
   done: "Готово",
   close: "Закрыть",
+  sheetClose: "Закрыть окно",
   back: "Назад",
   backIcon: "←",
   settings: "Настройки",
