@@ -7,14 +7,14 @@ import { META_KEYS } from "../../data/metaKeys";
 import type { DaySummaryView, JournalEntry, TaskProgressView } from "../../data/repositories/gameRepository";
 import { Badge } from "../components/Badge";
 import { CoinText } from "../components/CoinText";
-import { GlyphLabel } from "../components/Pictogram";
-import { Card } from "../components/Card";
+import { PixelIcon } from "../components/Pictogram";
+import { PixelSprite, type SpriteName } from "../components/PixelSprite";
 import { useSession } from "../session/SessionProvider";
 import { dayCloseLines, strings } from "../strings";
 import { CHART_COLORS, DonutChart } from "../components/DonutChart";
 import type { PixelIconName } from "../pixelIconXml";
 import { moneyStrings } from "../stringsMoney";
-import { colors, font, spacing, type } from "../theme";
+import { colors, font, radius, spacing, type } from "../theme";
 import {
   classify,
   groupByDay,
@@ -24,11 +24,13 @@ import {
   type JournalPeriod,
 } from "./journalStats";
 import {
+  Amount,
   Legend,
   MoneyCard,
   moneyColors,
   OpRow,
   PillRow,
+  ProgressBar,
   SectionTitle,
   StatTile,
   TileRow,
@@ -55,8 +57,45 @@ function journalLabel(
   return entry.labelKey;
 }
 
-function meterReasonLines(deltas: DaySummaryView["meterDeltas"]): string[] {
-  return dayCloseLines(deltas, false);
+type EffectSection = {
+  key: string;
+  line: string;
+  tint: string;
+  sprite: SpriteName;
+};
+
+/** One block per meter outcome. Negatives use their own color; a cancelled drop stays green. */
+function effectSections(deltas: DaySummaryView["meterDeltas"]): EffectSection[] {
+  const lines = dayCloseLines(deltas);
+  const sections: EffectSection[] = [
+    {
+      key: "care",
+      line: lines[0],
+      tint: deltas.care < 0 ? moneyColors.goal : colors.fill,
+      sprite: "food",
+    },
+    {
+      key: "mood",
+      line: lines[1],
+      tint: deltas.dailyMood < 0 ? CHART_COLORS.bank : colors.fill,
+      sprite: "mood",
+    },
+  ];
+  if (lines[2]) {
+    sections.push({
+      key: "overspend",
+      line: lines[2],
+      tint: CHART_COLORS.optional,
+      sprite: "mood",
+    });
+  }
+  return sections;
+}
+
+function markInk(tint: string) {
+  if (tint === CHART_COLORS.optional || tint === CHART_COLORS.tasks) return colors.onRaised;
+  if (tint === colors.fill) return colors.text;
+  return moneyColors.heroText;
 }
 
 function useRecord() {
@@ -251,78 +290,183 @@ export function ResultsBody() {
 
   if (!lastClosed) {
     return (
-      <Card>
+      <MoneyCard>
         <Text style={styles.body}>{strings.resultsEmpty}</Text>
-      </Card>
+      </MoneyCard>
     );
   }
 
+  const effects = effectSections(lastClosed.meterDeltas);
+
   return (
     <>
-      <Card>
-        <Text style={styles.section}>{strings.resultsLastDay(lastClosed.n)}</Text>
-        <BucketLine
-          pictogram={strings.navPlanPictogram}
-          label={strings.bucketMandatory}
-          plan={lastClosed.plan.mandatory}
-          actual={lastClosed.actual.mandatory}
-        />
-        <BucketLine
-          pictogram={strings.navShopPictogram}
-          label={strings.bucketOptional}
-          plan={lastClosed.plan.optional}
-          actual={lastClosed.actual.optional}
-        />
-        <BucketLine
-          pictogram={strings.navSavingsPictogram}
-          label={strings.bucketSavings}
-          plan={lastClosed.plan.savings}
-          actual={lastClosed.actual.savings}
-        />
-        {meterReasonLines(lastClosed.meterDeltas).map((line) => (
-          <Text key={line} style={styles.body}>
-            {line}
-          </Text>
-        ))}
+      <View style={styles.hero}>
+        <Text style={styles.heroDay}>{strings.resultsLastDay(lastClosed.n)}</Text>
         <Badge icon={strings.stageIcon} word={strings.stageWord} value={STAGE_NAMES[lastClosed.stage]} />
-      </Card>
-      <Card>
-        <Text style={styles.section}>{strings.resultsOverall}</Text>
-        <Text style={styles.body}>{strings.resultsDaysPlayed(lastClosed.n)}</Text>
-        <Text style={styles.body}>{strings.resultsTasksDone(completedTopics, topicTasks.length)}</Text>
-        <Text style={styles.body}>{strings.resultsGoalsAchieved(goalCount)}</Text>
-      </Card>
+      </View>
+      <BucketSection
+        icon="clipboard"
+        label={strings.bucketMandatory}
+        color={CHART_COLORS.mandatory}
+        plan={lastClosed.plan.mandatory}
+        actual={lastClosed.actual.mandatory}
+      />
+      <BucketSection
+        icon="smile"
+        label={strings.bucketOptional}
+        color={CHART_COLORS.optional}
+        plan={lastClosed.plan.optional}
+        actual={lastClosed.actual.optional}
+      />
+      <BucketSection
+        icon="arrow-down"
+        label={strings.bucketSavings}
+        color={CHART_COLORS.savings}
+        plan={lastClosed.plan.savings}
+        actual={lastClosed.actual.savings}
+      />
+      {effects.map((effect) => (
+        <View key={effect.key} style={[styles.effect, { borderLeftColor: effect.tint }]}>
+          <View style={[styles.mark, { backgroundColor: effect.tint }]}>
+            <PixelSprite name={effect.sprite} size={24} />
+          </View>
+          <Text style={styles.effectLine}>{effect.line}</Text>
+        </View>
+      ))}
+      <SectionTitle>{strings.resultsOverall}</SectionTitle>
+      <MoneyCard tight>
+        <CountRow icon="clock" tint={CHART_COLORS.bank} text={strings.resultsDaysPlayed(lastClosed.n)} />
+        <CountRow
+          icon="map"
+          tint={CHART_COLORS.tasks}
+          text={strings.resultsTasksDone(completedTopics, topicTasks.length)}
+        />
+        <CountRow icon="star" tint={moneyColors.goal} text={strings.resultsGoalsAchieved(goalCount)} last />
+      </MoneyCard>
     </>
   );
 }
 
-function BucketLine({
-  pictogram,
+function BucketSection({
+  icon,
   label,
+  color,
   plan,
   actual,
 }: {
-  pictogram: string;
+  icon: PixelIconName;
   label: string;
+  color: string;
   plan: number;
   actual: number;
 }) {
   return (
-    <View>
-      <GlyphLabel glyph={pictogram} label={label} labelStyle={styles.body} />
-      <CoinText coin text={strings.planVsActual(plan, actual)} style={styles.body} />
+    <View style={[styles.bucket, { borderLeftColor: color }]}>
+      <View style={styles.bucketTop}>
+        <View style={[styles.mark, { backgroundColor: color }]}>
+          <PixelIcon name={icon} size={22} color={markInk(color)} />
+        </View>
+        <Text style={styles.bucketLabel}>{label}</Text>
+        <Amount value={actual} size={16} />
+      </View>
+      <ProgressBar value={actual} max={Math.max(plan, actual)} color={color} />
+      <CoinText coin text={strings.planVsActual(plan, actual)} style={styles.planLine} />
+    </View>
+  );
+}
+
+function CountRow({
+  icon,
+  tint,
+  text,
+  last,
+}: {
+  icon: PixelIconName;
+  text: string;
+  tint: string;
+  last?: boolean;
+}) {
+  return (
+    <View style={[styles.count, last ? null : styles.countDivider]}>
+      <View style={[styles.mark, { backgroundColor: tint }]}>
+        <PixelIcon name={icon} size={22} color={markInk(tint)} />
+      </View>
+      <Text style={styles.body}>{text}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  section: {
+  hero: {
+    backgroundColor: moneyColors.heroFace,
+    borderRadius: radius.card,
+    gap: spacing.s,
+    padding: spacing.m + 4,
+  },
+  heroDay: {
+    color: moneyColors.heroText,
+    fontFamily: font.pixel,
+    fontSize: 16,
+    fontWeight: "400",
+    lineHeight: 28,
+  },
+  bucket: {
+    backgroundColor: colors.card,
+    borderLeftWidth: 8,
+    borderRadius: radius.card,
+    gap: spacing.s,
+    padding: spacing.m,
+  },
+  bucketTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.s,
+  },
+  bucketLabel: {
     color: colors.text,
-    fontSize: type.section,
+    flex: 1,
+    fontSize: type.body,
     fontWeight: "700",
+  },
+  planLine: {
+    color: colors.subtle,
+    fontSize: type.body,
+  },
+  effect: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderLeftWidth: 8,
+    borderRadius: radius.card,
+    flexDirection: "row",
+    gap: spacing.m,
+    padding: spacing.m,
+  },
+  effectLine: {
+    color: colors.text,
+    flex: 1,
+    fontSize: type.body,
+  },
+  mark: {
+    alignItems: "center",
+    borderRadius: 20,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
+  },
+  count: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    minHeight: 56,
+    paddingVertical: spacing.s,
+  },
+  countDivider: {
+    borderBottomColor: colors.track,
+    borderBottomWidth: 1,
   },
   body: {
     color: colors.text,
+    flex: 1,
     fontSize: type.body,
   },
   chart: {
@@ -351,10 +495,5 @@ const styles = StyleSheet.create({
     color: colors.subtle,
     fontFamily: font.pixel,
     fontSize: 12,
-  },
-  fact: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.s,
   },
 });
