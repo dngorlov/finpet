@@ -109,6 +109,8 @@ export default function MainScreen({ navigation }: Props) {
   );
 
   useEffect(() => {
+    // Re-read the hub from SQLite after a money action elsewhere bumps `revision`.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadHub();
   }, [loadHub, revision]);
 

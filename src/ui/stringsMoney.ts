@@ -10,6 +10,14 @@ function daysWord(n: number): string {
   return "дней";
 }
 
+function coinsWord(n: number): string {
+  const mod10 = Math.abs(n) % 10;
+  const mod100 = Math.abs(n) % 100;
+  if (mod10 === 1 && mod100 !== 11) return "монета";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "монеты";
+  return "монет";
+}
+
 function timesWord(n: number): string {
   const mod10 = n % 10;
   const mod100 = n % 100;
@@ -20,7 +28,8 @@ function timesWord(n: number): string {
 export type ShareLine = { label: string; amount: number; percent: number };
 
 function shareList(parts: readonly ShareLine[]): string {
-  return parts.map((part) => `${part.label} ${part.amount} монет, ${part.percent}%`).join("; ");
+  // Coins only: percents are not taught to 7–11 year olds (Т/З 8.3, age-appropriate maths).
+  return parts.map((part) => `${part.label} ${part.amount} ${coinsWord(part.amount)}`).join("; ");
 }
 
 export const moneyStrings = {
@@ -30,16 +39,14 @@ export const moneyStrings = {
   day: (n: number) => (n <= 0 ? "Старт" : `День ${n}`),
   signed: (n: number) => (n > 0 ? `+${n}` : `${n}`),
   coins: (n: number) => `${n} монет`,
-  legendRow: (label: string, amount: number, percent: number) => `${label}: ${amount} монет, ${percent}%`,
-  percent: (n: number) => `${n}%`,
+  legendRow: (label: string, amount: number) => `${label}: ${amount} ${coinsWord(amount)}`,
 
   // Копилка
   savingsCaption: "Копилка",
   savingsGoalCaption: "Цель",
   savingsNoGoal: "Цели пока нет",
   savingsForecast: "Накопишь",
-  savingsGoalProgress: (have: number, cost: number, percent: number) =>
-    `Цель: собрано ${have} из ${cost}, ${percent}%`,
+  savingsGoalProgress: (have: number, cost: number) => `Цель: собрано ${have} из ${cost}`,
   actionGoal: "Цель",
   statTotal: "Отложено всего",
   statCount: "Взносов",

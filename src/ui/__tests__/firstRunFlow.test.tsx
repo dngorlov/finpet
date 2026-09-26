@@ -103,6 +103,7 @@ describe("first-run flow (Appendix A 1–4)", () => {
     try {
       expect(() => {
         jest.isolateModules(() => {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
           require("../FinPetApp");
         });
       }).not.toThrow();

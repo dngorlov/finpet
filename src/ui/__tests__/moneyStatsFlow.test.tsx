@@ -76,20 +76,20 @@ describe("Журнал stats", () => {
     expect(screen.getByText("День 1")).toBeOnTheScreen();
     expect(screen.getByText("Старт")).toBeOnTheScreen();
     expect(screen.getByLabelText("Покупка: Обед -12")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Обязательное: 12 монет, 37%")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Желаемое: 5 монет, 16%")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Копилка: 15 монет, 47%")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Обязательное: 12 монет")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Желаемое: 5 монет")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Копилка: 15 монет")).toBeOnTheScreen();
     expect(
       screen.getByRole("img", {
-        name: "Траты, Вчера: Обязательное 12 монет, 37%; Желаемое 5 монет, 16%; Копилка 15 монет, 47%",
+        name: "Траты, Вчера: Обязательное 12 монет; Желаемое 5 монет; Копилка 15 монет",
       }),
     ).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Доходы" }));
     expect(screen.getByRole("button", { name: "Доходы" })).toBeSelected();
-    expect(screen.getByLabelText("Пособие: 20 монет, 17%")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Стартовый бюджет: 100 монет, 83%")).toBeOnTheScreen();
-    expect(screen.queryByLabelText("Обязательное: 12 монет, 37%")).not.toBeOnTheScreen();
+    expect(screen.getByLabelText("Пособие: 20 монет")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Стартовый бюджет: 100 монет")).toBeOnTheScreen();
+    expect(screen.queryByLabelText("Обязательное: 12 монет")).not.toBeOnTheScreen();
     expect(screen.getByLabelText("Пришло: 120 монет")).toBeOnTheScreen();
   });
 });
@@ -107,7 +107,7 @@ describe("План yesterday", () => {
 
     await user.press(screen.getByRole("button", { name: "Копилка, больше" }));
     expect(screen.getByText("Сегодня на 14 меньше, чем вчера")).toBeOnTheScreen();
-    expect(screen.getByLabelText(/^Копилка: 1 монет, \d+%$/)).toBeOnTheScreen();
+    expect(screen.getByLabelText("Копилка: 1 монета")).toBeOnTheScreen();
     expect(screen.getByRole("img", { name: /^План на сегодня: .*Копилка 1 монет/ })).toBeOnTheScreen();
   });
 });
@@ -129,6 +129,6 @@ describe("Копилка stats", () => {
     expect(screen.getByLabelText("В среднем за раз: 10 монет")).toBeOnTheScreen();
     expect(screen.getByLabelText("Снятие, День 1, -4 монет")).toBeOnTheScreen();
     expect(screen.getByLabelText("Пополнение, День 1, +15 монет")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Цель: собрано 16 из 90, 17%")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Цель: собрано 16 из 90")).toBeOnTheScreen();
   });
 });
