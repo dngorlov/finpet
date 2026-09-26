@@ -87,8 +87,20 @@ export const DEV_TOOLS: readonly LibraryCredit[] = [
  * TODO(hsespbteam): add every other AI model the team used (for art, texts,
  * research, etc.) with what it was used for, before submitting the Т/З.
  */
+/**
+ * Команда hsespbteam. TODO(команда): проверьте фамилии и роли — здесь только
+ * то, что известно из переписки.
+ */
+export const TEAM: readonly Credit[] = [
+  { what: "Сергей Гончаров", source: "разработка: код приложения, карта заданий, мини-игры, банк, экраны" },
+  { what: "Дима", source: "разработка: архитектура, данные, экраны" },
+  { what: "Андрей", source: "дизайн: пиксель-арт, питомцы, иконки, карта Москвы, палитра" },
+  { what: "Савва", source: "образовательный сценарий: уроки, карточки, тесты, мини-игры" },
+  { what: "Александр Лузин", source: "продукт: требования и постановка задач" },
+];
+
 export const AI_MODELS: readonly Credit[] = [
-  { what: "Claude (Anthropic)", source: "код, тесты, правка текстов" },
+  { what: "Claude (Anthropic)", source: "помощник разработчиков: код, тесты, правка текстов" },
 ];
 
 export const FONTS: readonly Credit[] = [

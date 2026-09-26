@@ -8,6 +8,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import {
   AI_MODELS,
+  TEAM,
   DEV_TOOLS,
   EDUCATIONAL_CONTENT,
   FONTS,
@@ -26,6 +27,7 @@ import { colors, spacing, type } from "../theme";
 type Props = NativeStackScreenProps<RootStackParamList, "Settings">;
 
 const CREDIT_GROUPS: { title: string; items: readonly Credit[] }[] = [
+  { title: homeStrings.creditsTeam, items: TEAM },
   { title: homeStrings.creditsAi, items: AI_MODELS },
   { title: homeStrings.creditsFonts, items: FONTS },
   { title: homeStrings.creditsIcons, items: ICONS },
@@ -46,9 +48,22 @@ export default function SettingsScreen({ navigation }: Props) {
       <Text role="heading" style={styles.heading}>
         {homeStrings.creditsTitle}
       </Text>
+      {CREDIT_GROUPS.slice(0, 1).map((group) => (
+        <Card key={group.title}>
+          <Text role="heading" style={styles.groupTitle}>
+            {group.title}
+          </Text>
+          {group.items.map((item) => (
+            <View key={item.what} style={styles.row}>
+              <Text style={styles.rowName}>{item.what}</Text>
+              <Text style={styles.rowMeta}>{item.source}</Text>
+            </View>
+          ))}
+        </Card>
+      ))}
       <LibraryGroup title={homeStrings.creditsLibraries} items={RUNTIME_LIBRARIES} />
       <LibraryGroup title={homeStrings.creditsDevTools} items={DEV_TOOLS} />
-      {CREDIT_GROUPS.map((group) => (
+      {CREDIT_GROUPS.slice(1).map((group) => (
         <Card key={group.title}>
           <Text role="heading" style={styles.groupTitle}>
             {group.title}

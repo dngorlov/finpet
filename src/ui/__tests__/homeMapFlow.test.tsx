@@ -107,6 +107,8 @@ describe("Об авторах и источниках", () => {
     await user.press(screen.getByRole("button", { name: "Настройки" }));
     expect(screen.getByRole("heading", { name: "Об авторах и источниках" })).toBeOnTheScreen();
     expect(screen.getByText("Drizzle ORM")).toBeOnTheScreen();
+    expect(screen.getByText("Команда hsespbteam")).toBeOnTheScreen();
+    expect(screen.getByText("Сергей Гончаров")).toBeOnTheScreen();
     expect(screen.getByText("Claude (Anthropic)")).toBeOnTheScreen();
     expect(screen.getByText("Press Start 2P")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Взрослый раздел" })).toBeOnTheScreen();
