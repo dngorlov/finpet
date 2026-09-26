@@ -269,8 +269,15 @@ function NamePhase({
                 <Pictogram glyph={strings.namePen} />
               </View>
             </View>
+            <View
+              pointerEvents="none"
+              aria-hidden
+              accessibilityElementsHidden
+              style={styles.cloudTailSlot}
+            >
+              <View style={styles.cloudTail} />
+            </View>
           </View>
-          <View aria-hidden accessibilityElementsHidden style={styles.cloudTail} />
         </View>
         <PetView
           species={draft.species}
@@ -351,20 +358,30 @@ const styles = StyleSheet.create({
   cloudCard: {
     alignItems: "center",
     backgroundColor: colors.card,
+    borderColor: colors.raisedEdge,
     borderRadius: radius.card,
+    borderWidth: 3,
     flexDirection: "row",
     gap: spacing.s,
     padding: spacing.m,
   },
+  cloudTailSlot: {
+    alignItems: "center",
+    bottom: -9,
+    height: 14,
+    left: 0,
+    position: "absolute",
+    right: 0,
+  },
   cloudTail: {
-    borderLeftColor: "transparent",
-    borderLeftWidth: 8,
-    borderRightColor: "transparent",
-    borderRightWidth: 8,
-    borderTopColor: colors.card,
-    borderTopWidth: 10,
-    height: 0,
-    width: 0,
+    backgroundColor: colors.card,
+    borderBottomColor: colors.raisedEdge,
+    borderBottomWidth: 3,
+    borderRightColor: colors.raisedEdge,
+    borderRightWidth: 3,
+    height: 14,
+    transform: [{ rotate: "45deg" }],
+    width: 14,
   },
   body: {
     color: colors.text,

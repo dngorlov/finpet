@@ -93,6 +93,12 @@ export const goals = sqliteTable("goals", {
   isActive: integer("isActive").notNull(),
   achievedAt: integer("achievedAt"),
   fundedCelebrated: integer("fundedCelebrated").notNull(),
+  /** Set for a Своя цель. Preset rows leave these empty. */
+  name: text("name"),
+  icon: text("icon"),
+  custom: integer("custom").notNull().default(0),
+  /** Порог этапа captured when the Своя цель was set. */
+  threshold: integer("threshold"),
 });
 
 export const petState = sqliteTable("petState", {
@@ -102,6 +108,8 @@ export const petState = sqliteTable("petState", {
   care: integer("care").notNull(),
   mood: integer("mood").notNull(),
   stage: integer("stage").notNull(),
+  /** Prices of cheaper Свои цели already bought on this Этап. */
+  stageCredit: integer("stageCredit").notNull().default(0),
 });
 
 export const meterEvents = sqliteTable("meterEvents", {
@@ -140,7 +148,13 @@ export const taskProgress = sqliteTable("taskProgress", {
   rewardPaid: integer("rewardPaid").notNull(),
   /** Best coins earned on this Задание so far; replays only pay above it. */
   bestReward: integer("bestReward").notNull().default(0),
+  /** Fully right first answers, summed over every run. */
+  correctAnswers: integer("correctAnswers").notNull().default(0),
+  /** Scored first answers, summed over every run. */
+  scoredAnswers: integer("scoredAnswers").notNull().default(0),
   completedAt: integer("completedAt"),
+  /** Set on the first completion. A replay does not move it. */
+  firstCompletedAt: integer("firstCompletedAt"),
 });
 
 export const meta = sqliteTable("meta", {

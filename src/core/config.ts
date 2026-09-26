@@ -19,9 +19,9 @@ export const METERS = {
   /** Initial meter values at profile creation (not settled in ROADMAP; midpoint chosen). */
   initialCare: 50,
   initialMood: 50,
-  /** Сытость taken at the end of every Игровой день, unless a Магазин purchase that feeds it cancelled the drop. */
+  /** Сытость taken at the end of every Игровой день. A purchase adds its own gain on top and does not cancel this. */
   dailyCareDrop: 15,
-  /** Счастье taken at the end of every Игровой день, unless a Магазин purchase that feeds it cancelled the drop. */
+  /** Счастье taken at the end of every Игровой день. A purchase adds its own gain on top and does not cancel this. */
   dailyMoodDrop: 15,
   /** Счастье penalty when actual optional spend exceeds the plan bucket (§2.2). */
   overspendMoodPenalty: 5,

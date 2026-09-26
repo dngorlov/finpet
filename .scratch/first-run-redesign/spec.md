@@ -6,7 +6,7 @@ Status: ready-for-agent
 
 A child currently sees the rules before meeting or customizing their Питомец, so the explanation is abstract and emotionally disconnected from the character they will care for. The primary action says «Начать» on every rule card even after the child has already started moving through them. The step indicators are implemented and styled as large buttons, which suggests that they are navigation controls rather than passive progress.
 
-The existing first-run journey also combines appearance and both names on one setup screen. It does not support the desired sequence of first making a pet, then naming it, then hearing that pet explain how the game works. This weakens the first impression of ФинПет and makes the rules feel like a barrier before the child reaches the engaging part.
+The existing first-run journey also combines appearance and both names on one setup screen. It does not support the desired sequence of first making a pet, then naming it, then hearing that pet explain how the game works. This weakens the first impression of Финни and makes the rules feel like a barrier before the child reaches the engaging part.
 
 ## Solution
 
@@ -22,7 +22,7 @@ The same pet-spoken «Как играть» explanation remains replayable from 
 
 ## User Stories
 
-1. As a ребёнок starting ФинПет for the first time, I want to meet the pet creator immediately, so that the first interaction is playful rather than instructional.
+1. As a ребёнок starting Финни for the first time, I want to meet the pet creator immediately, so that the first interaction is playful rather than instructional.
 2. As a ребёнок, I want a complete default Питомец to appear immediately, so that I am never looking at an empty or invalid character.
 3. As a ребёнок, I want to choose one of three Вид options, so that I can select the creature I like.
 4. As a ребёнок, I want to choose one of three Окрас options, so that I can personalize the pet's appearance.

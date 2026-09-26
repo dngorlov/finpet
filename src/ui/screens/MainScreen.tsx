@@ -13,6 +13,7 @@ import { StatusStrip } from "../components/StatusStrip";
 import type { MoneySection } from "../navigation/playChrome";
 import { usePlayChrome } from "../navigation/playChrome";
 import type { RootStackParamList } from "../navigation/types";
+import { goalFace } from "../goalLabel";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { shopStrings } from "../stringsShop";
@@ -34,6 +35,8 @@ type HubModel = {
   savings: SavingsView;
   day: DayState;
   goalName: string;
+  goalIcon: string;
+  threshold: string | null;
   accumulated: number;
   cost: number;
   remaining: number;
@@ -51,7 +54,7 @@ const MONEY_OPTIONS: { id: MoneySection; label: string }[] = [
 
 export default function MainScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
-  const { tab, setTab, money, setMoney, revision } = usePlayChrome();
+  const { tab, setTab, money, setMoney, revision, setGoalPrompt } = usePlayChrome();
   const [hub, setHub] = useState<HubModel | null>(null);
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
   const [cardOpen, setCardOpen] = useState(false);
@@ -63,6 +66,13 @@ export default function MainScreen({ navigation }: Props) {
     setDropBox(null);
     setDayTip(false);
   }, []);
+  const openGoal = useCallback(() => {
+    setCardOpen(false);
+    closeDayTip();
+    setMoney("savings");
+    setTab("money");
+    setGoalPrompt(true);
+  }, [closeDayTip, setGoalPrompt, setMoney, setTab]);
   const placeDropShield = useCallback(() => {
     const drop = dropRef.current;
     const shell = shellRef.current;
@@ -94,14 +104,16 @@ export default function MainScreen({ navigation }: Props) {
     const savings = game.savingsState(profileId);
     const day = game.dayState(profileId);
     const activeGoal = savings.activeGoal;
-    const goalItem = activeGoal ? content.goals.find((item) => item.id === activeGoal.key) : undefined;
+    const face = goalFace(savings, profile.stage, content.goals);
     const cost = activeGoal?.cost ?? 0;
     const remaining = activeGoal?.remaining ?? 0;
     setHub({
       profile,
       savings,
       day,
-      goalName: goalItem?.name ?? "",
+      goalName: face.name,
+      goalIcon: face.icon,
+      threshold: face.threshold,
       accumulated: cost - remaining,
       cost,
       remaining,
@@ -211,8 +223,12 @@ export default function MainScreen({ navigation }: Props) {
                 day={hub.day.n}
                 waiting={waiting}
                 goalName={hub.goalName}
+                goalIcon={hub.goalIcon}
+                threshold={hub.threshold}
                 accumulated={hub.accumulated}
                 cost={hub.cost}
+                canPickGoal={hub.savingsOpen}
+                onPickGoal={openGoal}
                 onShop={() => navigation.navigate("Shop")}
                 onResults={() => navigation.navigate("Results")}
                 dayTip={dayTip}
@@ -245,11 +261,15 @@ export default function MainScreen({ navigation }: Props) {
           stage={hub.profile.stage}
           petName={hub.profile.petName}
           goalName={hub.goalName}
+          goalIcon={hub.goalIcon}
+          threshold={hub.threshold}
           accumulated={hub.accumulated}
           cost={hub.cost}
           open={cardOpen}
           onOpen={() => setCardOpen(true)}
           onClose={() => setCardOpen(false)}
+          canPickGoal={hub.savingsOpen}
+          onPickGoal={openGoal}
         />
       </View>
       <View style={styles.tabTray}>

@@ -7,6 +7,6 @@ test("real SQLite: v3 db upgrades to v4, and an open txn is recovered", () => {
   runMigrations(driver, MIGRATIONS.filter((m) => m.version <= 3));
   db.exec("BEGIN; CREATE TABLE junk(x);"); // leftover open transaction
   runMigrations(driver, MIGRATIONS);
-  expect((db.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(5);
-  expect(db.prepare("SELECT bestReward FROM taskProgress").all()).toEqual([]);
+  expect((db.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(7);
+  expect(db.prepare("SELECT bestReward, correctAnswers, firstCompletedAt FROM taskProgress").all()).toEqual([]);
 });

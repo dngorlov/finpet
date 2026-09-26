@@ -1,3 +1,4 @@
+import { readCustomGoalItem } from "../../core/customGoal";
 import { FEATURES } from "../../core/config";
 import { currentTask, createLessonPin, type CurrentTask } from "../../core/currentTask";
 import { billsForDay } from "../../core/economy";
@@ -73,7 +74,7 @@ export function resolveCurrentTask(
 export function currentTaskLabel(task: CurrentTask, content: GameContent): string {
   if (task.kind === "set-goal") return strings.currentTaskSetGoal;
   if (task.kind === "buy-goal") {
-    const name = content.goals.find((goal) => goal.id === task.goalId)?.name ?? task.goalId;
+    const name = readCustomGoalItem(task.goalId)?.name ?? content.goals.find((goal) => goal.id === task.goalId)?.name ?? task.goalId;
     return strings.currentTaskBuyGoal(name);
   }
   if (task.kind === "confirm-plan") return strings.currentTaskPlan;

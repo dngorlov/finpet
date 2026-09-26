@@ -349,6 +349,48 @@ describe("stages", () => {
     expect(game.getProfile(profileId).stage).toBe("pro");
     expect(game.savingsState(profileId).activeGoal).toBeNull();
   });
+
+  it("holds Этап until cheaper Свои цели add up to the Порог, and hides that rule from a preset", () => {
+    const { game, profileId } = seed();
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+    const { dayId } = opened;
+    const prices = [60, 75, 90];
+
+    const buy = (name: string, price: number) => {
+      game.setCustomGoal(profileId, { name, icon: "🎈", price, presetPrices: prices });
+      const active = game.savingsState(profileId).activeGoal;
+      if (!active) throw new Error("expected goal");
+      game.transferToSavings(profileId, dayId, price);
+      return game.purchaseFromSavings(profileId, dayId, {
+        id: active.key,
+        kind: "optional",
+        price,
+        effect: { meter: "mood", delta: 10 },
+        once: true,
+      });
+    };
+
+    expect(game.savingsState(profileId).activeGoal).toMatchObject({ custom: false, threshold: null });
+    expect(buy("Наклейки", 20)).toMatchObject({ status: "ok", stageExplanation: null, stageHeld: true });
+    expect(game.getProfile(profileId).stage).toBe("novice");
+    expect(game.savingsState(profileId).stageCredit).toBe(20);
+
+    game.setCustomGoal(profileId, { name: "Рюкзак", icon: "🎒", price: 60, presetPrices: prices });
+    expect(game.savingsState(profileId).activeGoal).toMatchObject({
+      custom: true,
+      name: "Рюкзак",
+      icon: "🎒",
+      cost: 60,
+      threshold: 60,
+    });
+
+    expect(buy("Мяч", 20)).toMatchObject({ stageHeld: true });
+    expect(game.savingsState(profileId).stageCredit).toBe(40);
+    expect(buy("Корм", 20)).toMatchObject({ stageExplanation: "Теперь ты Про!" });
+    expect(game.getProfile(profileId).stage).toBe("pro");
+    expect(game.savingsState(profileId)).toMatchObject({ stageCredit: 0, activeGoal: null });
+  });
 });
 
 describe("day gating", () => {
@@ -483,7 +525,14 @@ describe("task reward", () => {
     expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", 10)).toBe(4);
     expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", 10)).toBe(0);
     expect(game.listTaskProgress(profileId)).toEqual([
-      { taskKey: "budget_first_plan", status: "completed", rewardPaid: true, bestReward: 10 },
+      expect.objectContaining({
+        taskKey: "budget_first_plan",
+        status: "completed",
+        rewardPaid: true,
+        bestReward: 10,
+        correctAnswers: 0,
+        scoredAnswers: 0,
+      }),
     ]);
     expect(game.getProfile(profileId).balance).toBe(110);
     expect(sums(sqlite, profileId).balance).toBe(sums(sqlite, profileId).txSum);
@@ -532,10 +581,55 @@ describe("task reward", () => {
     expect(game.claimTaskReward(profileId, opened.dayId, "budget_first_plan", 10)).toBe(10);
     expect(game.listTaskProgress(profileId)).toEqual(
       expect.arrayContaining([
-        { taskKey: "budget_fix_backpack", status: "available", rewardPaid: false, bestReward: 0 },
-        { taskKey: "budget_first_plan", status: "completed", rewardPaid: true, bestReward: 10 },
+        expect.objectContaining({
+          taskKey: "budget_fix_backpack",
+          status: "available",
+          rewardPaid: false,
+          bestReward: 0,
+          correctAnswers: 0,
+          scoredAnswers: 0,
+          firstCompletedAt: null,
+        }),
+        expect.objectContaining({ taskKey: "budget_first_plan", status: "completed", rewardPaid: true, bestReward: 10 }),
       ]),
     );
+  });
+
+  it("sums first answers and keeps the day of the first completion", () => {
+    const clock = new FakeClock(new Date(2026, 8, 25, 15, 0, 0));
+    const { game, profileId } = seed(clock);
+    const opened = game.openDay(profileId);
+    if (opened.status !== "opened") throw new Error("expected opened");
+
+    expect(
+      game.claimTaskReward(profileId, opened.dayId, "budget_what", 6, undefined, { correct: 1, scored: 2 }),
+    ).toBe(6);
+    const first = game.listTaskProgress(profileId)[0];
+    expect(first).toMatchObject({
+      correctAnswers: 1,
+      scoredAnswers: 2,
+      firstCompletedAt: clock.now().getTime(),
+      completedAt: clock.now().getTime(),
+    });
+
+    clock.set(new Date(2026, 8, 26, 15, 0, 0));
+    expect(
+      game.claimTaskReward(profileId, opened.dayId, "budget_what", 10, undefined, { correct: 2, scored: 2 }),
+    ).toBe(4);
+    expect(game.listTaskProgress(profileId)).toEqual([
+      expect.objectContaining({
+        taskKey: "budget_what",
+        correctAnswers: 3,
+        scoredAnswers: 4,
+        bestReward: 10,
+        firstCompletedAt: first?.firstCompletedAt,
+        completedAt: clock.now().getTime(),
+      }),
+    ]);
+    expect(() =>
+      game.claimTaskReward(profileId, opened.dayId, "budget_what", 10, undefined, { correct: 3, scored: 2 }),
+    ).toThrow(/статистика ответов/);
+    expect(game.listTaskProgress(profileId)[0]).toMatchObject({ correctAnswers: 3, scoredAnswers: 4 });
   });
 });
 
@@ -675,7 +769,7 @@ describe("day and journal reads", () => {
       facts: { mandatoryCovered: true, withinPlan: true, deposited: true },
       plan: { mandatory: 12, optional: 5, savings: 15 },
       actual: { mandatory: 12, optional: 5, savings: 15 },
-      meterDeltas: { care: 0, mood: 0 },
+      meterDeltas: { care: -15, mood: -15 },
       stage: "novice",
       previousStage: "novice",
       stageExplanation: null,
@@ -706,8 +800,8 @@ describe("day and journal reads", () => {
 
     expect(game.listTaskProgress(profileId)).toEqual(
       expect.arrayContaining([
-        { taskKey: "budget_fix_backpack", status: "available", rewardPaid: false, bestReward: 0 },
-        { taskKey: "budget_first_plan", status: "completed", rewardPaid: true, bestReward: 10 },
+        expect.objectContaining({ taskKey: "budget_fix_backpack", status: "available", rewardPaid: false, bestReward: 0 }),
+        expect.objectContaining({ taskKey: "budget_first_plan", status: "completed", rewardPaid: true, bestReward: 10 }),
       ]),
     );
   });
@@ -728,7 +822,7 @@ describe("Счета and a kept План", () => {
 
     const summary = game.closeDay(profileId, catalogWithMedicine, bills);
     expect(summary.facts.mandatoryCovered).toBe(true);
-    expect(summary.meterDeltas.care).toBe(0);
+    expect(summary.meterDeltas.care).toBe(-15);
   });
 
   it("requires the day's extra bill on its cycle day", () => {
@@ -881,7 +975,7 @@ describe("shop-item Цели", () => {
     expect(closed).toMatchObject({
       facts: { mandatoryCovered: true, withinPlan: true, deposited: true },
       actual: { mandatory: 12, optional: 5, savings: 83 },
-      meterDeltas: { care: 0, mood: 0 },
+      meterDeltas: { care: -15, mood: -15 },
       score: 4,
     });
   });

@@ -19,6 +19,9 @@ type PlayChromeValue = {
   setMoney: (section: MoneySection) => void;
   focus: TaskFocus;
   setFocus: (focus: TaskFocus) => void;
+  /** Home asked Копилка to open the Цель picker. SavingsScreen consumes it. */
+  goalPrompt: boolean;
+  setGoalPrompt: (open: boolean) => void;
   /** Bumped after a money action so the shell's status strip re-reads the profile. */
   revision: number;
   touchChrome: () => void;
@@ -31,11 +34,12 @@ export function PlayChromeProvider({ children }: { children: ReactNode }) {
   const [tab, setTab] = useState<PlayTab>("home");
   const [money, setMoney] = useState<MoneySection>("savings");
   const [focus, setFocus] = useState<TaskFocus>(null);
+  const [goalPrompt, setGoalPrompt] = useState(false);
   const [revision, setRevision] = useState(0);
   const touchChrome = useCallback(() => setRevision((n) => n + 1), []);
   const value = useMemo(
-    () => ({ tab, setTab, money, setMoney, focus, setFocus, revision, touchChrome }),
-    [tab, money, focus, revision, touchChrome],
+    () => ({ tab, setTab, money, setMoney, focus, setFocus, goalPrompt, setGoalPrompt, revision, touchChrome }),
+    [tab, money, focus, goalPrompt, revision, touchChrome],
   );
   return <PlayChromeContext.Provider value={value}>{children}</PlayChromeContext.Provider>;
 }

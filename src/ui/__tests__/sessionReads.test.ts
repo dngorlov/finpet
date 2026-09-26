@@ -49,7 +49,7 @@ describe("fake SessionGame M4 reads", () => {
       n: 1,
       score: 4,
       facts: { mandatoryCovered: true, withinPlan: true, deposited: true },
-      meterDeltas: { care: 0, mood: 0 },
+      meterDeltas: { care: -15, mood: -15 },
       stage: "novice",
       previousStage: "novice",
     });
@@ -58,8 +58,8 @@ describe("fake SessionGame M4 reads", () => {
     expect(ports.game.dayState(profileId)).toMatchObject({ open: false, n: 1, dayId: closed.dayId });
     expect(ports.game.listTaskProgress(profileId)).toEqual(
       expect.arrayContaining([
-        { taskKey: "budget_fix_backpack", status: "available", rewardPaid: false, bestReward: 0 },
-        { taskKey: "budget_what", status: "completed", rewardPaid: true, bestReward: 10 },
+        expect.objectContaining({ taskKey: "budget_fix_backpack", status: "available", rewardPaid: false, bestReward: 0 }),
+        expect.objectContaining({ taskKey: "budget_what", status: "completed", rewardPaid: true, bestReward: 10 }),
       ]),
     );
   });

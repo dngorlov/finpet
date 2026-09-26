@@ -125,40 +125,12 @@ export function meterDeltaMap(item: Pick<CatalogItem, "effect" | "also">): { car
   return deltas;
 }
 
-/**
- * Which daily meter drops a day's Магазин purchases cancel.
- * A purchase counts only when it was paid from Баланс and one of its effects feeds that meter.
- * Buying the Цель from Копилка does not cancel a drop.
- */
-export function dailyDropCovered(
-  purchases: readonly { itemId: string; paidFrom: "balance" | "savings" }[],
-  catalog: readonly Pick<CatalogItem, "id" | "effect" | "also">[],
-): { care: boolean; mood: boolean } {
-  const byId = new Map(catalog.map((item) => [item.id, item]));
-  let care = false;
-  let mood = false;
-  for (const purchase of purchases) {
-    if (purchase.paidFrom === "savings") continue;
-    const item = byId.get(purchase.itemId);
-    if (!item) continue;
-    for (const effect of itemMeterEffects(item)) {
-      if (effect.meter === "care") care = true;
-      if (effect.meter === "mood") mood = true;
-    }
-  }
-  return { care, mood };
-}
-
 /** Meters stay in 0–100 (§2.2). */
 export function applyMeterDelta(current: number, delta: number): number {
   return Math.min(METERS.max, Math.max(METERS.min, current + delta));
 }
 
 export interface DayCloseMeters {
-  /** A Магазин purchase today feeds Сытость, so the daily drop does not land. */
-  careCovered: boolean;
-  /** A Магазин purchase today feeds Счастье, so the daily drop does not land. */
-  moodCovered: boolean;
   optionalSpend: number;
   /** Confirmed Желаемые bucket; null if the day had no confirmed plan. */
   optionalPlan: number | null;
@@ -182,21 +154,21 @@ export function planOpenAtClose(input: {
 }
 
 /**
- * Meter deltas applied at Итоги дня. Every day starts from the default drop;
- * a covering purchase cancels that meter's drop. Overspend and a missing План
- * are separate Счастье drops.
+ * Meter deltas applied at Итоги дня. The daily drop always lands. A purchase
+ * adds its own gain when it is bought, which offsets the drop and does not
+ * cancel it. Overspend and a missing План are separate Счастье drops.
  */
 export function dayCloseMeterDeltas(input: DayCloseMeters): {
   care: number;
   mood: number;
-  /** The daily Счастье drop that landed. 0 when a purchase cancelled it. */
+  /** The daily Счастье drop. It always lands. */
   dailyMood: number;
   overspend: number;
   /** Счастье taken because an open План was never confirmed. */
   noPlan: number;
 } {
-  const care = input.careCovered ? 0 : -METERS.dailyCareDrop;
-  const dailyMood = input.moodCovered ? 0 : -METERS.dailyMoodDrop;
+  const care = -METERS.dailyCareDrop;
+  const dailyMood = -METERS.dailyMoodDrop;
   const overspend =
     input.optionalPlan !== null && input.optionalSpend > input.optionalPlan
       ? -METERS.overspendMoodPenalty

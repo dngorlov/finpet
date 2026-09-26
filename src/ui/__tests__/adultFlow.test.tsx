@@ -21,7 +21,7 @@ function playSomeEconomy(ports: ReturnType<typeof createFakePorts>, profileId: s
   const day = ports.game.dayState(profileId);
   ports.game.purchase(profileId, day.dayId, lunch);
   ports.game.transferToSavings(profileId, day.dayId, 15);
-  ports.game.claimTaskReward(profileId, day.dayId, "budget_what", 10);
+  ports.game.claimTaskReward(profileId, day.dayId, "budget_what", 10, undefined, { correct: 3, scored: 4 });
 }
 
 describe("Взрослый раздел contents and persistence", () => {
@@ -38,6 +38,9 @@ describe("Взрослый раздел contents and persistence", () => {
     expect(screen.getByText("Платежи: ещё впереди")).toBeOnTheScreen();
     expect(screen.getByText("Игровых дней пока нет — это нормально.")).toBeOnTheScreen();
     expect(screen.getByText("Задания 1/12")).toBeOnTheScreen();
+    expect(screen.getByText("Верных ответов: 75%, 3 из 4")).toBeOnTheScreen();
+    expect(screen.getByText("Уроки по календарю: 1 за 1 день")).toBeOnTheScreen();
+    expect(screen.getByText("Последний урок: сегодня")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Сбросить прогресс" }));
     expect(screen.getByText("Прогресс сбросится, имена и вид питомца останутся.")).toBeOnTheScreen();
@@ -48,7 +51,7 @@ describe("Взрослый раздел contents and persistence", () => {
 
     expect(screen.getByLabelText("Баланс 100")).toBeOnTheScreen();
     expect(screen.getByLabelText(/Питомец Пух/)).toBeOnTheScreen();
-    expect(screen.getAllByText("Выбери цель")).toHaveLength(2);
+    expect(screen.queryByText("Выбери цель")).not.toBeOnTheScreen();
     expect(ports.game.listTaskProgress(ports.meta.get("activeProfileId")!)).toEqual([]);
   });
 
@@ -62,7 +65,14 @@ describe("Взрослый раздел contents and persistence", () => {
     expect(screen.getAllByText("15 / 90")).toHaveLength(2);
     expect(screen.getByLabelText("Сытость 60")).toBeOnTheScreen();
     expect(ports.game.listTaskProgress(childId)).toEqual([
-      { taskKey: "budget_what", status: "completed", rewardPaid: true, bestReward: 10 },
+      expect.objectContaining({
+        taskKey: "budget_what",
+        status: "completed",
+        rewardPaid: true,
+        bestReward: 10,
+        correctAnswers: 3,
+        scoredAnswers: 4,
+      }),
     ]);
 
     await view.unmount();
@@ -74,7 +84,14 @@ describe("Взрослый раздел contents and persistence", () => {
     expect(screen.getByLabelText("Сытость 60")).toBeOnTheScreen();
     expect(screen.getByLabelText(/Питомец Пух/)).toBeOnTheScreen();
     expect(ports.game.listTaskProgress(childId)).toEqual([
-      { taskKey: "budget_what", status: "completed", rewardPaid: true, bestReward: 10 },
+      expect.objectContaining({
+        taskKey: "budget_what",
+        status: "completed",
+        rewardPaid: true,
+        bestReward: 10,
+        correctAnswers: 3,
+        scoredAnswers: 4,
+      }),
     ]);
   });
 

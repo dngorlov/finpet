@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, type StyleProp, type TextStyle } from "react-na
 import { SvgXml } from "react-native-svg";
 import { PIXEL_ICON_XML, type PixelIconName } from "../pixelIconXml";
 import { colors, spacing } from "../theme";
+import { PixelSprite } from "./PixelSprite";
 
 /** Emoji (variation selectors stripped) that have a free pixelarticons outline. */
 const GLYPH_ICON: Record<string, PixelIconName> = {
@@ -23,7 +24,6 @@ const GLYPH_ICON: Record<string, PixelIconName> = {
   "📋": "clipboard",
   "🔒": "lock",
   "🛒": "shopping-cart",
-  "🪙": "coins",
 };
 
 const hidden = {
@@ -41,7 +41,9 @@ export function Pictogram({
   size?: number;
   color?: string;
 }) {
-  const name = GLYPH_ICON[glyph.replace(/\uFE0F/g, "")];
+  const bare = glyph.replace(/\uFE0F/g, "");
+  if (bare === "🪙") return <PixelSprite name="coin" size={size} />;
+  const name = GLYPH_ICON[bare];
   if (!name) {
     return (
       <Text {...hidden} style={{ color, fontSize: size }}>

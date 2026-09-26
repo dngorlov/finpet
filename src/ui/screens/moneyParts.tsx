@@ -213,7 +213,7 @@ export function OpRow({
   return (
     <View accessible aria-label={label} style={[styles.op, last ? null : styles.opDivider]}>
       <View style={styles.opIcon}>
-        <PixelIcon name={icon} size={24} color={tint} />
+        {icon === "coins" ? <PixelSprite name="coin" size={24} /> : <PixelIcon name={icon} size={24} color={tint} />}
       </View>
       <View style={styles.opText}>
         <Text style={styles.opTitle} numberOfLines={2}>

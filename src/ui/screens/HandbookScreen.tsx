@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { taskUnlockOrder, unlockedTasks, type TaskContent } from "../../core/tasks";
+import type { TaskContent } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
 import { BackButton } from "../components/BackButton";
 import { BottomSheet } from "../components/BottomSheet";
@@ -15,6 +15,7 @@ import type { PixelIconName } from "../pixelIconXml";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { homeStrings } from "../stringsHome";
+import { handbookLessons, handbookWords, teachingCards } from "../tasks/handbook";
 import { completedTaskIds, type TaskTopic } from "../tasks/model";
 import { colors, minTarget, spacing, type } from "../theme";
 import { TOPIC_TINT } from "../topicStyle";
@@ -42,15 +43,11 @@ function withPet(text: string, petName: string): string {
   return text.split("{pet}").join(petName);
 }
 
-function lessonCards(task: TaskContent) {
-  return task.nodes.filter((node) => node.kind === "card");
-}
-
-/** Словарик: «Слова» are the kid terms as tiles, «Уроки» are the unscored cards of open уроки. */
+/** Словарик: «Слова» and «Уроки» are the theory of Уроки the child has finished. */
 export default function HandbookScreen() {
   const { game, meta, content } = useSession();
   const [tab, setTab] = useState<Tab>("words");
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openWordId, setOpenWordId] = useState<string | null>(null);
   const [openLessonId, setOpenLessonId] = useState<string | null>(null);
   const [petName, setPetName] = useState("");
   const [lessons, setLessons] = useState<TaskContent[]>([]);
@@ -61,24 +58,18 @@ export default function HandbookScreen() {
       if (!profileId) return;
       const profile = game.getProfile(profileId);
       const progress = game.listTaskProgress(profileId);
-      const openIds = new Set(
-        unlockedTasks(content.tasks, completedTaskIds(progress)).map((task) => task.id),
-      );
       setPetName(profile.petName);
-      setLessons(
-        taskUnlockOrder(content.tasks).filter(
-          (task) => !task.comingSoon && !task.correction && openIds.has(task.id),
-        ),
-      );
+      setLessons(handbookLessons(content.tasks, completedTaskIds(progress)));
     }, [content.tasks, game, meta]),
   );
 
-  const openTerm = content.terms.find((term) => term.id === openId) ?? null;
+  const words = handbookWords(lessons);
+  const openWord = words.find((word) => word.id === openWordId) ?? null;
   const openLesson = lessons.find((task) => task.id === openLessonId) ?? null;
 
   function selectTab(next: Tab) {
     setTab(next);
-    setOpenId(null);
+    setOpenWordId(null);
     setOpenLessonId(null);
   }
 
@@ -109,24 +100,28 @@ export default function HandbookScreen() {
         })}
       </View>
       {tab === "words" ? (
-        <>
-          <Text style={styles.hint}>{homeStrings.handbookWordsHint}</Text>
-          <View style={styles.grid}>
-            {content.terms.map((term, index) => (
-              <Pressable
-                key={term.id}
-                role="button"
-                aria-label={term.term}
-                onPress={() => setOpenId(term.id)}
-                style={({ pressed }) => [styles.tile, pressed ? styles.tilePressed : null]}
-              >
-                <View style={[styles.tileFace, { backgroundColor: TILE_FILLS[index % TILE_FILLS.length] }]}>
-                  <Text style={styles.tileLabel}>{term.term}</Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </>
+        words.length === 0 ? (
+          <Text style={styles.hint}>{homeStrings.handbookEmptyWords}</Text>
+        ) : (
+          <>
+            <Text style={styles.hint}>{homeStrings.handbookWordsHint}</Text>
+            <View style={styles.grid}>
+              {words.map((word, index) => (
+                <Pressable
+                  key={word.id}
+                  role="button"
+                  aria-label={word.title}
+                  onPress={() => setOpenWordId(word.id)}
+                  style={({ pressed }) => [styles.tile, pressed ? styles.tilePressed : null]}
+                >
+                  <View style={[styles.tileFace, { backgroundColor: TILE_FILLS[index % TILE_FILLS.length] }]}>
+                    <Text style={styles.tileLabel}>{word.title}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        )
       ) : lessons.length === 0 ? (
         <Text style={styles.hint}>{homeStrings.handbookEmptyLessons}</Text>
       ) : (
@@ -152,14 +147,14 @@ export default function HandbookScreen() {
         </>
       )}
       <BottomSheet
-        visible={openTerm !== null}
-        onClose={() => setOpenId(null)}
-        footer={<PrimaryButton label={strings.gotIt} onPress={() => setOpenId(null)} />}
+        visible={openWord !== null}
+        onClose={() => setOpenWordId(null)}
+        footer={<PrimaryButton label={strings.gotIt} onPress={() => setOpenWordId(null)} />}
       >
-        {openTerm ? (
+        {openWord ? (
           <>
-            <Text style={styles.sheetTerm}>{openTerm.term}</Text>
-            <CoinText text={openTerm.definition} style={styles.sheetDefinition} />
+            <Text style={styles.sheetTerm}>{openWord.title}</Text>
+            <CoinText text={withPet(openWord.text, petName)} style={styles.sheetDefinition} />
           </>
         ) : null}
       </BottomSheet>
@@ -171,7 +166,7 @@ export default function HandbookScreen() {
         {openLesson ? (
           <>
             <Text style={styles.sheetTerm}>{openLesson.title}</Text>
-            {lessonCards(openLesson).map((card) => (
+            {teachingCards(openLesson).map((card) => (
               <View key={card.id} style={styles.lessonCard}>
                 {card.title ? (
                   <CoinText text={withPet(card.title, petName)} style={styles.cardTitle} />

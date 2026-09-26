@@ -1,4 +1,5 @@
 import {
+  checkedTally,
   chooseOption,
   dealTask,
   earnedReward,
@@ -11,6 +12,7 @@ import {
   scoredUnits,
   sortVerdict,
   startTask,
+  tallyVerdicts,
   taskRewardDue,
   unlockedTasks,
   type TaskContent,
@@ -154,6 +156,12 @@ describe("mini-games inside a lesson sheet and «скоро» pins", () => {
 
 describe("score-based reward", () => {
   const quiz = fixture({ id: "q", topic: "budget", reward: 15 });
+
+  it("counts fully right first answers and rejects a tally that cannot exist", () => {
+    expect(tallyVerdicts(["good", "warn", "bad"])).toEqual({ correct: 1, scored: 3 });
+    expect(checkedTally(undefined)).toEqual({ correct: 0, scored: 0 });
+    expect(() => checkedTally({ correct: 2, scored: 1 })).toThrow(/статистика ответов/);
+  });
 
   it("pays the share of first-try points: right 1, «с ценой» ½, wrong 0", () => {
     expect(scoredUnits(quiz)).toBe(2);

@@ -150,4 +150,23 @@ CREATE TABLE IF NOT EXISTS deposits (
 );
 `,
   },
+  {
+    version: 6,
+    up: `
+ALTER TABLE goals ADD COLUMN name TEXT;
+ALTER TABLE goals ADD COLUMN icon TEXT;
+ALTER TABLE goals ADD COLUMN custom INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE goals ADD COLUMN threshold INTEGER;
+ALTER TABLE petState ADD COLUMN stageCredit INTEGER NOT NULL DEFAULT 0;
+`,
+  },
+  {
+    version: 7,
+    up: `
+ALTER TABLE taskProgress ADD COLUMN correctAnswers INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE taskProgress ADD COLUMN scoredAnswers INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE taskProgress ADD COLUMN firstCompletedAt INTEGER;
+UPDATE taskProgress SET firstCompletedAt = completedAt WHERE status = 'completed' AND completedAt IS NOT NULL;
+`,
+  },
 ];

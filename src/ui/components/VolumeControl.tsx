@@ -29,12 +29,17 @@ export function VolumeControl({
   const onChangeRef = useLatest(onChange);
   const onCommitRef = useLatest(onCommit);
   const trackWidthRef = useRef(0);
+  // Window X of the track, locked when the finger goes down. Later locationX
+  // values are local to whichever view is under the finger (the fill, the
+  // label, the card), so they jump. pageX stays in window space.
+  const trackPageXRef = useRef(0);
 
-  const setFromLocation = useCallback(
-    (locationX: number) => {
+  const setFromPageX = useCallback(
+    (pageX: number) => {
       const width = trackWidthRef.current;
-      if (width <= 0) return;
-      const x = Math.max(0, Math.min(width, locationX));
+      const origin = trackPageXRef.current;
+      if (width <= 0 || !Number.isFinite(pageX) || !Number.isFinite(origin)) return;
+      const x = Math.max(0, Math.min(width, pageX - origin));
       const next = clampVolume((x / width) * 100);
       liveRef.current = next;
       onChangeRef.current(next);
@@ -51,16 +56,20 @@ export function VolumeControl({
         onMoveShouldSetPanResponder: () => true,
         onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: (event: GestureResponderEvent) => {
-          setFromLocation(event.nativeEvent.locationX);
+          const { pageX, locationX } = event.nativeEvent;
+          if (Number.isFinite(pageX) && Number.isFinite(locationX)) {
+            trackPageXRef.current = pageX - locationX;
+          }
+          setFromPageX(pageX);
         },
         onPanResponderMove: (event: GestureResponderEvent) => {
-          setFromLocation(event.nativeEvent.locationX);
+          setFromPageX(event.nativeEvent.pageX);
         },
         onPanResponderRelease: () => {
           onCommitRef.current(liveRef.current);
         },
       }),
-    [onCommitRef, setFromLocation],
+    [onCommitRef, setFromPageX],
   );
   /* eslint-enable react-hooks/refs */
 
@@ -93,6 +102,8 @@ export function VolumeControl({
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
           aria-hidden
+          collapsable={false}
+          pointerEvents="box-only"
           onLayout={onTrackLayout}
           style={styles.trackHit}
           {...panResponder.panHandlers}

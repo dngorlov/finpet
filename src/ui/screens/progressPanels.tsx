@@ -7,6 +7,7 @@ import type { DaySummaryView, JournalEntry, TaskProgressView } from "../../data/
 import { PixelIcon } from "../components/Pictogram";
 import type { SpriteName } from "../components/PixelSprite";
 import { StageCardPlate } from "../components/StageCard";
+import { goalFace } from "../goalLabel";
 import { useSession } from "../session/SessionProvider";
 import { dayCloseLines, strings } from "../strings";
 import { CHART_COLORS, DonutChart } from "../components/DonutChart";
@@ -17,6 +18,7 @@ import {
   classify,
   groupByDay,
   itemLookup,
+  itemTitle,
   journalStats,
   type JournalFlow,
   type JournalPeriod,
@@ -64,7 +66,7 @@ type EffectSection = {
   sprite: SpriteName;
 };
 
-/** One block per meter outcome. Negatives use their own color; a cancelled drop stays green. */
+/** One block per meter outcome. The daily drop is always a loss. */
 function effectSections(deltas: DaySummaryView["meterDeltas"]): EffectSection[] {
   const lines = dayCloseLines(deltas);
   const sections: EffectSection[] = [
@@ -109,6 +111,8 @@ function markInk(tint: string) {
 type CardFace = {
   petName: string;
   goalName: string;
+  goalIcon: string;
+  threshold: string | null;
   accumulated: number;
   cost: number;
 };
@@ -129,7 +133,7 @@ function useRecord() {
       const profile = game.getProfile(profileId);
       const savings = game.savingsState(profileId);
       const active = savings.activeGoal;
-      const goalItem = active ? content.goals.find((item) => item.id === active.key) : undefined;
+      const face = goalFace(savings, profile.stage, content.goals);
       const cost = active?.cost ?? 0;
       setRows(game.listJournal(profileId));
       setToday(game.dayState(profileId).n);
@@ -138,7 +142,9 @@ function useRecord() {
       setGoalCount(game.boughtAsActiveGoalCount(profileId));
       setCard({
         petName: profile.petName,
-        goalName: goalItem?.name ?? "",
+        goalName: face.name,
+        goalIcon: face.icon,
+        threshold: face.threshold,
         accumulated: cost - (active?.remaining ?? 0),
         cost,
       });
@@ -185,11 +191,7 @@ export function JournalPanel() {
   const lookup = useMemo(() => itemLookup(content.catalog, content.goals), [content]);
   const stats = useMemo(() => journalStats(rows, period, today, lookup), [rows, period, today, lookup]);
   const groups = useMemo(() => groupByDay(stats.entries), [stats.entries]);
-  const itemName = (id: string | null) =>
-    content.catalog.find((item) => item.id === id)?.name ??
-    content.goals.find((goal) => goal.id === id)?.name ??
-    id ??
-    "";
+  const itemName = (id: string | null) => itemTitle(id, content.catalog, content.goals);
   const journalAmount = (entry: JournalEntry) => {
     if (entry.kind === "purchase" && entry.amount === 0 && entry.itemId) {
       return -(lookup(entry.itemId)?.price ?? 0);
@@ -336,6 +338,8 @@ export function ResultsBody() {
         stage={lastClosed.stage}
         petName={card.petName}
         goalName={card.goalName}
+        goalIcon={card.goalIcon}
+        threshold={card.threshold}
         accumulated={card.accumulated}
         cost={card.cost}
       />

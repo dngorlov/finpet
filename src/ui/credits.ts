@@ -1,6 +1,6 @@
 /**
  * Об авторах и источниках (hackathon Т/З): libraries, models, fonts, art and
- * references used to build FinPet. Versions are the ones installed from
+ * references used to build finni. Versions are the ones installed from
  * package.json; a test checks that every dependency there is listed here.
  */
 

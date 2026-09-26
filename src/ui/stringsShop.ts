@@ -12,8 +12,8 @@ export const shopStrings = {
   dailyDropHint: "Подсказка про день",
   /** Invisible catch over Дом. A tap anywhere but the tip closes it. */
   dailyDropClose: "Закрыть подсказку",
-  /** Standing rule under the Магазин tabs, on План, and in the Дом day tip. */
-  dailyRule: `Каждый день сытость -${METERS.dailyCareDrop} и счастье -${METERS.dailyMoodDrop}. Покупка в Магазине это отменяет.`,
+  /** Standing rule under the Магазин tabs and in the Дом day tip. The drop always lands; a purchase offsets it. */
+  dailyRule: `Каждый день сытость -${METERS.dailyCareDrop} и счастье -${METERS.dailyMoodDrop}. Покупка в Магазине это компенсирует.`,
   dailyCare: (n: number) => `сытость -${n}`,
   dailyMood: (n: number) => `счастье -${n}`,
 
@@ -25,10 +25,16 @@ export const shopStrings = {
   restoreA11y: (name: string) => `Вернуть ${name}`,
 
   postponeTitle: (name: string) => `Отложить ${name}?`,
-  /** «Каждый день сытость -15 и счастье -15. Покупка это отменяет.» */
-  postponeDaily: (phrase: string) => `Каждый день ${phrase}. Покупка это отменяет.`,
+  /** «Каждый день сытость -15 и счастье -15. Покупка это компенсирует.» */
+  postponeDaily: (phrase: string) => `Каждый день ${phrase}. Покупка это компенсирует.`,
   postponeDueLater: "Можно вернуться и купить позже, пока день не закончился.",
   postponeKeepPlan: "Деньги останутся в плане. Потратишь их позже или на другое.",
   postponeKeep: "Деньги останутся у тебя.",
   postponeNoEffect: "Питомец ничего не потеряет.",
+
+  /** Receipt after a Магазин purchase. */
+  resultBought: "Куплено",
+  resultPet: "Питомец",
+  /** «Покупка компенсирует снижение: сытость -15 и счастье -15.» The day's drop still lands. */
+  resultShield: (phrase: string) => `Покупка компенсирует снижение: ${phrase}.`,
 } as const;

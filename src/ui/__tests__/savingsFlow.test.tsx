@@ -57,8 +57,7 @@ describe("Копилка", () => {
     });
     await user.press(screen.getByRole("button", { name: "Сумма, больше" }));
     await user.press(screen.getByRole("button", { name: "Забрать" }));
-    expect(screen.getByText(/В копилке станет 14/)).toBeOnTheScreen();
-    expect(screen.getByText(/Мечта отодвинется/)).toBeOnTheScreen();
+    expect(screen.getByLabelText(/В копилке станет 14 монет\. Мечта отодвинется/)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Забрать 1?" }));
 
     expect(screen.getByText("Баланс +1")).toBeOnTheScreen();

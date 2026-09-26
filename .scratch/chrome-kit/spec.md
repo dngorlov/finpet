@@ -4,7 +4,7 @@ Status: ready-for-agent
 
 ## Problem Statement
 
-ФинПет currently looks like a stack of flat cream rectangles. Buttons, chips, cards, nav tiles, and speech bubbles are copied inside screens instead of shared, so each surface has a slightly different shape and the app does not feel like one game. Kids comparing it to familiar learning apps see a settings-form hub rather than a mascot-forward home.
+Финни currently looks like a stack of flat cream rectangles. Buttons, chips, cards, nav tiles, and speech bubbles are copied inside screens instead of shared, so each surface has a slightly different shape and the app does not feel like one game. Kids comparing it to familiar learning apps see a settings-form hub rather than a mascot-forward home.
 
 The primary action does not look pressable. Disabled «Дальше» only fades. Selection on the План tile is mostly a color change. Этап, Баланс, and Копилка sit as plain text. «Как играть» stacks controls in the scroll instead of keeping the next action in reach.
 
@@ -12,7 +12,7 @@ The primary action does not look pressable. Disabled «Дальше» only fades
 
 Restyle every current child-facing screen with one shared chrome kit inspired by familiar raised-button learning apps, without copying another brand’s mascot, green, or progress mechanics.
 
-The child still plays ФинПет: cream/orange, Russian sentence case, Питомец as narrator, 2×3 hub. What changes is the chrome: raised primary actions, round Cards, Chip pickers with a visible check, a top Badge strip, pictogram NavTiles, a tailed SpeechBubble, and a pinned bottom action on linear flows.
+The child still plays Финни: cream/orange, Russian sentence case, Питомец as narrator, 2×3 hub. What changes is the chrome: raised primary actions, round Cards, Chip pickers with a visible check, a top Badge strip, pictogram NavTiles, a tailed SpeechBubble, and a pinned bottom action on linear flows.
 
 ## User Stories
 
@@ -42,7 +42,7 @@ The child still plays ФинПет: cream/orange, Russian sentence case, Пит�
 24. As a ребёнок on Стартовый бюджет, stubs, and Settings, I want the same Screen/Card/PrimaryButton chrome, so that unfinished destinations still belong to the game.
 25. As a ребёнок, I want body text at least 16 sp and headings in Russian sentence case, so that the 7–11 register holds.
 26. As a ребёнок with system font enlargement, I want buttons, chips, badges, and the pinned bar to stay usable at 360 dp, so that large text does not clip the next action.
-27. As a ребёнок, I want no owl, no borrowed green success-only palette, and no English all-caps headings, so that ФинПет keeps its own identity.
+27. As a ребёнок, I want no owl, no borrowed green success-only palette, and no English all-caps headings, so that Финни keeps its own identity.
 28. As a ребёнок, I want no streak, hearts, XP, leagues, or lesson path, so that progress stays Этап, Забота, Настроение, and the Игровой день.
 29. As a returning ребёнок, I want launch to still skip Первый запуск and open the restyled Main, so that chrome work does not change routing.
 30. As a ребёнок finishing Первый запуск, I want the same pet-first sequence and the same single profile commit, so that a visual pass cannot break setup.

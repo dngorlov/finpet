@@ -1,12 +1,9 @@
 import { render, screen, userEvent } from "@testing-library/react-native";
-import { loadContent } from "../../data/content";
 import { FinPetApp } from "../FinPetApp";
 import { DEV_TOOLS, RUNTIME_LIBRARIES } from "../credits";
 import { HomeScene, type HomePet } from "../screens/HomeScene";
 import { homeStrings } from "../stringsHome";
 import { createFakePorts, seedReturningChild } from "../testSupport/fakePorts";
-
-const content = loadContent();
 
 async function renderApp(ports = createFakePorts()) {
   const user = userEvent.setup();
@@ -48,11 +45,11 @@ describe("Главная scene", () => {
     expect(screen.getByText("День 1")).toBeOnTheScreen();
     expect(screen.queryByText(/Каждый день сытость -15/)).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Подсказка про день" }));
-    expect(screen.getByText("Каждый день сытость -15 и счастье -15. Покупка в Магазине это отменяет.")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день сытость -15 и счастье -15. Покупка в Магазине это компенсирует.")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Закрыть подсказку", includeHiddenElements: true }));
     expect(screen.queryByText(/Каждый день сытость -15/)).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Подсказка про день" }));
-    expect(screen.getByText("Каждый день сытость -15 и счастье -15. Покупка в Магазине это отменяет.")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день сытость -15 и счастье -15. Покупка в Магазине это компенсирует.")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Подсказка про день" }));
     expect(screen.queryByText(/Каждый день сытость -15/)).not.toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Магазин" })).toBeEnabled();
@@ -75,6 +72,47 @@ describe("Главная scene", () => {
 
     await view.rerender(homeScene({ care: 80, mood: 80 }));
     expect(screen.getByText(homeStrings.petLinesHappy[0])).toBeOnTheScreen();
+  });
+});
+
+describe("Дом shortcuts", () => {
+  it("hides Выбери цель until Копилка is open", async () => {
+    const ports = createFakePorts();
+    const profileId = seedReturningChild(ports);
+    ports.game.clearActiveGoal(profileId);
+    await renderApp(ports);
+
+    expect(screen.queryByText("Выбери цель")).not.toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Этап 1 из 3, Новичок" })).toBeOnTheScreen();
+  });
+
+  it("opens Деньги from the balance and Цель from Выбери цель", async () => {
+    const ports = createFakePorts();
+    const profileId = seedReturningChild(ports, { unlockMoney: true });
+    ports.game.clearActiveGoal(profileId);
+    const { user } = await renderApp(ports);
+
+    await user.press(screen.getByRole("button", { name: "Баланс 100" }));
+    expect(screen.getByRole("button", { name: "Деньги" })).toBeSelected();
+    expect(screen.getByRole("button", { name: "Копилка" })).toBeSelected();
+
+    await user.press(screen.getByRole("button", { name: "Дом" }));
+    await user.press(screen.getByRole("button", { name: "Магазин" }));
+    await user.press(screen.getByRole("button", { name: "Баланс 100" }));
+    expect(screen.queryByRole("button", { name: "Магазин" })).not.toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Копилка" })).toBeSelected();
+
+    await user.press(screen.getByRole("button", { name: "Дом" }));
+    await user.press(screen.getByRole("button", { name: "Выбери цель" }));
+    expect(screen.getByRole("button", { name: "Копилка" })).toBeSelected();
+    expect(screen.getByRole("button", { name: "Своя цель" })).toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Закрыть" }));
+    await user.press(screen.getByRole("button", { name: "Дом" }));
+    await user.press(screen.getByRole("button", { name: "Этап 1 из 3, Новичок. Выбери цель" }));
+    const prompts = screen.getAllByRole("button", { name: "Выбери цель" });
+    await user.press(prompts[prompts.length - 1]);
+    expect(screen.getByRole("button", { name: "Своя цель" })).toBeOnTheScreen();
   });
 });
 
@@ -124,36 +162,52 @@ describe("Карта заданий compact panel", () => {
     }
   });
 
-  it("opens Словарик from the floating button, shows a word in a drawer, and reads one урок at a time", async () => {
+  it("opens Словарик with only the words and уроки the child has finished", async () => {
     const ports = createFakePorts();
-    seedReturningChild(ports);
+    const profileId = seedReturningChild(ports);
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Карта" }));
     await user.press(screen.getByRole("button", { name: "Словарик" }));
     expect(screen.getByRole("button", { name: "Слова" })).toBeSelected();
-
-    const plan = content.terms.find((term) => term.term === "План")!;
-    expect(screen.queryByLabelText(plan.definition)).not.toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "План" }));
-    expect(screen.getByLabelText(plan.definition)).toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Понятно" }));
-    expect(screen.queryByLabelText(plan.definition)).not.toBeOnTheScreen();
+    expect(screen.getByText(homeStrings.handbookEmptyWords)).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Что такое бюджет?" })).not.toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Уроки" }));
     expect(screen.getByRole("button", { name: "Уроки" })).toBeSelected();
+    expect(screen.getByText(homeStrings.handbookEmptyLessons)).toBeOnTheScreen();
     for (const title of ["Что такое бюджет?", "Планирование бюджета", "Что такое сбережения"]) {
-      expect(screen.getByRole("button", { name: title })).toBeOnTheScreen();
+      expect(screen.queryByRole("button", { name: title })).not.toBeOnTheScreen();
     }
-    expect(screen.queryByRole("button", { name: "Меняем план" })).not.toBeOnTheScreen();
-    expect(screen.queryByLabelText(/Бюджет — это план твоих денег/)).not.toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Назад" }));
+    ports.game.noteTaskCompleted!(profileId, "budget_what");
+    await user.press(screen.getByRole("button", { name: "Словарик" }));
+
+    expect(screen.getByRole("button", { name: "Что такое бюджет?" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Из чего складывается бюджет?" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Нужно или хочется?" })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Готово!" })).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Планируем деньги" })).not.toBeOnTheScreen();
+    expect(screen.queryByText(/Пух получает монеты/)).not.toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Из чего складывается бюджет?" }));
+    expect(screen.getByText(/Пух получает монеты/)).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Понятно" }));
+    expect(screen.queryByText(/Пух получает монеты/)).not.toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Уроки" }));
+    expect(screen.getByRole("button", { name: "Что такое бюджет?" })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Планирование бюджета" })).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Что такое сбережения" })).not.toBeOnTheScreen();
+    expect(screen.queryByText(/Бюджет — это план твоих денег/)).not.toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Что такое бюджет?" }));
-    expect(screen.getByLabelText(/Бюджет — это план твоих денег/)).toBeOnTheScreen();
-    expect(screen.getByLabelText(/Пух получает монеты/)).toBeOnTheScreen();
+    expect(screen.getByText(/Бюджет — это план твоих денег/)).toBeOnTheScreen();
+    expect(screen.getByText(/Пух получает монеты/)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
-    expect(screen.queryByLabelText(/Бюджет — это план твоих денег/)).not.toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "Планирование бюджета" })).toBeOnTheScreen();
+    expect(screen.queryByText(/Бюджет — это план твоих денег/)).not.toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Что такое бюджет?" })).toBeOnTheScreen();
   });
 });
 

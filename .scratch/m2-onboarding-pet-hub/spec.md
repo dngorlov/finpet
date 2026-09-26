@@ -5,7 +5,7 @@ Source: `docs/ROADMAP.md` §7 M2, §4.2 screens #1–4, §2.2/§2.5, §5.4 · `d
 
 ## Problem Statement
 
-A child who installs ФинПет still lands on an empty placeholder Main screen. They cannot meet the Питомец, pick how it looks, receive the Стартовый бюджет, or see Баланс / Забота / Настроение / Цель on the hub. Appendix A steps 1–4 (first launch, local Профиль ребёнка, pet customization, starting budget plus current Цель and available Задание) are not playable on a device, so later economy and task screens have nothing to hang off.
+A child who installs Финни still lands on an empty placeholder Main screen. They cannot meet the Питомец, pick how it looks, receive the Стартовый бюджет, or see Баланс / Забота / Настроение / Цель on the hub. Appendix A steps 1–4 (first launch, local Профиль ребёнка, pet customization, starting budget plus current Цель and available Задание) are not playable on a device, so later economy and task screens have nothing to hang off.
 
 ## Solution
 

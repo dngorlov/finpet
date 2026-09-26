@@ -6,3 +6,5 @@ A day used to earn a score — +2 when today's Счета were bought, +1 when s
 
 - **Keep the score on Итоги as a rating that does not move Этап.** Rejected: with Этап disconnected, the number has no mechanic.
 - **Require all three Цели of a stage before advancing.** Rejected: the child picks one of the three, and that purchase is the step.
+
+A cheaper Своя цель is the exception in ADR-0012: several of them must add up to the Порог этапа.

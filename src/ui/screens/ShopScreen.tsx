@@ -9,7 +9,6 @@ import { CoinText } from "../components/CoinText";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { BackButton } from "../components/BackButton";
 import { BottomSheet } from "../components/BottomSheet";
-import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { GoalPicker, ownedOnceItemIds } from "../components/GoalPicker";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -21,8 +20,9 @@ import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { shopStrings } from "../stringsShop";
 import { colors, spacing, type } from "../theme";
-import { billsForDay, meterDeltaMap } from "../../core/economy";
+import { billsForDay } from "../../core/economy";
 import { confirmedLeftover, leftoverAfterTap } from "./planLeftover";
+import { PurchaseResult, type PurchaseResultModel } from "./PurchaseResult";
 import {
   DrawerHead,
   hiddenFromReader,
@@ -67,7 +67,7 @@ export default function ShopScreen({ navigation }: Props) {
   const [savings, setSavings] = useState<SavingsView | null>(null);
   const [postponed, setPostponed] = useState<Set<string>>(new Set());
   const [drawer, setDrawer] = useState<Drawer>({ name: "closed" });
-  const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
+  const [receipt, setReceipt] = useState<PurchaseResultModel | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [offerPickGoal, setOfferPickGoal] = useState(false);
 
@@ -144,14 +144,7 @@ export default function ShopScreen({ navigation }: Props) {
     markPostponed(item, false);
     closeDrawer();
     setOfferPickGoal(offerGoal);
-    setFeedback({
-      deltas: {
-        ...(fromSavings ? { savings: -item.price } : { balance: -item.price }),
-        ...meterDeltaMap(item),
-      },
-      cause: strings.feedbackCausePurchase,
-      nextStep: strings.feedbackNextPurchase,
-    });
+    setReceipt({ item, paidFrom: fromSavings ? "savings" : "balance" });
   };
 
   const buy = (item: CatalogItemContent) => {
@@ -318,7 +311,7 @@ export default function ShopScreen({ navigation }: Props) {
   };
 
   const footer =
-    offerPickGoal && drawer.name === "closed" && !feedback ? (
+    offerPickGoal && drawer.name === "closed" && !receipt ? (
       <PrimaryButton
         label={strings.pickNewGoal}
         onPress={() => {
@@ -329,8 +322,8 @@ export default function ShopScreen({ navigation }: Props) {
     ) : null;
 
   const sheetOpen = drawer.name !== "closed";
-  // Behind an open drawer the page is out of reach, for touch and for the screen reader.
-  const behindSheet = sheetOpen ? hiddenFromReader : {};
+  // Behind an open drawer or the receipt the page is out of reach, for touch and for the screen reader.
+  const behindSheet = sheetOpen || receipt ? hiddenFromReader : {};
 
   return (
     <Screen
@@ -376,14 +369,7 @@ export default function ShopScreen({ navigation }: Props) {
       <BottomSheet visible={sheetOpen} onClose={closeDrawer} footer={drawerFooter()}>
         {drawerBody()}
       </BottomSheet>
-      {feedback ? (
-        <FeedbackCard
-          model={feedback}
-          onDismiss={() => {
-            setFeedback(null);
-          }}
-        />
-      ) : null}
+      {receipt ? <PurchaseResult model={receipt} onDismiss={() => setReceipt(null)} /> : null}
       <GoalPicker visible={pickerOpen} onClose={() => setPickerOpen(false)} onChanged={load} />
     </Screen>
   );

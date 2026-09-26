@@ -9,6 +9,7 @@ import {
   dealTask,
   earnedReward,
   endsGameDay,
+  tallyVerdicts,
   isPickChoice,
   startTask,
   type BudgetSplit,
@@ -125,7 +126,8 @@ export default function TaskRunScreen({ navigation, route }: Props) {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
     const day = game.dayState(profileId);
-    const earned = earnedReward(run, Object.values(verdicts));
+    const verdictList = Object.values(verdicts);
+    const earned = earnedReward(run, verdictList);
     const alreadyCompleted = game
       .listTaskProgress(profileId)
       .some((row) => row.taskKey === task.id && row.status === "completed");
@@ -136,6 +138,7 @@ export default function TaskRunScreen({ navigation, route }: Props) {
       task.id,
       earned,
       dayEnded ? { task, catalog: content.catalog, bills: content.bills } : undefined,
+      tallyVerdicts(verdictList),
     );
     navigation.replace("TaskResult", {
       taskId: task.id,

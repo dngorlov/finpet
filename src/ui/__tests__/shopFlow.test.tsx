@@ -15,7 +15,7 @@ async function renderApp(ports = createFakePorts()) {
 }
 
 describe("Магазин", () => {
-  it("buys a mandatory item, shows FeedbackCard, and updates Main", async () => {
+  it("buys a mandatory item, shows the pet receipt, and updates Main", async () => {
     const ports = createFakePorts();
     seedReturningChild(ports);
     const { user } = await renderApp(ports);
@@ -35,7 +35,7 @@ describe("Магазин", () => {
     expect(
       screen.getByRole("button", { name: "Школьные принадлежности. 10 монет. Счастье +5" }),
     ).toBeOnTheScreen();
-    expect(screen.getByText("Каждый день сытость -15 и счастье -15. Покупка в Магазине это отменяет.")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день сытость -15 и счастье -15. Покупка в Магазине это компенсирует.")).toBeOnTheScreen();
     expect(screen.queryByText(/не купишь|если отложить/)).not.toBeOnTheScreen();
     expect(screen.queryByText("Счёт на сегодня", { includeHiddenElements: true })).not.toBeOnTheScreen();
     expect(screen.getAllByText("Необходимое", { includeHiddenElements: true })).toHaveLength(1);
@@ -57,9 +57,18 @@ describe("Магазин", () => {
     expect(screen.queryByRole("button", { name: "Купить Обед" })).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Купить" }));
 
-    expect(screen.getByText("Баланс -12")).toBeOnTheScreen();
-    expect(screen.getByText("Сытость +10")).toBeOnTheScreen();
-    expect(screen.getByText("Счастье +5")).toBeOnTheScreen();
+    expect(screen.getByText("Куплено")).toBeOnTheScreen();
+    expect(screen.getByText("Обед")).toBeOnTheScreen();
+    expect(screen.getByText("Питомец")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс -12")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Сытость +10")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Счастье +5")).toBeOnTheScreen();
+    expect(screen.getByText("+10", { includeHiddenElements: true })).toHaveStyle({
+      fontFamily: "PressStart2P_400Regular",
+      color: "#FFFFFF",
+    });
+    expect(screen.getByText("Питомцу нужно есть каждый день")).toBeOnTheScreen();
+    expect(screen.getByText("Покупка компенсирует снижение: сытость -15 и счастье -15.")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     expect(screen.getByText("Куплено", { includeHiddenElements: true })).toBeOnTheScreen();
     expect(screen.getByLabelText("Баланс 88")).toBeOnTheScreen();
@@ -80,8 +89,11 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: new RegExp(`^${candy.name}`) }));
     expect(screen.getByText(candy.description)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Купить" }));
-    expect(screen.getByText("Баланс -5")).toBeOnTheScreen();
-    expect(screen.getByText("Счастье +5")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс -5")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Счастье +5")).toBeOnTheScreen();
+    expect(screen.queryByLabelText(/Сытость/)).not.toBeOnTheScreen();
+    expect(screen.getByText("Сладкое для счастья")).toBeOnTheScreen();
+    expect(screen.getByText("Покупка компенсирует снижение: счастье -15.")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
@@ -145,7 +157,7 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Отложить Обед" }));
     expect(screen.getByText("Отложить Обед?")).toBeOnTheScreen();
-    expect(screen.getByText("Каждый день сытость -15 и счастье -15. Покупка это отменяет.")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день сытость -15 и счастье -15. Покупка это компенсирует.")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Отложить" }));
     expect(screen.queryByText("Отложить Обед?")).not.toBeOnTheScreen();
@@ -169,7 +181,7 @@ describe("Магазин", () => {
     expect(screen.getByRole("button", { name: "Желаемое" })).toBeSelected();
     await user.press(screen.getByRole("button", { name: "Отложить Конфета" }));
     expect(screen.getByLabelText("Деньги останутся у тебя.")).toBeOnTheScreen();
-    expect(screen.getByText("Каждый день счастье -15. Покупка это отменяет.")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день счастье -15. Покупка это компенсирует.")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
     expect(screen.getByRole("button", { name: "Отложить Конфета" })).toBeOnTheScreen();
@@ -183,7 +195,7 @@ describe("Магазин", () => {
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Отложить Проезд" }));
-    expect(screen.getByText("Каждый день счастье -15. Покупка это отменяет.")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день счастье -15. Покупка это компенсирует.")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Отложить" }));
     await user.press(screen.getByRole("button", { name: "Купить Проезд" }));
     await user.press(screen.getByRole("button", { name: "Купить" }));

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ФинПет",
-    "slug": "finpet",
+    "name": "Финни",
+    "slug": "finni",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,7 +10,7 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "org.hseteamspb.finpet",
+      "package": "org.hseteamspb.finni",
       "versionCode": 1,
       "permissions": [],
       "blockedPermissions": [

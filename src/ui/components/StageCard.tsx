@@ -79,28 +79,36 @@ export function StageCard({
   stage,
   petName,
   goalName,
+  goalIcon = "",
+  threshold = null,
   accumulated,
   cost,
   open,
   onOpen,
   onClose,
+  canPickGoal,
+  onPickGoal,
 }: {
   stage: Stage;
   petName: string;
   goalName: string;
+  goalIcon?: string;
+  threshold?: string | null;
   accumulated: number;
   cost: number;
   open: boolean;
   onOpen: () => void;
   onClose: () => void;
+  /** Копилка is open, so an empty card can offer «Выбери цель». */
+  canPickGoal: boolean;
+  onPickGoal: () => void;
 }) {
   const { width } = useWindowDimensions();
   const face = FACES[stage];
   const name = STAGE_NAMES[stage];
   const number = stageNumber(stage);
-  const progress =
-    goalName && cost > 0 ? homeStrings.goalA11y(goalName, accumulated, cost) : strings.goalEmptyPrompt;
-  const label = strings.stageA11y(name, number, STAGE_TOTAL, progress);
+  const spoken = spokenGoal(goalName, accumulated, cost, threshold, canPickGoal);
+  const label = strings.stageA11y(name, number, STAGE_TOTAL, spoken);
   const { cardHeight } = cardSize(width);
   const [shift] = useState(() => new Animated.Value(tuckedOffset(Dimensions.get("window").width)));
 
@@ -114,7 +122,20 @@ export function StageCard({
     }).start();
   }, [cardHeight, open, shift]);
 
-  const faceProps = { face, name, number, petName, goalName, accumulated, cost, reserveClose: true };
+  const faceProps = {
+    face,
+    name,
+    number,
+    petName,
+    goalName,
+    goalIcon,
+    threshold,
+    accumulated,
+    cost,
+    canPickGoal,
+    onPickGoal,
+    reserveClose: true,
+  };
 
   return (
     <>
@@ -129,7 +150,8 @@ export function StageCard({
           onPress={onOpen}
           style={[styles.face, faceShell(face), { height: cardHeight }]}
         >
-          <CardFace {...faceProps} />
+          {/* The tucked face only peeks the title. «Выбери цель» is a control on the open card. */}
+          <CardFace {...faceProps} onPickGoal={undefined} />
         </Pressable>
       </View>
       {open ? (
@@ -163,6 +185,21 @@ export function StageCard({
   );
 }
 
+function spokenGoal(
+  goalName: string,
+  accumulated: number,
+  cost: number,
+  threshold: string | null,
+  canPickGoal: boolean,
+): string {
+  if (goalName && cost > 0) {
+    const progress = homeStrings.goalA11y(goalName, accumulated, cost);
+    return threshold ? `${progress}. ${threshold}` : progress;
+  }
+  if (!canPickGoal) return "";
+  return threshold ? `${strings.goalEmptyPrompt}. ${threshold}` : strings.goalEmptyPrompt;
+}
+
 function faceShell(face: Face) {
   return {
     backgroundColor: face.background,
@@ -177,25 +214,28 @@ export function StageCardPlate({
   stage,
   petName,
   goalName,
+  goalIcon = "",
+  threshold = null,
   accumulated,
   cost,
 }: {
   stage: Stage;
   petName: string;
   goalName: string;
+  goalIcon?: string;
+  threshold?: string | null;
   accumulated: number;
   cost: number;
 }) {
   const face = FACES[stage];
   const name = STAGE_NAMES[stage];
   const number = stageNumber(stage);
-  const progress =
-    goalName && cost > 0 ? homeStrings.goalA11y(goalName, accumulated, cost) : strings.goalEmptyPrompt;
+  const spoken = spokenGoal(goalName, accumulated, cost, threshold, true);
 
   return (
     <View
       accessible
-      accessibilityLabel={strings.stageA11y(name, number, STAGE_TOTAL, progress)}
+      accessibilityLabel={strings.stageA11y(name, number, STAGE_TOTAL, spoken)}
       style={[styles.plateCard, faceShell(face)]}
     >
       <CardFace
@@ -204,8 +244,11 @@ export function StageCardPlate({
         number={number}
         petName={petName}
         goalName={goalName}
+        goalIcon={goalIcon}
+        threshold={threshold}
         accumulated={accumulated}
         cost={cost}
+        canPickGoal
         reserveClose={false}
       />
     </View>
@@ -218,8 +261,12 @@ function CardFace({
   number,
   petName,
   goalName,
+  goalIcon,
+  threshold,
   accumulated,
   cost,
+  canPickGoal,
+  onPickGoal,
   reserveClose,
 }: {
   face: Face;
@@ -227,8 +274,12 @@ function CardFace({
   number: number;
   petName: string;
   goalName: string;
+  goalIcon: string;
+  threshold: string | null;
   accumulated: number;
   cost: number;
+  canPickGoal: boolean;
+  onPickGoal?: () => void;
   reserveClose: boolean;
 }) {
   const hasGoal = goalName.length > 0 && cost > 0;
@@ -255,9 +306,31 @@ function CardFace({
                   {strings.goalRatio(accumulated, cost)}
                 </Text>
               ) : null}
-              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.holder, ink]}>
-                {hasGoal ? goalName : strings.goalEmptyPrompt}
-              </Text>
+              {hasGoal ? (
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.holder, ink]}>
+                  {`${goalIcon ? `${goalIcon} ` : ""}${goalName}`}
+                </Text>
+              ) : canPickGoal && onPickGoal ? (
+                <Pressable
+                  role="button"
+                  aria-label={strings.goalEmptyPrompt}
+                  onPress={onPickGoal}
+                  style={({ pressed }) => [pressed ? styles.promptPressed : null]}
+                >
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.holder, ink]}>
+                    {strings.goalEmptyPrompt}
+                  </Text>
+                </Pressable>
+              ) : canPickGoal ? (
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.holder, ink]}>
+                  {strings.goalEmptyPrompt}
+                </Text>
+              ) : null}
+              {threshold ? (
+                <Text numberOfLines={1} style={[styles.threshold, ink]}>
+                  {threshold}
+                </Text>
+              ) : null}
             </View>
             {petName ? (
               <Text numberOfLines={1} style={[styles.emboss, ink]}>
@@ -414,6 +487,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "400",
     letterSpacing: 1,
+  },
+  promptPressed: {
+    opacity: 0.7,
+  },
+  threshold: {
+    fontSize: 16,
+    fontWeight: "400",
   },
   emboss: {
     fontSize: 13,

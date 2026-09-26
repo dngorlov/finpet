@@ -13,14 +13,22 @@ const MONEY_WORD =
 
 type Part = { kind: "text"; value: string } | { kind: "coin" };
 
+/** The word labels an amount («12 монет», «монет 12»), not a sentence about coins. */
+function besideAmount(text: string, start: number, end: number): boolean {
+  return /\d[\s\u00A0]*$/.test(text.slice(0, start)) || /^[\s\u00A0]*\d/.test(text.slice(end));
+}
+
 export function splitMoney(text: string): Part[] {
   const parts: Part[] = [];
   let last = 0;
   for (const match of text.matchAll(MONEY_WORD)) {
     const index = match.index ?? 0;
+    const raw = match[0];
     if (index > last) parts.push({ kind: "text", value: text.slice(last, index) });
-    parts.push({ kind: "coin" });
-    last = index + match[0].length;
+    // The emoji is already a coin mark. A word becomes one only next to a number.
+    const icon = raw.includes("🪙") || besideAmount(text, index, index + raw.length);
+    parts.push(icon ? { kind: "coin" } : { kind: "text", value: raw });
+    last = index + raw.length;
   }
   if (last < text.length || parts.length === 0) parts.push({ kind: "text", value: text.slice(last) });
   return parts;
@@ -30,9 +38,13 @@ function hasCoinWord(parts: readonly Part[]): boolean {
   return parts.some((part) => part.kind === "coin");
 }
 
+function mentionsMoney(text: string): boolean {
+  return new RegExp(MONEY_WORD.source, "i").test(text);
+}
+
 /**
- * Renders copy with the currency drawn as the coin icon.
- * A bare amount (`coin`) gets the icon beside the words.
+ * Draws the coin icon where an amount is shown («12 монет», «ещё 7»).
+ * A money word in a sentence stays written («положил монеты в копилку»).
  * The spoken label keeps «монеты» / «деньги» for the screen reader.
  */
 export function CoinText({
@@ -47,7 +59,7 @@ export function CoinText({
   style?: StyleProp<TextStyle>;
   /** Expose the original sentence to the screen reader. Off inside a control that already has a name. */
   labelled?: boolean;
-  /** This line is an amount even when it never says «монета». */
+  /** This line is an amount even when it never says «монета». Ignored when there is no number. */
   coin?: boolean;
   /** Sit in a row (a button label) instead of stretching to the full line. */
   inline?: boolean;
@@ -56,7 +68,16 @@ export function CoinText({
 }) {
   const parts = splitMoney(text);
   const words = hasCoinWord(parts);
-  if (!words && !coin) return <Text style={style}>{text}</Text>;
+  const amountLine = coin && /\d/.test(text);
+  if (!words && !amountLine) {
+    // A spelled «монеты» / «деньги» stays one sentence for the screen reader.
+    if (!labelled || !mentionsMoney(text)) return <Text style={style}>{text}</Text>;
+    return (
+      <Text style={style} accessibilityLabel={label ?? text}>
+        {text}
+      </Text>
+    );
+  }
 
   const flat = StyleSheet.flatten(style);
   const color = typeof flat?.color === "string" ? flat.color : colors.text;
@@ -76,7 +97,7 @@ export function CoinText({
       ) : (
         <Text style={style}>{text}</Text>
       )}
-      {!words && coin ? <Pictogram glyph={strings.balanceIcon} size={size} color={color} /> : null}
+      {!words && amountLine ? <Pictogram glyph={strings.balanceIcon} size={size} color={color} /> : null}
     </View>
   );
 }

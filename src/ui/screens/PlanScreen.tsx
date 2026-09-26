@@ -13,6 +13,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { TextButton } from "../components/TextButton";
 import { usePlayChrome } from "../navigation/playChrome";
+import { activeGoalLabel } from "../goalLabel";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { moneyStrings } from "../stringsMoney";
@@ -49,7 +50,7 @@ export default function PlanScreen() {
     );
     const savings = game.savingsState(profileId);
     const active = savings.activeGoal;
-    const name = active ? content.goals.find((entry) => entry.id === active.key)?.name : undefined;
+    const name = active ? activeGoalLabel(active, content.goals)?.name : undefined;
     setGoal(active && name && !active.achieved ? { name, remaining: active.remaining } : null);
     setAskingConfirm(false);
     touchChrome();

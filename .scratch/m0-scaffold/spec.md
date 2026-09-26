@@ -1,4 +1,4 @@
-# Spec: M0 — Scaffold (FinPet)
+# Spec: M0 — Scaffold (finni)
 
 Status: ready-for-agent
 Source: `docs/ROADMAP.md` §7 (M0), §3 (architecture), §5.4 (asset contract) · `docs/adr/0001` (stack) · `docs/REQUIREMENTS.md` (Technical Constraints, UX Constraints) · `CONTEXT.md` (vocabulary)
@@ -9,12 +9,12 @@ The hackathon runs on an 11-day clock, and today the repo contains only planning
 
 ## Solution
 
-Stand up the FinPet Expo/React Native application skeleton exactly as fixed in ROADMAP §3 and ADR-0001: an Expo managed-workflow TypeScript app with the settled app identity, portrait-only and Android 8.0 minimum, React Navigation with a placeholder Russian Main screen, expo-sqlite + Drizzle bound with a migration runner that applies the initial migration at boot, a green jest harness, the placeholder pet-asset tree matching the designer drop contract, and a README that gets a stranger from clone to installed APK. M0 delivers no gameplay — it makes every later milestone pure addition.
+Stand up the finni Expo/React Native application skeleton exactly as fixed in ROADMAP §3 and ADR-0001: an Expo managed-workflow TypeScript app with the settled app identity, portrait-only and Android 8.0 minimum, React Navigation with a placeholder Russian Main screen, expo-sqlite + Drizzle bound with a migration runner that applies the initial migration at boot, a green jest harness, the placeholder pet-asset tree matching the designer drop contract, and a README that gets a stranger from clone to installed APK. M0 delivers no gameplay — it makes every later milestone pure addition.
 
 ## User Stories
 
 1. As a hackathon judge, I want the APK to install and cold-launch to the main screen on an Android 8.0 (API 26) device in ≤5 s, so that the doc's launch constraint is met from the very first build.
-2. As a child user, I want the app to open in portrait orientation under the Russian name «ФинПет», so that it already feels like a finished game rather than a dev build.
+2. As a child user, I want the app to open in portrait orientation under the Russian name «Финни», so that it already feels like a finished game rather than a dev build.
 3. As a team developer, I want an Expo + TypeScript scaffold committed with a lockfile, so that all five of us get identical builds on any machine.
 4. As a team developer, I want `npm test` to run a green jest suite, so that test-first work from M1 onward starts on a working harness.
 5. As the M1 implementing agent, I want the domain layer isolated from React/Expo imports (enforced by lint, not convention), so that economy/stage logic is jest-testable without any device.
@@ -32,7 +32,7 @@ Stand up the FinPet Expo/React Native application skeleton exactly as fixed in R
 ## Implementation Decisions
 
 - **Stack per ADR-0001:** Expo managed workflow + TypeScript (strict mode), current stable Expo SDK at implementation time, Hermes enabled (SDK default), lockfile committed for reproducibility.
-- **App identity:** display name «ФинПет», `applicationId org.hseteamspb.finpet`, `versionName 0.1.0`, `versionCode 1`; identity table duplicated into the README (version/build must be discoverable in docs per the technical constraints).
+- **App identity:** display name «Финни», `applicationId org.hseteamspb.finni`, `versionName 0.1.0`, `versionCode 1`; identity table duplicated into the README (version/build must be discoverable in docs per the technical constraints).
 - **Device posture:** portrait-only orientation; `minSdkVersion` pinned to 26 (Android 8.0) via expo-build-properties.
 - **Permissions:** release manifest stripped to zero permissions (empty permissions list in expo-build-properties); dev-client/debug builds keep their connectivity automatically for Metro. No analytics, crash reporting, or any network SDK — offline is structural (ground rules, ROADMAP §1).
 - **Navigation:** React Navigation native stack with a single placeholder Main screen in Russian (app name + version footer). The hub layout, meters, and cards arrive in M2 per ROADMAP §4.2 #4 — do not pre-build them.
@@ -66,7 +66,7 @@ Stand up the FinPet Expo/React Native application skeleton exactly as fixed in R
 - Milestone AC (ROADMAP §7, M0), restated as the definition of done: release APK builds and installs on an Android 8.0 (API 26) emulator; portrait locked; cold launch → Main ≤5 s; `npm test` green.
 - If the current stable Expo SDK's floor is already ≥ API 26, still pin 26 explicitly so a future SDK bump cannot silently raise or lower the floor.
 - Launch-time budget is measured, not assumed: record the emulator stopwatch number in the M0 issue comments — M6 re-measures it as a regression gate.
-- Use the canonical vocabulary from `CONTEXT.md` for any user-visible string introduced here («ФинПет», «монеты» if coins appear in the placeholder UI) and keep all strings in the strings module, never inline.
+- Use the canonical vocabulary from `CONTEXT.md` for any user-visible string introduced here («Финни», «монеты» if coins appear in the placeholder UI) and keep all strings in the strings module, never inline.
 
 ## Comments
 

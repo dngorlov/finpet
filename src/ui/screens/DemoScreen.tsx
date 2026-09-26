@@ -93,6 +93,9 @@ export default function DemoScreen({ navigation }: Props) {
           ))}
           <Text style={styles.body}>{overview.daysLine}</Text>
           <Text style={styles.body}>{overview.tasksLine}</Text>
+          <Text style={styles.body}>{overview.answersLine}</Text>
+          <Text style={styles.body}>{overview.lessonsLine}</Text>
+          {overview.lastLessonLine ? <Text style={styles.body}>{overview.lastLessonLine}</Text> : null}
         </Card>
       ) : null}
       <Card>

@@ -7,7 +7,6 @@ import {
   applyMeterDelta,
   billsForDay,
   checkPurchase,
-  dailyDropCovered,
   dayCloseMeterDeltas,
   itemMeterEffects,
   planKept,
@@ -18,16 +17,19 @@ import {
   type PlanBuckets,
 } from "../../core/economy";
 import { checkDeposit, depositInterest, depositPayout, findOffer, maturesOnDay } from "../../core/bank";
+import { customGoalItemId, parseCustomGoalDraft } from "../../core/customGoal";
 import { applyGoalProgress, checkWithdrawal, estimateDaysToGoal, potFromTransfers } from "../../core/savings";
 import {
+  applyStageStep,
   dayScore,
   explainStageChange,
-  nextStage,
+  showStageThreshold,
   STAGE_CODES,
   stageFromCode,
+  stageGoalFloor,
   type Stage,
 } from "../../core/stages";
-import { endsGameDay, rewardTopUp, type TaskContent, type TaskStepResult } from "../../core/tasks";
+import { checkedTally, endsGameDay, rewardTopUp, type AnswerTally, type TaskContent, type TaskStepResult } from "../../core/tasks";
 import { createLocalId } from "../localId";
 import { META_KEYS } from "../metaKeys";
 import * as tables from "../schema";
@@ -49,7 +51,7 @@ export interface CreateProfileInput {
 }
 
 export type PurchaseResult =
-  | { status: "ok"; stageExplanation?: string | null }
+  | { status: "ok"; stageExplanation?: string | null; stageHeld?: boolean }
   | { status: "blocked"; missing: number };
 export type OpenDayResult =
   | { status: "opened"; dayId: string; n: number }
@@ -109,6 +111,14 @@ export interface TaskProgressView {
   rewardPaid: boolean;
   /** Best coins earned on this Задание so far (0 if never finished). */
   bestReward: number;
+  /** Fully right first answers across every run of this Задание. */
+  correctAnswers: number;
+  /** Scored first answers across every run (right, «с ценой», or wrong). */
+  scoredAnswers: number;
+  /** First completion. Replays leave this where it was. */
+  firstCompletedAt: number | null;
+  /** Latest completion, including a replay. */
+  completedAt: number | null;
 }
 
 /** Read model for the hub and PetView (appearance + meters + Баланс). */
@@ -126,10 +136,24 @@ export interface ProfileView {
   stage: Stage;
 }
 
+export interface ActiveGoalView {
+  key: string;
+  cost: number;
+  remaining: number;
+  achieved: boolean;
+  custom: boolean;
+  name: string | null;
+  icon: string | null;
+  /** Порог этапа stored with a Своя цель. Null for a preset. */
+  threshold: number | null;
+}
+
 export interface SavingsView {
   pot: number;
   estimateDays: number | null;
-  activeGoal: { key: string; cost: number; remaining: number; achieved: boolean } | null;
+  activeGoal: ActiveGoalView | null;
+  /** Prices of cheaper Свои цели already bought on this Этап. */
+  stageCredit: number;
 }
 
 export interface DayState {
@@ -385,7 +409,13 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     conn.delete(tables.goals).where(eq(tables.goals.profileId, profileId)).run();
   }
 
-  function writeActiveGoal(conn: GameDb, profileId: string, key: string, cost: number) {
+  function writeActiveGoal(
+    conn: GameDb,
+    profileId: string,
+    key: string,
+    cost: number,
+    custom?: { name: string; icon: string; threshold: number },
+  ) {
     clearGoals(conn, profileId);
     conn
       .insert(tables.goals)
@@ -398,6 +428,10 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         isActive: 1,
         achievedAt: null,
         fundedCelebrated: 0,
+        name: custom?.name ?? null,
+        icon: custom?.icon ?? null,
+        custom: custom ? 1 : 0,
+        threshold: custom?.threshold ?? null,
       })
       .run();
   }
@@ -483,6 +517,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         care: METERS.initialCare,
         mood: METERS.initialMood,
         stage: STAGE_CODES.novice,
+        stageCredit: 0,
       })
       .run();
     const seeded = input.activeGoalKey
@@ -547,13 +582,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     const optionalSpend = bought
       .filter((row) => row.kind === "optional" && row.paidFrom !== "savings")
       .reduce((sum, row) => sum + row.price, 0);
-    const covered = dailyDropCovered(
-      bought.map((row) => ({ itemId: row.itemId, paidFrom: row.paidFrom })),
-      catalog,
-    );
     const deltas = dayCloseMeterDeltas({
-      careCovered: covered.care,
-      moodCovered: covered.mood,
       optionalSpend,
       optionalPlan: confirmed ? confirmed.optional : null,
       planMissing:
@@ -871,6 +900,23 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       });
     },
 
+    setCustomGoal(
+      profileId: string,
+      input: { name: string; icon: string; price: number; presetPrices: readonly number[] },
+    ): void {
+      db.transaction((tx) => {
+        profile(tx, profileId);
+        const draft = parseCustomGoalDraft(input);
+        const threshold = stageGoalFloor(input.presetPrices);
+        const key = customGoalItemId(newId("cg"), draft.price, draft.name);
+        writeActiveGoal(tx, profileId, key, draft.price, {
+          name: draft.name,
+          icon: draft.icon,
+          threshold,
+        });
+      });
+    },
+
     purchaseFromSavings(profileId: string, dayId: string, item: CatalogItem): PurchaseResult {
       return db.transaction((tx) => {
         requireOpenDay(tx, profileId, dayId);
@@ -926,15 +972,28 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           applyMeter(tx, profileId, dayId, effect.meter, effect.delta, `purchase:${item.id}`);
         }
         clearGoals(tx, profileId);
-        const current = stageFromCode(pet(tx, profileId).stage);
-        const to = nextStage(current);
-        if (to !== current) {
-          tx.update(tables.petState)
-            .set({ stage: STAGE_CODES[to] })
-            .where(eq(tables.petState.profileId, profileId))
-            .run();
-        }
-        return { status: "ok" as const, stageExplanation: explainStageChange(current, to) };
+        const petRow = pet(tx, profileId);
+        const current = stageFromCode(petRow.stage);
+        const custom = active.custom === 1;
+        const threshold = active.threshold ?? item.price;
+        const step = applyStageStep({
+          stage: current,
+          custom,
+          price: item.price,
+          threshold,
+          credit: petRow.stageCredit,
+        });
+        tx.update(tables.petState)
+          .set({ stage: STAGE_CODES[step.stage], stageCredit: step.credit })
+          .where(eq(tables.petState.profileId, profileId))
+          .run();
+        const stageHeld =
+          showStageThreshold({ stage: current, custom, price: item.price, threshold }) && step.stage === current;
+        return {
+          status: "ok" as const,
+          stageExplanation: explainStageChange(current, step.stage),
+          stageHeld,
+        };
       });
     },
 
@@ -1037,6 +1096,10 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           status: row.status === "completed" ? ("completed" as const) : ("available" as const),
           rewardPaid: row.rewardPaid === 1,
           bestReward: row.bestReward,
+          correctAnswers: row.correctAnswers,
+          scoredAnswers: row.scoredAnswers,
+          firstCompletedAt: row.firstCompletedAt,
+          completedAt: row.completedAt,
         }));
     },
 
@@ -1101,18 +1164,24 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       const pot = potFromTransfers(transfers);
       const deposits = transfers.filter((t) => t.kind === "in").map((t) => t.amount);
       const active = activeGoal(db, profileId);
+      const stageCredit = pet(db, profileId).stageCredit;
       if (!active) {
-        return { pot, estimateDays: null as number | null, activeGoal: null };
+        return { pot, estimateDays: null as number | null, activeGoal: null, stageCredit };
       }
       const progress = applyGoalProgress(pot, active.cost);
       return {
         pot,
         estimateDays: estimateDaysToGoal(progress.remaining, deposits),
+        stageCredit,
         activeGoal: {
           key: active.key,
           cost: active.cost,
           remaining: progress.remaining,
           achieved: progress.achieved,
+          custom: active.custom === 1,
+          name: active.name,
+          icon: active.icon,
+          threshold: active.threshold,
         },
       };
     },
@@ -1178,10 +1247,12 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       taskId: string,
       earned: number,
       lesson?: PinnedLessonClaim,
+      answers?: AnswerTally,
     ): number {
       return db.transaction((tx) => {
         requireDayForTask(tx, profileId, dayId);
         if (earned < 0) throw new Error("Награда не может быть отрицательной");
+        const tally = checkedTally(answers);
         const existing = tx
           .select()
           .from(tables.taskProgress)
@@ -1194,13 +1265,17 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           credit(tx, profileId, dayId, reward, "task_reward", `task_reward:${taskId}`);
         }
         const bestReward = Math.max(best, earned);
+        const now = nowMs();
         if (existing) {
           tx.update(tables.taskProgress)
             .set({
               status: "completed",
               rewardPaid: bestReward > 0 ? 1 : existing.rewardPaid,
               bestReward,
-              completedAt: nowMs(),
+              correctAnswers: existing.correctAnswers + tally.correct,
+              scoredAnswers: existing.scoredAnswers + tally.scored,
+              completedAt: now,
+              firstCompletedAt: existing.firstCompletedAt ?? now,
             })
             .where(eq(tables.taskProgress.id, existing.id))
             .run();
@@ -1213,7 +1288,10 @@ export function createGameRepository(db: GameDb, clock: Clock) {
               status: "completed",
               rewardPaid: bestReward > 0 ? 1 : 0,
               bestReward,
-              completedAt: nowMs(),
+              correctAnswers: tally.correct,
+              scoredAnswers: tally.scored,
+              completedAt: now,
+              firstCompletedAt: now,
             })
             .run();
         }

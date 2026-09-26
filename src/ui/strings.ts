@@ -2,7 +2,6 @@
  * Single home for RU user-facing strings (ROADMAP §3). Vocabulary must match
  * CONTEXT.md; body text stays ≥16 sp per the UX constraints.
  */
-import { METERS } from "../core/config";
 const SPECIES_NAMES: Record<string, string> = {
   sp1: "Вид 1",
   sp2: "Вид 2",
@@ -28,7 +27,7 @@ const POSE_NAMES = {
 } as const;
 
 export const strings = {
-  appName: "ФинПет",
+  appName: "Финни",
   versionLine: (version: string, build: number) => `версия ${version} (${build})`,
 
   next: "Дальше",
@@ -187,6 +186,14 @@ export const strings = {
   shopDoTask: "Выполнить задание",
 
   goalPickerTitle: "Выбери цель",
+  customGoal: "Своя цель",
+  customGoalName: "Название цели",
+  customGoalNameHint: "Например, мяч",
+  customGoalPrice: "Цена",
+  goalIcon: (emoji: string) => `Значок ${emoji}`,
+  goalIconPick: (emoji: string) => `Выбрать значок ${emoji}`,
+  stageThreshold: (credit: number, floor: number) => `До следующего этапа: ${credit} из ${floor}`,
+  cheapGoalHeld: "Одна такая цель не открывает следующий этап. Купи ещё, чтобы набрать сумму.",
   goalDrop: "Без цели",
   goalEmptyPrompt: "Выбери цель",
   currentTaskSetGoal: "Текущая задача: выбрать цель",
@@ -205,7 +212,7 @@ export const strings = {
   savingsConfirmDeposit: (n: number) => `Положить ${n}?`,
   savingsConfirmWithdraw: (n: number) => `Забрать ${n}?`,
   savingsWithdrawPreview: (potAfter: number, days: number) =>
-    `В копилке станет ${potAfter}. Мечта отодвинется на ${days} дн.`,
+    `В копилке станет ${potAfter} ${coinsWord(potAfter)}. Мечта отодвинется на ${days} дн.`,
   savingsWithdrawPreviewNone: (potAfter: number) => `В копилке станет ${potAfter}.`,
   savingsAchieved: "Мечта сбылась!",
   savingsConfetti: "🎉",
@@ -231,10 +238,8 @@ export const strings = {
   resultsScoreMandatory: (earned: boolean) => (earned ? "Обязательные +2" : "Обязательные 0"),
   resultsScoreWithinPlan: (earned: boolean) => (earned ? "По плану +1" : "По плану 0"),
   scoreDeposited: (earned: boolean) => (earned ? "Копилка +1" : "Копилка 0"),
-  /** «Каждый день: Сытость -15» — the drop landed. */
+  /** «Каждый день: Сытость -15» — the drop always lands. A purchase offsets it separately. */
   meterDailyApplied: (meter: string, n: number) => `Каждый день: ${meter} ${n}`,
-  /** «Каждый день: Сытость -15, покупка отменила» — a Магазин purchase cancelled it. */
-  meterDailyKept: (meter: string, n: number) => `Каждый день: ${meter} ${n}, покупка отменила`,
   meterReasonOverspend: (n: number) => `Счастье ${n}: желаемое сверх плана.`,
   meterReasonNoPlan: (n: number) => `Счастье ${n}: плана на день не было.`,
   journalStart: "Старт",
@@ -314,7 +319,7 @@ export const strings = {
   stageWord: "Этап",
   stagePlace: (current: number, total: number) => `${current} из ${total}`,
   stageA11y: (name: string, current: number, total: number, progress: string) =>
-    `Этап ${current} из ${total}, ${name}. ${progress}`,
+    progress.length > 0 ? `Этап ${current} из ${total}, ${name}. ${progress}` : `Этап ${current} из ${total}, ${name}`,
   balanceBadge: (n: number) => `Баланс ${n}`,
   savingsBadge: (n: number) => `Копилка ${n}`,
   goalRatio: (have: number, cost: number) => `${have} / ${cost}`,
@@ -392,6 +397,17 @@ export const strings = {
   demoResetConfirmBody: "Демо вернётся к первому игровому дню",
   demoReset: "Сбросить демо",
   adultDaysEmpty: "Игровых дней пока нет — это нормально.",
+  adultAnswersEmpty: "Верных ответов пока нет — это нормально.",
+  adultAnswersLine: (percent: number, correct: number, scored: number) =>
+    `Верных ответов: ${percent}%, ${correct} из ${scored}`,
+  adultLessonsEmpty: "Уроков по календарю пока нет — это нормально.",
+  adultLessonsLine: (lessons: number, days: number) => `Уроки по календарю: ${lessons} за ${days} ${daysWord(days)}`,
+  adultLastLesson: (when: string) => `Последний урок: ${when}`,
+  adultLastLessonWhen: (daysAgo: number) => {
+    if (daysAgo <= 0) return "сегодня";
+    if (daysAgo === 1) return "вчера";
+    return `${daysAgo} ${daysWord(daysAgo)} назад`;
+  },
   adultTopicLine: (topic: string, done: number, total: number) => {
     if (done === 0) return `${topic}: ещё впереди`;
     if (done >= total) return `${topic}: все задания сделаны`;
@@ -423,7 +439,7 @@ function daysWord(n: number): string {
   return "дней";
 }
 
-/** Итоги lines for a closed day: the daily drop, and whether a purchase cancelled it. */
+/** Итоги lines for a closed day. The daily drop always lands; a purchase does not cancel it. */
 export function dayCloseLines(deltas: {
   care: number;
   dailyMood: number;
@@ -431,12 +447,8 @@ export function dayCloseLines(deltas: {
   noPlan: number;
 }): string[] {
   const lines = [
-    deltas.care < 0
-      ? strings.meterDailyApplied(strings.care, deltas.care)
-      : strings.meterDailyKept(strings.care, -METERS.dailyCareDrop),
-    deltas.dailyMood < 0
-      ? strings.meterDailyApplied(strings.mood, deltas.dailyMood)
-      : strings.meterDailyKept(strings.mood, -METERS.dailyMoodDrop),
+    strings.meterDailyApplied(strings.care, deltas.care),
+    strings.meterDailyApplied(strings.mood, deltas.dailyMood),
   ];
   if (deltas.overspend < 0) lines.push(strings.meterReasonOverspend(deltas.overspend));
   if (deltas.noPlan < 0) lines.push(strings.meterReasonNoPlan(deltas.noPlan));

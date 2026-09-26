@@ -43,7 +43,7 @@ function meterWord(meter: "care" | "mood") {
   return meter === "care" ? strings.care : strings.mood;
 }
 
-/** «сытость -15 и счастье -15» for the meters this purchase can cancel. Null when it feeds none. */
+/** «сытость -15 и счастье -15» for the meters this purchase offsets. Null when it feeds none. */
 export function dailyDropPhrase(item: CatalogItemContent): string | null {
   const meters = new Set(itemMeterEffects(item).map((effect) => effect.meter));
   const parts: string[] = [];

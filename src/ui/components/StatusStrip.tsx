@@ -73,12 +73,20 @@ export function StatusStrip() {
   return (
     <View style={styles.wrap}>
       <View style={styles.status}>
-        <View accessible aria-label={strings.balanceBadge(profile.balance)} style={styles.balance}>
+        <Pressable
+          role="button"
+          aria-label={strings.balanceBadge(profile.balance)}
+          onPress={() => {
+            setTab("money");
+            navigation.navigate("Main");
+          }}
+          style={({ pressed }) => [styles.balance, pressed ? styles.balancePressed : null]}
+        >
           <PixelSprite name="coin" size={24} />
           <Text aria-hidden style={styles.balanceValue}>
             {profile.balance}
           </Text>
-        </View>
+        </Pressable>
         <Pressable
           role="button"
           aria-label={strings.settings}
@@ -145,6 +153,9 @@ const styles = StyleSheet.create({
     height: minTarget,
     justifyContent: "center",
     paddingHorizontal: spacing.m,
+  },
+  balancePressed: {
+    opacity: 0.7,
   },
   balanceValue: {
     color: colors.text,

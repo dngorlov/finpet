@@ -1,6 +1,6 @@
 import type { CatalogItem, DayBills, PlanBuckets } from "../../core/economy";
 import type { Stage } from "../../core/stages";
-import type { TaskStepResult } from "../../core/tasks";
+import type { AnswerTally, TaskStepResult } from "../../core/tasks";
 import type { GameContent } from "../../data/content";
 import type {
   CollectDepositsResult,
@@ -47,6 +47,10 @@ export type SessionGame = {
   transferToSavings(profileId: string, dayId: string, amount: number): TransferResult;
   withdrawFromSavings(profileId: string, dayId: string, amount: number): WithdrawResult;
   setActiveGoal(profileId: string, item: (CatalogItem & { stage?: Stage }) | string): void;
+  setCustomGoal(
+    profileId: string,
+    input: { name: string; icon: string; price: number; presetPrices: readonly number[] },
+  ): void;
   clearActiveGoal(profileId: string): void;
   listGoals(profileId: string): GoalOption[];
   listJournal(profileId: string): JournalEntry[];
@@ -59,6 +63,7 @@ export type SessionGame = {
     taskId: string,
     earned: number,
     lesson?: PinnedLessonClaim,
+    answers?: AnswerTally,
   ): number;
   closeDay(profileId: string, catalog: readonly CatalogItem[], bills?: readonly DayBills[]): DaySummaryView;
 };

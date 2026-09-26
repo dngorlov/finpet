@@ -335,6 +335,31 @@ export function unlockedTasks(
   });
 }
 
+/** First answers on one run: fully right, and how many were scored at all. */
+export interface AnswerTally {
+  /** Verdict `good` only. «С ценой» is scored, but not fully right. */
+  correct: number;
+  scored: number;
+}
+
+/** Count first answers. A retry of the same question is not included. */
+export function tallyVerdicts(verdicts: readonly Verdict[]): AnswerTally {
+  return {
+    correct: verdicts.filter((verdict) => verdict === "good").length,
+    scored: verdicts.length,
+  };
+}
+
+/** Accept a run's tally, or zeros when the caller did not record one. */
+export function checkedTally(tally: AnswerTally | undefined): AnswerTally {
+  const correct = tally?.correct ?? 0;
+  const scored = tally?.scored ?? 0;
+  if (!Number.isInteger(correct) || !Number.isInteger(scored) || correct < 0 || scored < 0 || correct > scored) {
+    throw new Error("Неверная статистика ответов");
+  }
+  return { correct, scored };
+}
+
 /** Points for the first answer to a question: right 1, «с ценой» ½, wrong 0. */
 export function verdictPoints(verdict: Verdict): number {
   if (verdict === "good") return 1;

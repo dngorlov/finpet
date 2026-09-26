@@ -3,7 +3,6 @@ import {
   applyMeterDelta,
   billsForDay,
   checkPurchase,
-  dailyDropCovered,
   dayCloseMeterDeltas,
   itemMeterEffects,
   planKept,
@@ -13,9 +12,11 @@ import {
   type PlanBuckets,
 } from "../../core/economy";
 import { checkDeposit, depositInterest, depositPayout, findOffer, maturesOnDay } from "../../core/bank";
+import { customGoalItemId, parseCustomGoalDraft } from "../../core/customGoal";
 import { applyGoalProgress, checkWithdrawal, estimateDaysToGoal, potFromTransfers } from "../../core/savings";
-import { dayScore, explainStageChange, nextStage, type Stage } from "../../core/stages";
-import { endsGameDay, rewardTopUp, type TaskStepResult } from "../../core/tasks";
+import { applyStageStep, dayScore, explainStageChange, showStageThreshold, stageGoalFloor, type Stage } from "../../core/stages";
+import { createLocalId } from "../../data/localId";
+import { checkedTally, endsGameDay, rewardTopUp, type AnswerTally, type TaskStepResult } from "../../core/tasks";
 import { loadContent } from "../../data/content";
 import { META_KEYS } from "../../data/metaKeys";
 import type {
@@ -38,7 +39,13 @@ type PurchaseRow = {
   paidFrom: "balance" | "savings";
   boughtAsActiveGoal: boolean;
 };
-type StoredGoal = GoalOption & { fundedCelebrated: boolean };
+type StoredGoal = GoalOption & {
+  fundedCelebrated: boolean;
+  custom: boolean;
+  name: string | null;
+  icon: string | null;
+  threshold: number | null;
+};
 
 type StoredProfile = ProfileView & {
   dayOpen: boolean;
@@ -54,7 +61,21 @@ type StoredProfile = ProfileView & {
   lastClosed: DaySummaryView | null;
   tasks: TaskProgressView[];
   deposits: StoredDeposit[];
+  stageCredit: number;
 };
+
+function storedTask(
+  partial: Pick<TaskProgressView, "taskKey" | "status" | "rewardPaid" | "bestReward"> &
+    Partial<Pick<TaskProgressView, "correctAnswers" | "scoredAnswers" | "firstCompletedAt" | "completedAt">>,
+): TaskProgressView {
+  return {
+    correctAnswers: 0,
+    scoredAnswers: 0,
+    firstCompletedAt: null,
+    completedAt: null,
+    ...partial,
+  };
+}
 
 type StoredDeposit = {
   id: string;
@@ -80,6 +101,7 @@ function viewOf(row: StoredProfile): ProfileView {
     lastClosed: _lastClosed,
     tasks: _tasks,
     deposits: _deposits,
+    stageCredit: _stageCredit,
     ...view
   } = row;
   return view;
@@ -182,7 +204,19 @@ export function createFakePorts(): SessionPorts {
           ? input.goals.find((goal) => goal.key === input.activeGoalKey)
           : undefined;
         return seeded
-          ? [{ key: seeded.key, cost: seeded.cost, status: "active" as const, isActive: true, fundedCelebrated: false }]
+          ? [
+              {
+                key: seeded.key,
+                cost: seeded.cost,
+                status: "active" as const,
+                isActive: true,
+                fundedCelebrated: false,
+                custom: false,
+                name: null,
+                icon: null,
+                threshold: null,
+              },
+            ]
           : [];
       })(),
       planStatus: "none",
@@ -194,6 +228,7 @@ export function createFakePorts(): SessionPorts {
       lastClosed: null,
       tasks: [],
       deposits: [],
+      stageCredit: 0,
     };
     appendJournal(row, {
       amount: ECONOMY.startingBudget,
@@ -264,17 +299,22 @@ export function createFakePorts(): SessionPorts {
         const deposits = row.transfers.filter((t) => t.kind === "in").map((t) => t.amount);
         const active = row.goals.find((g) => g.isActive);
         if (!active) {
-          return { pot, estimateDays: null, activeGoal: null };
+          return { pot, estimateDays: null, activeGoal: null, stageCredit: row.stageCredit };
         }
         const progress = applyGoalProgress(pot, active.cost);
         return {
           pot,
           estimateDays: estimateDaysToGoal(progress.remaining, deposits),
+          stageCredit: row.stageCredit,
           activeGoal: {
             key: active.key,
             cost: active.cost,
             remaining: progress.remaining,
             achieved: progress.achieved,
+            custom: active.custom,
+            name: active.name,
+            icon: active.icon,
+            threshold: active.threshold,
           },
         };
       },
@@ -360,9 +400,20 @@ export function createFakePorts(): SessionPorts {
         });
         row.goals = [];
         const from = row.stage;
-        const to = nextStage(from);
-        row.stage = to;
-        return { status: "ok" as const, stageExplanation: explainStageChange(from, to) };
+        const custom = Boolean(active.custom);
+        const threshold = active.threshold ?? item.price;
+        const step = applyStageStep({
+          stage: from,
+          custom,
+          price: item.price,
+          threshold,
+          credit: row.stageCredit,
+        });
+        row.stage = step.stage;
+        row.stageCredit = step.credit;
+        const stageHeld =
+          showStageThreshold({ stage: from, custom, price: item.price, threshold }) && step.stage === from;
+        return { status: "ok" as const, stageExplanation: explainStageChange(from, step.stage), stageHeld };
       },
       transferToSavings(profileId, dayId, amount) {
         const row = requireRow(profiles, profileId);
@@ -415,7 +466,38 @@ export function createFakePorts(): SessionPorts {
         const existing = row.goals.find((goal) => goal.key === key);
         const cost = catalogItem?.price ?? existing?.cost;
         if (cost == null) throw new Error(`Цель ${key} не найдена`);
-        row.goals = [{ key, cost, status: "active", isActive: true, fundedCelebrated: false }];
+        row.goals = [
+          {
+            key,
+            cost,
+            status: "active",
+            isActive: true,
+            fundedCelebrated: false,
+            custom: false,
+            name: null,
+            icon: null,
+            threshold: null,
+          },
+        ];
+      },
+      setCustomGoal(profileId, input) {
+        const row = requireRow(profiles, profileId);
+        const draft = parseCustomGoalDraft(input);
+        const threshold = stageGoalFloor(input.presetPrices);
+        const key = customGoalItemId(createLocalId("cg"), draft.price, draft.name);
+        row.goals = [
+          {
+            key,
+            cost: draft.price,
+            status: "active",
+            isActive: true,
+            fundedCelebrated: false,
+            custom: true,
+            name: draft.name,
+            icon: draft.icon,
+            threshold,
+          },
+        ];
       },
       clearActiveGoal(profileId) {
         const row = requireRow(profiles, profileId);
@@ -424,7 +506,17 @@ export function createFakePorts(): SessionPorts {
       noteTaskCompleted(profileId: string, taskId: string) {
         const row = requireRow(profiles, profileId);
         if (row.tasks.some((task) => task.taskKey === taskId)) return;
-        row.tasks.push({ taskKey: taskId, status: "completed", rewardPaid: false, bestReward: 0 });
+        const now = Date.now();
+        row.tasks.push(
+          storedTask({
+            taskKey: taskId,
+            status: "completed",
+            rewardPaid: false,
+            bestReward: 0,
+            firstCompletedAt: now,
+            completedAt: now,
+          }),
+        );
       },
       listGoals(profileId) {
         return requireRow(profiles, profileId).goals.map((g) => ({ ...g }));
@@ -520,12 +612,13 @@ export function createFakePorts(): SessionPorts {
           }
         }
         if (result.spawnTask && !row.tasks.some((task) => task.taskKey === result.spawnTask)) {
-          row.tasks.push({ taskKey: result.spawnTask, status: "available", rewardPaid: false, bestReward: 0 });
+          row.tasks.push(storedTask({ taskKey: result.spawnTask, status: "available", rewardPaid: false, bestReward: 0 }));
         }
       },
-      claimTaskReward(profileId, dayId, taskId, earned, lesson) {
+      claimTaskReward(profileId, dayId, taskId, earned, lesson, answers?: AnswerTally) {
         const row = requireRow(profiles, profileId);
         requireDayForTask(row, dayId);
+        const tally = checkedTally(answers);
         const existing = row.tasks.find((task) => task.taskKey === taskId);
         const firstCompletion = existing?.status !== "completed";
         const best = existing?.bestReward ?? 0;
@@ -539,12 +632,28 @@ export function createFakePorts(): SessionPorts {
           });
         }
         const bestReward = Math.max(best, earned);
+        const now = Date.now();
         if (existing) {
           existing.status = "completed";
           existing.rewardPaid = existing.rewardPaid || bestReward > 0;
           existing.bestReward = bestReward;
+          existing.correctAnswers += tally.correct;
+          existing.scoredAnswers += tally.scored;
+          existing.firstCompletedAt = existing.firstCompletedAt ?? now;
+          existing.completedAt = now;
         } else {
-          row.tasks.push({ taskKey: taskId, status: "completed", rewardPaid: bestReward > 0, bestReward });
+          row.tasks.push(
+            storedTask({
+              taskKey: taskId,
+              status: "completed",
+              rewardPaid: bestReward > 0,
+              bestReward,
+              correctAnswers: tally.correct,
+              scoredAnswers: tally.scored,
+              firstCompletedAt: now,
+              completedAt: now,
+            }),
+          );
         }
         if (lesson && firstCompletion && endsGameDay(lesson.task)) {
           planLessonEndsThisDay = taskId === FEATURES.planTaskId;
@@ -571,13 +680,7 @@ export function createFakePorts(): SessionPorts {
         const optionalSpend = bought
           .filter((item) => item.kind === "optional" && item.paidFrom !== "savings")
           .reduce((sum, item) => sum + item.price, 0);
-        const covered = dailyDropCovered(
-          bought.map((item) => ({ itemId: item.itemId, paidFrom: item.paidFrom })),
-          catalog,
-        );
         const meterDeltas = dayCloseMeterDeltas({
-          careCovered: covered.care,
-          moodCovered: covered.mood,
           optionalSpend,
           optionalPlan: confirmed ? confirmed.optional : null,
           planMissing:

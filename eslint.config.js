@@ -1,5 +1,5 @@
 /**
- * Expo's flat config plus the FinPet architecture boundary:
+ * Expo's flat config plus the finni architecture boundary:
  * src/core stays pure domain logic — no React/Expo, no ui/data imports
  * (ROADMAP §3; spec .scratch/m0-scaffold).
  */

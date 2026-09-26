@@ -79,8 +79,8 @@ describe("Итоги дня", () => {
     expect(screen.getByText("план 45 · потрачено 45")).toBeOnTheScreen();
     expect(screen.getByText("план 0 · потрачено 0")).toBeOnTheScreen();
     expect(screen.getByText("план 15 · потрачено 15")).toBeOnTheScreen();
-    expect(screen.getByText("Каждый день: Сытость -15, покупка отменила")).toBeOnTheScreen();
-    expect(screen.getByText("Каждый день: Счастье -15, покупка отменила")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день: Сытость -15")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день: Счастье -15")).toBeOnTheScreen();
     expect(screen.getByLabelText("Этап 1 из 3, Новичок. Цель: Скейтборд, 15 из 90")).toBeOnTheScreen();
     expect(screen.getByText("Новичок")).toBeOnTheScreen();
     expect(screen.queryByText(/Про!/)).not.toBeOnTheScreen();

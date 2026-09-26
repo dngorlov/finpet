@@ -1,3 +1,4 @@
+import { readCustomGoalItem } from "../../core/customGoal";
 import type { PlanBuckets } from "../../core/economy";
 import type { JournalEntry } from "../../data/repositories/gameRepository";
 
@@ -187,11 +188,24 @@ export function itemLookup(
 ): ItemLookup {
   return (itemId) => {
     if (!itemId) return undefined;
+    const custom = readCustomGoalItem(itemId);
+    if (custom) return { kind: "goal" as const, price: custom.price };
     const item = catalog.find((entry) => entry.id === itemId);
     if (item) return { kind: item.kind, price: item.price };
     const goal = goals.find((entry) => entry.id === itemId);
     return goal ? { kind: "goal", price: goal.price } : undefined;
   };
+}
+
+export function itemTitle(
+  itemId: string | null,
+  catalog: readonly { id: string; name: string }[],
+  goals: readonly { id: string; name: string }[],
+): string {
+  if (!itemId) return "";
+  const custom = readCustomGoalItem(itemId);
+  if (custom) return custom.name;
+  return catalog.find((item) => item.id === itemId)?.name ?? goals.find((goal) => goal.id === itemId)?.name ?? itemId;
 }
 
 export interface SavingsStats {

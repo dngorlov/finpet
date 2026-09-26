@@ -10,7 +10,7 @@ Kids 7–11 who have used other learning games expect chunky raised buttons, big
 
 ## Solution
 
-Restyle every current child-facing screen with one FinPet chrome kit inspired by friendly raised-button learning apps, without copying another product’s mascot, green, or progress mechanics.
+Restyle every current child-facing screen with one finni chrome kit inspired by friendly raised-button learning apps, without copying another product’s mascot, green, or progress mechanics.
 
 The kit is: Screen, Card, PrimaryButton, TextButton, Chip, SpeechBubble, Badge, NavTile, plus the existing PetView, MeterBar, and BackButton. Linear flows pin the primary action at the bottom. Main stays one scrolling hub: badge strip, large centered pet, chunky meters, goal and task Cards, 2×3 pictogram tiles. Chip pickers include a visible check, not color alone; Питомец appearance on Первый запуск uses bead sliders instead.
 
@@ -30,7 +30,7 @@ The kit is: Screen, Card, PrimaryButton, TextButton, Chip, SpeechBubble, Badge, 
 12. As a ребёнок, I want a SpeechBubble under the pet with a small tail pointing up, so that the pet is clearly the speaker.
 13. As a ребёнок, I want the pet’s name visible on «Как играть», so that the speaker is mine.
 14. As a TalkBack user, I want each bubble announced once as «Питомец [имя] говорит: …», so that I do not hear the pet image twice.
-15. As a ребёнок on Main, I want a top strip of Badges for Этап, Баланс, and Копилка, each with icon + word + number, so that status is dense but still named in FinPet words.
+15. As a ребёнок on Main, I want a top strip of Badges for Этап, Баланс, and Копилка, each with icon + word + number, so that status is dense but still named in finni words.
 16. As a ребёнок on Main, I want the Питомец large and centered under the badges, so that the creature is the star of the hub.
 17. As a ребёнок, I want Забота and Настроение as taller rounded bars with icon + number, so that meters stay readable and never become “lives”.
 18. As a ребёнок, I want each hub destination to be a NavTile with a simple pictogram plus the Russian word, so that the grid feels like skills, not a settings list.
@@ -39,7 +39,7 @@ The kit is: Screen, Card, PrimaryButton, TextButton, Chip, SpeechBubble, Badge, 
 21. As a ребёнок, I want body text at least 16 sp and sentence-case Russian, so that nothing shouts in English all-caps.
 22. As a ребёнок with a large system font, I want the kit to still fit at 360 dp, so that first run and the hub do not overflow into dead ends.
 23. As a ребёнок, I want touch targets at least 48 dp, including the pressed primary and «Назад».
-24. As a ребёнок, I want the cream and orange FinPet colors to stay, so that the app does not look like a green language course.
+24. As a ребёнок, I want the cream and orange finni colors to stay, so that the app does not look like a green language course.
 25. As a ребёнок, I want no streak flame, hearts-as-lives, XP, leagues, owl, or lesson path, so that money-and-pet rules are not replaced.
 26. As a разработчик, I want one kit instead of copied screen styles, so that later План / Магазин / Копилка screens reuse chrome instead of inventing it.
 27. As a разработчик, I want PrimaryButton to replace the current single-style app button everywhere it is a primary action, so that there are not two primaries.
@@ -62,7 +62,7 @@ The kit is: Screen, Card, PrimaryButton, TextButton, Chip, SpeechBubble, Badge, 
 - SpeechBubble: body text in a rounded card; small tail pointing up at the pet; used by HowToPlay. Pet centered above the bubble; name visible. Replay and first-run rules share this layout.
 - Badge: icon + word + number for Этап, Баланс, Копилка on Main. Do not invent gem/heart/XP labels.
 - NavTile: pictogram + word, raised like a skill tile, 2×3 grid preserved. Accessible name is the word. План-needed state: check + existing hint text.
-- Expand the theme type scale to title / section / body / button. Body and button ≥16. System font only. Russian sentence case. Keep FinPet cream/orange tokens; add only what raised/disabled/track states need. No Duo green, no new brand font.
+- Expand the theme type scale to title / section / body / button. Body and button ≥16. System font only. Russian sentence case. Keep finni cream/orange tokens; add only what raised/disabled/track states need. No Duo green, no new brand font.
 - Linear flows (Первый запуск phases and HowToPlay) pin primary + quiet action in a bottom bar. Main, Glossary, Settings, stubs, StartingBudget keep actions in the scrolling content unless they are already short modal-like screens with one CTA.
 - Replace the current single-style app button with PrimaryButton for primary actions («Дальше», «Играть!», «Понятно», «Закончить день», glossary «Как играть», stub backs that are primary). Do not leave a parallel flat primary.
 - Pictograms may be simple emoji placeholders, like current pet art placeholders; they must not become the accessible name.

@@ -40,6 +40,48 @@ export function dayScore(facts: DayFacts): number {
   return (facts.mandatoryCovered ? 2 : 0) + (facts.withinPlan ? 1 : 0) + (facts.deposited ? 1 : 0);
 }
 
+/** Cheapest preset Цель of an Этап. A Своя цель below this is too cheap to advance alone. */
+export function stageGoalFloor(prices: readonly number[]): number {
+  if (prices.length === 0) throw new Error("У этапа нет целей");
+  return Math.min(...prices);
+}
+
+/**
+ * A preset, or a Своя цель at or above the Порог, advances one step and clears
+ * the running sum. A cheaper Своя цель adds its price; the step happens only
+ * when that sum reaches the Порог. Миллионер has no next step.
+ */
+export function applyStageStep(input: {
+  stage: Stage;
+  custom: boolean;
+  price: number;
+  threshold: number;
+  credit: number;
+}): { stage: Stage; credit: number } {
+  if (nextStage(input.stage) === input.stage) {
+    return { stage: input.stage, credit: input.credit };
+  }
+  if (!input.custom || input.price >= input.threshold) {
+    return { stage: nextStage(input.stage), credit: 0 };
+  }
+  const credit = input.credit + input.price;
+  if (credit >= input.threshold) {
+    return { stage: nextStage(input.stage), credit: 0 };
+  }
+  return { stage: input.stage, credit };
+}
+
+/** The Порог is visible only for a Своя цель cheaper than it, and only when a next Этап exists. */
+export function showStageThreshold(input: {
+  stage: Stage;
+  custom: boolean;
+  price: number;
+  threshold: number;
+}): boolean {
+  if (!input.custom || nextStage(input.stage) === input.stage) return false;
+  return input.price < input.threshold;
+}
+
 /** Said on Копилка when a purchase moves Этап. A step that stays put says nothing. */
 export function explainStageChange(from: Stage, to: Stage): string | null {
   if (from === to) return null;

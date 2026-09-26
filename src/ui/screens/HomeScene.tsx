@@ -53,8 +53,12 @@ export function HomeScene({
   day,
   waiting,
   goalName,
+  goalIcon = "",
+  threshold = null,
   accumulated,
   cost,
+  canPickGoal = false,
+  onPickGoal,
   onShop,
   onResults,
   dayTip,
@@ -66,8 +70,13 @@ export function HomeScene({
   day: number;
   waiting: boolean;
   goalName: string;
+  goalIcon?: string;
+  threshold?: string | null;
   accumulated: number;
   cost: number;
+  /** Копилка is open, so an empty Цель can offer «Выбери цель». */
+  canPickGoal?: boolean;
+  onPickGoal?: () => void;
   onShop: () => void;
   onResults: () => void;
   /** «День N» explanation is open. The screen behind owns the tap-outside catcher. */
@@ -197,32 +206,44 @@ export function HomeScene({
               <PixelIcon name="info-box" size={20} color={colors.card} />
             </Pressable>
           </View>
-          <View
-            accessible
-            aria-label={goalName ? homeStrings.goalA11y(goalName, accumulated, cost) : strings.goalEmptyPrompt}
-            style={styles.goal}
-          >
-            {goalName ? (
-              <>
-                <View style={styles.goalRow}>
+          {goalName ? (
+            <View
+              accessible
+              aria-label={`${homeStrings.goalA11y(goalName, accumulated, cost)}${threshold ? `. ${threshold}` : ""}`}
+              style={styles.goal}
+            >
+              <View style={styles.goalRow}>
+                {goalIcon ? (
+                  <Text aria-hidden style={styles.goalEmoji}>
+                    {goalIcon}
+                  </Text>
+                ) : (
                   <PixelIcon name="star" size={20} color={colors.accentText} />
-                  <View style={styles.goalName}>
-                    <CoinText inline labelled={false} text={goalName} style={styles.goalTitle} />
-                  </View>
-                  <Text style={styles.goalRatio}>{strings.goalRatio(accumulated, cost)}</Text>
-                  <PixelSprite name="coin" size={16} />
+                )}
+                <View style={styles.goalName}>
+                  <CoinText inline labelled={false} text={goalName} style={styles.goalTitle} />
                 </View>
-                <View style={styles.goalTrack}>
-                  <View style={[styles.goalFill, { width: `${Math.round(progress * 100)}%` }]} />
-                </View>
-              </>
-            ) : (
+                <Text style={styles.goalRatio}>{strings.goalRatio(accumulated, cost)}</Text>
+                <PixelSprite name="coin" size={16} />
+              </View>
+              <View style={styles.goalTrack}>
+                <View style={[styles.goalFill, { width: `${Math.round(progress * 100)}%` }]} />
+              </View>
+              {threshold ? <Text style={styles.goalThreshold}>{threshold}</Text> : null}
+            </View>
+          ) : canPickGoal ? (
+            <Pressable
+              role="button"
+              aria-label={strings.goalEmptyPrompt}
+              onPress={onPickGoal}
+              style={({ pressed }) => [styles.goal, pressed ? styles.goalPressed : null]}
+            >
               <View style={styles.goalRow}>
                 <PixelIcon name="star" size={20} color={colors.accentText} />
                 <Text style={styles.goalTitle}>{strings.goalEmptyPrompt}</Text>
               </View>
-            )}
-          </View>
+            </Pressable>
+          ) : null}
         </View>
         {dayTip ? (
           <View ref={dropRef} onLayout={onDropLayout} style={styles.drop}>
@@ -402,6 +423,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
+  goalPressed: {
+    opacity: 0.7,
+  },
   goal: {
     backgroundColor: colors.card,
     borderColor: colors.disabledFace,
@@ -424,6 +448,14 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   goalTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  goalEmoji: {
+    fontSize: 20,
+  },
+  goalThreshold: {
     color: colors.text,
     fontSize: 16,
     fontWeight: "700",

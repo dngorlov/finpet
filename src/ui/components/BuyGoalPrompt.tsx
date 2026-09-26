@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Modal, StyleSheet, View } from "react-native";
+import { CUSTOM_GOAL_MOOD, readCustomGoalItem } from "../../core/customGoal";
 import { meterDeltaMap } from "../../core/economy";
 import { META_KEYS } from "../../data/metaKeys";
 import { usePlayChrome } from "../navigation/playChrome";
@@ -24,7 +25,26 @@ export function BuyGoalPrompt() {
   const profileId = meta.get(META_KEYS.activeProfileId);
   const task = profileId ? resolveCurrentTask(game, content, profileId) : null;
   const goalId = task?.kind === "buy-goal" ? task.goalId : null;
-  const goal = goalId ? content.goals.find((item) => item.id === goalId) : undefined;
+  const preset = goalId ? content.goals.find((item) => item.id === goalId) : undefined;
+  const active = profileId ? game.savingsState(profileId).activeGoal : null;
+  const custom = !preset && active && active.key === goalId ? readCustomGoalItem(active.key) : null;
+  const goal = preset
+    ? {
+        id: preset.id,
+        name: preset.name,
+        price: preset.price,
+        effect: preset.effect,
+        stage: preset.stage,
+      }
+    : custom
+      ? {
+          id: active!.key,
+          name: active!.name || custom.name,
+          price: active!.cost,
+          effect: { meter: "mood" as const, delta: CUSTOM_GOAL_MOOD },
+          stage: undefined,
+        }
+      : undefined;
 
   // A new «купить цель» focus shows the prompt again (state adjusted during render, not in an effect).
   const [seenFocus, setSeenFocus] = useState<typeof focus>(null);
@@ -59,7 +79,7 @@ export function BuyGoalPrompt() {
         savings: -goal.price,
         ...meterDeltaMap(goal),
       },
-      cause: result.stageExplanation ?? strings.feedbackCausePurchase,
+      cause: result.stageExplanation ?? (result.stageHeld ? strings.cheapGoalHeld : strings.feedbackCausePurchase),
       nextStep: strings.feedbackNextGoal,
     });
   };

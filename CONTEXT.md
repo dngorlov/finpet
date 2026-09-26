@@ -1,4 +1,4 @@
-# FinPet (ФинПет)
+# finni (Финни)
 
 A single-context project: an offline Android game that teaches kids 7–11 basic money skills by caring for a virtual pet. The UI language is Russian; canonical terms below are the Russian strings used in the app, with English glosses.
 
@@ -19,7 +19,7 @@ An isolated test profile, resettable to its initial state. Its Игровые д
 _Avoid_: тестовый аккаунт, отладка
 
 **Взрослый раздел (Adult section)**:
-The area for adults, protected by an arithmetic gate: learning progress, Parent bonus, Demo mode toggle, Удалить профиль.
+The area for adults, protected by an arithmetic gate: learning progress, Parent bonus, Demo mode toggle, Удалить профиль. Progress includes topics, the share of fully right first answers, and how many Уроки were first finished on each real calendar date. That date is not an Игровой день. A replay counts in the answer share and in «последний урок», and does not add another урок or move its calendar date.
 _Avoid_: родительский контроль (a prohibited feature), родительские настройки
 
 **Удалить профиль (Delete profile)**:
@@ -57,7 +57,7 @@ The reopenable record of the last closed Игровой день — its plan ve
 _Avoid_: Прогресс, отчёт, итоги дня, очки
 
 **Обязательные расходы (Mandatory expenses)**:
-Purchases the pet needs (food, school supplies, transport, medicine). Every Игровой день takes 15 from Сытость and 15 from Счастье. A Магазин purchase that feeds a meter cancels that meter's drop for the day. Buying the Цель from Копилка does not.
+Purchases the pet needs (food, school supplies, transport, medicine). Every Игровой день takes 15 from Сытость and 15 from Счастье. A purchase adds its meter gain on top of that drop.
 
 **Счета (Day bills)**:
 The mandatory items due on a given Game Day, from a fixed content cycle. The План's Обязательные cannot be set below them, unless Магазин is Закрыто.
@@ -84,8 +84,16 @@ Separate from Копилка and opened after the lesson «Где живут н�
 _Avoid_: депозит, счёт, копилка (for the bank)
 
 **Цель (Goal)**:
-The one thing Копилка is accumulating toward, chosen from the three options of the child's current Этап — Новичок: Смарт-часы, Скейтборд, Конструктор; Про: Телефон, Самокат, Набор для рисования; Миллионер: Компьютер, Велосипед, Гитара. It is not sold in Магазин; there is at most one at a time, and buying it advances Этап.
-_Avoid_: ачивка, мечта, произвольная цель, Желаемое
+The one thing Копилка is accumulating toward. The child picks one of the three options of the current Этап — Новичок: Конструктор, Смарт-часы, Скейтборд; Про: Набор для рисования, Самокат, Телефон; Миллионер: Гитара, Велосипед, Компьютер — or writes a Своя цель. It is not sold in Магазин; there is at most one at a time. Buying a preset Цель, or a Своя цель that is not cheaper than the Порог этапа, advances Этап.
+_Avoid_: ачивка, мечта, Желаемое
+
+**Своя цель (Custom goal)**:
+A Цель the child writes on the current Этап: a name, an emoji значок, and a price. One at a time, beside the three presets, bought from Копилка the same way.
+_Avoid_: произвольная цель, мечта
+
+**Порог этапа (Stage threshold)**:
+The price of the cheapest preset Цель on the current Этап. Shown only while the active Цель is a Своя цель cheaper than it. Bought cheaper Свои цели add their prices until the sum reaches it, and that crossing advances Этап.
+_Avoid_: минимум, лимит, прогресс этапа
 
 ### Pet
 
@@ -110,15 +118,15 @@ The extra item the pet wears — one of the three designer accessories.
 _Avoid_: украшение, шапка, hat
 
 **Сытость (Satiety)**:
-The pet meter fed by buying Обед. Every Игровой день it falls by 15 unless a Магазин purchase that feeds it cancelled the drop.
+The pet meter fed by buying Обед. Every Игровой день it falls by 15. Buying Обед adds its gain on top of that drop.
 _Avoid_: здоровье, забота, голод
 
 **Счастье (Mood)**:
-The pet meter fed by Желаемые расходы, by Обязательные other than Обед, by Обед, and by buying the Цель. Every Игровой день it falls by 15 unless a Магазин purchase that feeds it cancelled the drop. Spending more than the План promised for Желаемые drops it once more. An open План left unconfirmed drops it once more; a closed План does not. Buying the Цель from Копилка does not cancel the daily drop.
+The pet meter fed by Желаемые расходы, by Обязательные other than Обед, by Обед, and by buying the Цель. Every Игровой день it falls by 15, and a purchase adds its gain on top of that drop. Spending more than the План promised for Желаемые drops it once more. An open План left unconfirmed drops it once more; a closed План does not.
 _Avoid_: настроение, радость
 
 **Этап (Stage)**:
-The pet's development level — Новичок, then Про, then Миллионер. It advances one step when the child buys the Цель, and in no other way.
+The pet's development level — Новичок, then Про, then Миллионер. It advances one step when the child buys a Цель that meets the Порог этапа, and in no other way.
 _Avoid_: уровень, эволюция, Друг, Мастер, очки
 
 ### Learning
@@ -132,7 +140,7 @@ An optional, kid-visible chat assistant on Дом that answers money questions i
 _Avoid_: чат-бот, ИИ-друг
 
 **Урок (Lesson)**:
-A pinned Задание made of unscored theory cards followed by scored questions. Once it is open, those cards can be read in Словарик. A mini-game may belong to it. The child plays that game from Мини-игры on Карта, and also from the pin, once the Урок is done.
+A pinned Задание made of unscored theory cards followed by scored questions. Once the child has finished it, those cards can be read in Словарик. A mini-game may belong to it. The child plays that game from Мини-игры on Карта, and also from the pin, once the Урок is done.
 _Avoid_: теория, лекция, тест
 
 **Задание (Task)**:
@@ -152,5 +160,5 @@ The in-app record of income, purchases and savings transfers for the current Gam
 _Avoid_: лог, отчёт
 
 **Словарик (Glossary)**:
-The handbook of key terms in kid language and the theory cards of Уроки the child can already open. Reading it pays nothing and does not replay Первый запуск.
+The handbook of the words and theory cards from Уроки the child has finished. An Урок that is only open is absent. Reading it pays nothing and does not replay Первый запуск.
 _Avoid_: справка, FAQ, Как играть

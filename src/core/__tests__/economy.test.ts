@@ -5,7 +5,6 @@ import {
   planKept,
   planMandatoryFloor,
   checkPurchase,
-  dailyDropCovered,
   dayCloseMeterDeltas,
   planOpenAtClose,
   validatePlan,
@@ -42,18 +41,9 @@ describe("checkPurchase", () => {
 });
 
 describe("day-close meters", () => {
-  const catalog = [
-    { id: "lunch", effect: { meter: "care" as const, delta: 10 }, also: { meter: "mood" as const, delta: 5 } },
-    { id: "transport", effect: { meter: "mood" as const, delta: 5 } },
-    { id: "candy", effect: { meter: "mood" as const, delta: 5 } },
-    { id: "skateboard", effect: { meter: "mood" as const, delta: 12 } },
-  ];
-
-  it("drops both meters by 15 when nothing in Магазин covered them", () => {
+  it("drops both meters by 15 whether or not a purchase fed them", () => {
     expect(
       dayCloseMeterDeltas({
-        careCovered: false,
-        moodCovered: false,
         optionalSpend: 0,
         optionalPlan: 10,
         planMissing: false,
@@ -67,44 +57,9 @@ describe("day-close meters", () => {
     });
   });
 
-  it("cancels a meter when a Баланс purchase feeds it", () => {
-    expect(dailyDropCovered([{ itemId: "lunch", paidFrom: "balance" }], catalog)).toEqual({
-      care: true,
-      mood: true,
-    });
-    expect(dailyDropCovered([{ itemId: "candy", paidFrom: "balance" }], catalog)).toEqual({
-      care: false,
-      mood: true,
-    });
-    expect(
-      dayCloseMeterDeltas({
-        careCovered: true,
-        moodCovered: false,
-        optionalSpend: 0,
-        optionalPlan: 10,
-        planMissing: false,
-      }),
-    ).toEqual({
-      care: 0,
-      mood: -15,
-      dailyMood: -15,
-      overspend: 0,
-      noPlan: 0,
-    });
-  });
-
-  it("does not let a Копилка purchase cancel the daily drop", () => {
-    expect(dailyDropCovered([{ itemId: "skateboard", paidFrom: "savings" }], catalog)).toEqual({
-      care: false,
-      mood: false,
-    });
-  });
-
   it("stacks the daily Счастье drop with Желаемые overspend", () => {
     expect(
       dayCloseMeterDeltas({
-        careCovered: false,
-        moodCovered: false,
         optionalSpend: 12,
         optionalPlan: 7,
         planMissing: false,
@@ -118,37 +73,17 @@ describe("day-close meters", () => {
     });
   });
 
-  it("keeps the overspend drop after a purchase cancelled the daily one", () => {
-    expect(
-      dayCloseMeterDeltas({
-        careCovered: true,
-        moodCovered: true,
-        optionalSpend: 12,
-        optionalPlan: 7,
-        planMissing: false,
-      }),
-    ).toEqual({
-      care: 0,
-      mood: -5,
-      dailyMood: 0,
-      overspend: -5,
-      noPlan: 0,
-    });
-  });
-
   it("does not punish optional spend when the day had no confirmed plan", () => {
     expect(
       dayCloseMeterDeltas({
-        careCovered: true,
-        moodCovered: true,
         optionalSpend: 12,
         optionalPlan: null,
         planMissing: false,
       }),
     ).toEqual({
-      care: 0,
-      mood: 0,
-      dailyMood: 0,
+      care: -15,
+      mood: -15,
+      dailyMood: -15,
       overspend: 0,
       noPlan: 0,
     });
@@ -157,8 +92,6 @@ describe("day-close meters", () => {
   it("drops Счастье again when an open План was never confirmed", () => {
     expect(
       dayCloseMeterDeltas({
-        careCovered: false,
-        moodCovered: false,
         optionalSpend: 0,
         optionalPlan: null,
         planMissing: true,

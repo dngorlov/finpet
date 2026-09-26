@@ -1,8 +1,10 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { CUSTOM_GOAL_MOOD } from "../../core/customGoal";
 import type { CatalogItemContent, GoalContent } from "../../data/content";
 import { applyGoalProgress, estimateDaysToGoal } from "../../core/savings";
+import { activeGoalLabel, goalThresholdLabel } from "../goalLabel";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, JournalEntry, SavingsView } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
@@ -21,7 +23,7 @@ import { strings } from "../strings";
 import { moneyStrings } from "../stringsMoney";
 import { colors, radius, spacing, type } from "../theme";
 import { meterDeltaMap } from "../../core/economy";
-import { itemLookup, savingsOps, savingsStats } from "./journalStats";
+import { itemLookup, itemTitle, savingsOps, savingsStats } from "./journalStats";
 import {
   ActionRow,
   Amount,
@@ -82,7 +84,7 @@ function engineItem(item: Pick<CatalogItemContent, "id" | "kind" | "price" | "ef
 
 export default function SavingsScreen() {
   const { game, meta, content } = useSession();
-  const { touchChrome, focus } = usePlayChrome();
+  const { touchChrome, focus, goalPrompt, setGoalPrompt } = usePlayChrome();
   const [savings, setSavings] = useState<SavingsView | null>(null);
   const [day, setDay] = useState<DayState | null>(null);
   const [balance, setBalance] = useState(0);
@@ -116,6 +118,12 @@ export default function SavingsScreen() {
     if (focus?.kind === "goal") setPickerOpen(true);
   }
 
+  useEffect(() => {
+    if (!goalPrompt) return;
+    setPickerOpen(true);
+    setGoalPrompt(false);
+  }, [goalPrompt, setGoalPrompt]);
+
   if (!savings) {
     return (
       <Screen>
@@ -136,18 +144,22 @@ export default function SavingsScreen() {
   const deposits = () =>
     journal.filter((row) => row.kind === "savings_in").map((row) => Math.abs(row.amount));
 
-  const goal = savings.activeGoal ? content.goals.find((item) => item.id === savings.activeGoal!.key) : undefined;
-  const activeItem = goal
-    ? {
-        id: goal.id,
-        name: goal.name,
-        kind: "optional" as const,
-        price: goal.price,
-        effect: goal.effect,
-        once: true,
-        stage: goal.stage,
-      }
-    : null;
+  const presented = activeGoalLabel(savings.activeGoal, content.goals);
+  const preset = savings.activeGoal ? content.goals.find((item) => item.id === savings.activeGoal!.key) : undefined;
+  const activeItem =
+    savings.activeGoal && presented
+      ? {
+          id: savings.activeGoal.key,
+          name: presented.name,
+          kind: "optional" as const,
+          price: savings.activeGoal.cost,
+          effect: preset?.effect ?? { meter: "mood" as const, delta: CUSTOM_GOAL_MOOD },
+          once: true,
+          stage: preset?.stage,
+        }
+      : null;
+  const profileId = meta.get(META_KEYS.activeProfileId);
+  const thresholdLabel = profileId ? goalThresholdLabel(savings, game.getProfile(profileId).stage) : null;
   const activeName = activeItem?.name ?? null;
   const accumulated = savings.activeGoal ? savings.activeGoal.cost - savings.activeGoal.remaining : 0;
   const funded = Boolean(savings.activeGoal?.achieved);
@@ -204,7 +216,7 @@ export default function SavingsScreen() {
         savings: -activeItem.price,
         ...meterDeltaMap(activeItem),
       },
-      cause: result.stageExplanation ?? strings.feedbackCausePurchase,
+      cause: result.stageExplanation ?? (result.stageHeld ? strings.cheapGoalHeld : strings.feedbackCausePurchase),
       nextStep: strings.feedbackNextGoal,
     });
   };
@@ -267,7 +279,7 @@ export default function SavingsScreen() {
   const showHome = phase.name !== "celebration";
   const transferOpen =
     phase.name === "deposit" || phase.name === "withdraw" || phase.name === "withdrawPreview";
-  const itemName = (id: string | null) => content.goals.find((entry) => entry.id === id)?.name ?? id ?? "";
+  const itemName = (id: string | null) => itemTitle(id, content.catalog, content.goals);
 
   return (
     <Screen footer={footer}>
@@ -296,7 +308,14 @@ export default function SavingsScreen() {
               <View style={styles.heroRow}>
                 <View style={styles.heroGoal}>
                   <Text style={styles.heroSmall}>{moneyStrings.savingsGoalCaption}</Text>
-                  <Text style={styles.heroGoalName}>{activeName}</Text>
+                  <View style={styles.heroName}>
+                    {savings.activeGoal?.custom && savings.activeGoal.icon ? (
+                      <Text aria-hidden style={styles.heroEmoji}>
+                        {savings.activeGoal.icon}
+                      </Text>
+                    ) : null}
+                    <Text style={styles.heroGoalName}>{activeName}</Text>
+                  </View>
                 </View>
                 <View accessible aria-label={strings.shopPrice(goalCost)}>
                   <Amount value={goalCost} size={16} color={moneyColors.heroText} />
@@ -309,6 +328,7 @@ export default function SavingsScreen() {
                 <Text style={styles.heroValue}>{strings.goalRatio(accumulated, goalCost)}</Text>
                 <Text style={styles.heroValue}>{strings.savingsRemaining(savings.activeGoal.remaining)}</Text>
               </View>
+              {thresholdLabel ? <Text style={styles.heroValue}>{thresholdLabel}</Text> : null}
               <View style={styles.heroRow}>
                 <Text style={styles.heroSmall}>{moneyStrings.savingsForecast}</Text>
                 <Text style={styles.heroValue}>
@@ -447,7 +467,7 @@ export default function SavingsScreen() {
         <AmountDialog onClose={closeTransfer}>
           <CoinText coin text={strings.savingsConfirmWithdraw(phase.amount)} style={styles.section} />
           <CoinText
-            coin
+            coin={phase.days == null}
             text={
               phase.days == null
                 ? strings.savingsWithdrawPreviewNone(phase.potAfter)
@@ -536,8 +556,17 @@ const styles = StyleSheet.create({
     color: moneyColors.heroSubtle,
     fontSize: 14,
   },
+  heroName: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.s,
+  },
+  heroEmoji: {
+    fontSize: 24,
+  },
   heroGoalName: {
     color: moneyColors.heroText,
+    flexShrink: 1,
     fontSize: type.section,
     fontWeight: "700",
   },
