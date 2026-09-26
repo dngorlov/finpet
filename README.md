@@ -1,55 +1,77 @@
-# ФинПет (FinPet)
+# ФинПет
 
-An offline Android game teaching kids 7–11 basic money skills through caring for a virtual pet. Hackathon prototype — milestone M0 (scaffold). All planning docs live in [`docs/`](./docs) (start with [`docs/ROADMAP.md`](./docs/ROADMAP.md)); domain vocabulary in [`CONTEXT.md`](./CONTEXT.md).
+Офлайн-игра для Android. Дети 7–11 лет учатся обращаться с деньгами, пока заботятся о пиксельном питомце. Ребёнок планирует бюджет на день, выбирает между обязательным и желаемым, копит на цель и проходит уроки на карте Москвы. Каждое решение сразу видно по сытости и настроению питомца.
 
-## App identity
+Команда hsespbteam: Сергей Гончаров и Дмитрий Горлов (разработка), Андрей (графика), Савва Власов (образовательный сценарий), Александр Лузин (требования).
 
-| Field | Value |
+## Что внутри
+
+| Механика | Где в приложении | Чему учит |
+|---|---|---|
+| **План дня** | Деньги → План | Разделить доход на обязательное, желаемое и копилку до покупок; сравнить план со вчерашним фактом |
+| **Приоритеты расходов** | Магазин, Итоги дня | Сначала счета на сегодня (обед, проезд…), потом желания. Если отложить счёт, питомец это почувствует |
+| **Накопление на цель** | Деньги → Копилка, Банк | Выбрать цель, копить регулярно, видеть прогноз. Вклад в банке приносит проценты |
+| **Уроки и мини-игры** | Карта заданий | 9 уроков в 3 темах (бюджет, сбережения, платежи), у каждого своя интерактивная игра |
+
+Ошибка в приложении учебная. Неверный ответ объясняется и даёт попробовать ещё раз. Опасная ошибка превращается в задание-исправление («Почини рюкзак»). Питомец не умирает, шкалы не падают ниже нуля. Реальных платежей, рекламы, сети и сбора данных нет.
+
+## Приложение
+
+| Поле | Значение |
 |---|---|
-| Display name | ФинПет |
-| Package | `org.hseteamspb.finpet` |
-| Version | 0.1.0 (versionCode 1) |
-| Min Android | 8.0 (API 26), portrait-only |
-| Permissions | none in release |
+| Название | ФинПет |
+| Пакет | `org.hseteamspb.finpet` |
+| Версия | 0.1.0 (versionCode 1) |
+| Android | 8.0+ (API 26), только портретная ориентация |
+| Разрешения | нет (`android.permissions: []`) |
+| Данные | только локальная SQLite на устройстве; см. [docs/PRIVACY.md](./docs/PRIVACY.md) |
 
-## Prerequisites
+## Быстрый старт
 
-- Node LTS and npm
-- JDK 17
-- Android Studio SDK with an API 26+ emulator (for `ANDROID_HOME` and device runs)
-
-## Everyday commands
+Нужны Node LTS и npm. Для сборки APK дополнительно нужны JDK 17 и Android SDK (API 26+).
 
 ```bash
-npm install          # once
-npm test             # jest suite (no device needed)
+npm install          # один раз
+npx expo start       # Metro; a — Android-эмулятор/устройство, QR — Expo Go
+npm test             # все тесты (≈200), устройство не нужно
 npm run typecheck    # tsc --noEmit
-npm run lint         # eslint
-npx expo start       # Metro dev server; press a for Android
+npm run lint         # eslint, должен быть чистым
 ```
 
-## Build a release APK
+### Сборка APK
 
 ```bash
 npx expo run:android --variant release
-# APK lands in android/app/build/outputs/apk/release/
+# APK: android/app/build/outputs/apk/release/app-release.apk
+adb install -r android/app/build/outputs/apk/release/app-release.apk
 ```
 
-Note: the release variant currently signs with the debug keystore; the real keystore + signing config arrive at milestone M7 (ROADMAP §7).
+Сейчас release подписывается debug-ключом. Для RuStore нужен свой keystore: его в репозиторий не кладём, `*.jks` и `*.key` уже в `.gitignore`.
 
-## Placeholder pet assets
+### Демо-режим для проверяющих
 
-`assets/pets/` is generated placeholder art matching the designer-drop contract (ROADMAP §5.4). Regenerate after changing the contract:
+Настройки → «Для взрослых» → ответить на вопрос-гейт → «Демо-режим». Демо-режим создаёт отдельный тестовый профиль, сразу открывает все разделы «Денег» и позволяет начинать следующий игровой день, не дожидаясь календарного. Уроки на карте открываются в том же порядке, что и в обычной игре. «Сбросить демо» возвращает профиль к первому дню.
 
-```bash
-node scripts/gen-placeholder-pets.mjs
+## Архитектура
+
+```
+src/core/   чистая логика: экономика, план, копилка, банк, уроки, мини-игры (без React)
+src/data/   expo-sqlite + Drizzle: схема, миграции, репозиторий, загрузка контента (zod)
+src/ui/     экраны, компоненты, мини-игры (src/ui/games), строки на русском
+assets/content/   учебный контент в JSON: уроки, каталог, счета, словарик
 ```
 
-## Repository map
+- **Контент отдельно от кода.** Уроки, вопросы, мини-игры, товары, цели и словарик лежат в `assets/content/*.json`. Схема zod проверяет их при запуске и в тестах. Новый урок добавляется правкой JSON, без программиста: см. [docs/CONTENT.md](./docs/CONTENT.md).
+- **Логика отдельно от интерфейса.** `src/core` не импортирует React и Expo, это проверяет eslint. Расчёты бюджета, покупок, накоплений и наград покрыты unit-тестами.
+- **Прогресс хранится в SQLite.** Миграции выполняются в транзакции и откатываются при ошибке, данные переживают перезапуск.
+- **Тесты.** Unit-тесты ядра, тесты репозитория на настоящей SQLite (better-sqlite3), сквозные сценарии UI на React Native Testing Library: от первого запуска до смены дня, уроков и мини-игр.
 
-- `src/core/` — pure domain logic (no React/Expo imports; enforced by `npm run lint`)
-- `src/data/` — expo-sqlite + Drizzle bootstrap, migrations, repositories (M1)
-- `src/ui/` — screens, components, theme, RU strings
-- `assets/content/` — educational content JSON (loader lands in M1)
-- `docs/` — requirements, roadmap, ADRs
-- `.scratch/` — local issue tracker (specs and tickets)
+Решения и их причины описаны в [docs/adr](./docs/adr), требования в [docs/REQUIREMENTS.md](./docs/REQUIREMENTS.md), план в [docs/ROADMAP.md](./docs/ROADMAP.md), словарь терминов в [CONTEXT.md](./CONTEXT.md).
+
+## Графика
+
+- Питомцы нарезаются из спрайт-листов Андрея: `node scripts/slice-pet-sheets.mjs` (`design/pets` → `assets/pets`).
+- Иконки лежат в `assets/icons`, исходники 12×12 — в `design/icons`.
+- Карта Москвы: `assets/map/moscow.png`. Точки уроков задаются долями ширины и высоты в `tasks.json`.
+
+Все источники, библиотеки, шрифты и ИИ-инструменты перечислены в приложении: Настройки → «Об авторах и источниках» (данные в `src/ui/credits.ts`).
