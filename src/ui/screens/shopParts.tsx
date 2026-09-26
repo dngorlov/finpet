@@ -20,7 +20,8 @@ const tint = {
   optionalTile: "#E9F0C4",
   goalTag: "#FFE08A",
   neutralTag: colors.track,
-  loss: "#FFDAD4",
+  /** Calm sand, not alarm red: a skipped bill is a choice with a cost, not a failure (Т/З 8.1, 8.4). */
+  loss: "#F3E3CF",
   gain: "#EEF3D2",
 } as const;
 
@@ -115,7 +116,7 @@ function Tag({ label, fill, icon }: { label: string; fill: string; icon?: PixelI
 /**
  * State tags: Цель, Куплено, Один раз, Отложено. No category or «Счёт на
  * сегодня» (Дима, 2026-09-26): the tab already says the category, and the
- * «не купишь: …» line already marks today's Счёт.
+ * «если отложить: …» line already marks today's Счёт.
  */
 export function ItemTags({ item, flags }: { item: CatalogItemContent; flags: RowFlags }) {
   if (!flags.goal && !flags.bought && !item.once && !flags.postponed) return null;

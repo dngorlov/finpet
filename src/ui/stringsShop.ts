@@ -6,8 +6,8 @@ export const shopStrings = {
   moodWord: "настроение",
   /** «+10 сытость» */
   effectGain: (delta: number, meter: string) => `+${delta} ${meter}`,
-  /** «не купишь: −15 сытость» */
-  effectSkip: (delta: number, meter: string) => `не купишь: −${delta} ${meter}`,
+  /** «если отложить: сытость −15» */
+  effectSkip: (delta: number, meter: string) => `если отложить: ${meter} −${delta}`,
 
   buy: "Купить",
   postpone: "Отложить",

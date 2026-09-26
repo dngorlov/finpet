@@ -35,9 +35,9 @@ describe("Магазин", () => {
     expect(
       screen.getByRole("button", { name: "Школьные принадлежности. 10 монет. Настроение +5" }),
     ).toBeOnTheScreen();
-    expect(screen.getAllByText(/не купишь: −15/, { includeHiddenElements: true })).toHaveLength(2);
-    expect(screen.getByText("не купишь: −15 сытость", { includeHiddenElements: true })).toBeOnTheScreen();
-    // The tab names the category and «не купишь» marks today's Счёт — no extra tags.
+    expect(screen.getAllByText(/если отложить: .* −15/, { includeHiddenElements: true })).toHaveLength(2);
+    expect(screen.getByText("если отложить: сытость −15", { includeHiddenElements: true })).toBeOnTheScreen();
+    // The tab names the category and «если отложить» marks today's Счёт — no extra tags.
     expect(screen.queryByText("Счёт на сегодня", { includeHiddenElements: true })).not.toBeOnTheScreen();
     expect(screen.getAllByText("Обязательное", { includeHiddenElements: true })).toHaveLength(1);
     expect(screen.getByText("🍱", { includeHiddenElements: true })).toBeOnTheScreen();
