@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { checkDeposit, depositPayout, maturesOnDay } from "../../core/bank";
 import { BANK } from "../../core/config";
@@ -9,7 +9,8 @@ import { AmountStepper } from "../components/AmountStepper";
 import { CoinText } from "../components/CoinText";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
-import { Chip } from "../components/Chip";
+import { CHART_COLORS } from "../components/DonutChart";
+import { PixelIcon } from "../components/Pictogram";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
@@ -17,7 +18,9 @@ import { TextButton } from "../components/TextButton";
 import { usePlayChrome } from "../navigation/playChrome";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
-import { colors, spacing, type } from "../theme";
+import { moneyStrings } from "../stringsMoney";
+import { colors, font, minTarget, radius, spacing, type } from "../theme";
+import { HeroCard, MoneyCard, moneyColors, ProgressBar, SectionTitle } from "./moneyParts";
 
 /**
  * Банк — separate from Копилка: a вклад takes coins out of Баланс for a fixed
@@ -56,6 +59,7 @@ export default function BankScreen() {
   const check = checkDeposit(balance, amount);
   const canOpen = Boolean(day?.open) && check.status === "ok";
   const returnsOn = day ? maturesOnDay(day.n, offer.days) : 0;
+  const locked = deposits.filter((dep) => dep.status === "open").reduce((sum, dep) => sum + dep.amount, 0);
 
   const open = () => {
     const profileId = meta.get(META_KEYS.activeProfileId);
@@ -95,18 +99,41 @@ export default function BankScreen() {
       }
     >
       <ScreenTitle style={styles.title}>{strings.bankTitle}</ScreenTitle>
-      <CoinText text={strings.bankIntro} style={styles.body} />
-      <View style={styles.row}>
-        {BANK.offers.map((item) => (
-          <Chip
-            key={item.id}
-            label={strings.bankOfferLabel(item.days, item.ratePercent)}
-            selected={item.id === offer.id}
-            onPress={() => setOfferId(item.id)}
-          />
-        ))}
+      <HeroCard caption={moneyStrings.bankActiveCaption} value={locked} label={moneyStrings.bankActiveTotal(locked)}>
+        <CoinText text={strings.bankIntro} style={styles.heroNote} />
+      </HeroCard>
+      <SectionTitle>{moneyStrings.bankOffers}</SectionTitle>
+      <View style={styles.offers}>
+        {BANK.offers.map((item) => {
+          const selected = item.id === offer.id;
+          const example = amount > 0 ? amount : BANK.minDeposit;
+          return (
+            <Pressable
+              key={item.id}
+              role="button"
+              aria-label={strings.bankOfferLabel(item.days, item.ratePercent)}
+              aria-selected={selected}
+              onPress={() => setOfferId(item.id)}
+              style={[styles.offer, selected ? styles.offerOn : null]}
+            >
+              <View style={styles.rate}>
+                <Text style={styles.rateText}>{moneyStrings.bankRate(item.ratePercent)}</Text>
+              </View>
+              <Text style={styles.term}>{moneyStrings.bankTerm(item.days)}</Text>
+              <Text style={styles.example}>
+                {moneyStrings.bankExample(example, depositPayout(example, item.ratePercent))}
+              </Text>
+              {selected ? (
+                <View style={styles.offerCheck}>
+                  <PixelIcon name="check" size={20} color={colors.onRaised} />
+                </View>
+              ) : null}
+            </Pressable>
+          );
+        })}
       </View>
-      <Card>
+      <MoneyCard>
+        <Text style={styles.section}>{moneyStrings.bankNew}</Text>
         <AmountStepper
           label={strings.bankAmount}
           pictogram={strings.navBankPictogram}
@@ -117,22 +144,42 @@ export default function BankScreen() {
           onChange={setAmount}
         />
         <CoinText coin text={strings.bankPreview(amount, payout, offer.days)} style={styles.body} />
-        {check.status === "tooSmall" ? <CoinText text={strings.bankMin(check.min)} style={styles.body} /> : null}
-      </Card>
+        {check.status === "tooSmall" ? <CoinText text={strings.bankMin(check.min)} style={styles.muted} /> : null}
+      </MoneyCard>
       {confirming ? (
         <Card>
           <CoinText text={strings.bankConfirmTitle} style={styles.section} />
           <CoinText text={strings.bankConfirmBody(amount, returnsOn)} style={styles.body} />
         </Card>
       ) : null}
-      <CoinText text={strings.bankActive} style={styles.section} />
-      {deposits.length === 0 ? <CoinText text={strings.bankEmpty} style={styles.body} /> : null}
-      {deposits.map((dep) => (
-        <Card key={dep.id}>
-          <CoinText coin text={strings.bankDepositLine(dep.amount, dep.ratePercent, dep.payout)} style={styles.body} />
-          <CoinText text={dep.status === "paid" ? strings.bankPaid : strings.bankDaysLeft(dep.daysLeft)} style={styles.body} />
-        </Card>
-      ))}
+      <SectionTitle>{strings.bankActive}</SectionTitle>
+      <MoneyCard tight>
+        {deposits.length === 0 ? <CoinText text={strings.bankEmpty} style={styles.muted} /> : null}
+        {deposits.map((dep, index) => {
+          const passed = dep.status === "paid" ? dep.days : Math.max(0, dep.days - dep.daysLeft);
+          return (
+            <View key={dep.id} style={[styles.deposit, index === deposits.length - 1 ? null : styles.depositDivider]}>
+              <View style={styles.depositIcon}>
+                <PixelIcon
+                  name={dep.status === "paid" ? "check" : "lock"}
+                  color={dep.status === "paid" ? moneyColors.plus : CHART_COLORS.bank}
+                />
+              </View>
+              <View style={styles.depositBody}>
+                <CoinText
+                  coin
+                  text={strings.bankDepositLine(dep.amount, dep.ratePercent, dep.payout)}
+                  style={styles.depositTitle}
+                />
+                <View accessible aria-label={moneyStrings.bankProgressA11y(passed, dep.days)}>
+                  <ProgressBar value={passed} max={dep.days} color={CHART_COLORS.bank} />
+                </View>
+                <Text style={styles.muted}>{dep.status === "paid" ? strings.bankPaid : strings.bankDaysLeft(dep.daysLeft)}</Text>
+              </View>
+            </View>
+          );
+        })}
+      </MoneyCard>
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}
     </Screen>
   );
@@ -153,9 +200,87 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: type.body,
   },
-  row: {
+  muted: {
+    color: colors.subtle,
+    fontSize: type.body,
+  },
+  heroNote: {
+    color: moneyColors.heroSubtle,
+    fontSize: type.body,
+  },
+  offers: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.s,
+  },
+  offer: {
+    backgroundColor: colors.card,
+    borderColor: colors.track,
+    borderRadius: radius.card,
+    borderWidth: 2,
+    flexBasis: "30%",
+    flexGrow: 1,
+    gap: 6,
+    minHeight: minTarget,
+    padding: 12,
+  },
+  offerOn: {
+    backgroundColor: colors.highlight,
+    borderColor: colors.accent,
+  },
+  offerCheck: {
+    position: "absolute",
+    right: 8,
+    top: 8,
+  },
+  rate: {
+    alignSelf: "flex-start",
+    backgroundColor: CHART_COLORS.bank,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  rateText: {
+    color: "#FFFFFF",
+    fontFamily: font.pixel,
+    fontSize: 12,
+  },
+  term: {
+    color: colors.text,
+    fontSize: type.section,
+    fontWeight: "700",
+  },
+  example: {
+    color: colors.subtle,
+    fontFamily: font.pixel,
+    fontSize: 10,
+    lineHeight: 16,
+  },
+  deposit: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    paddingVertical: spacing.s,
+  },
+  depositDivider: {
+    borderBottomColor: colors.track,
+    borderBottomWidth: 1,
+  },
+  depositIcon: {
+    alignItems: "center",
+    backgroundColor: colors.track,
+    borderRadius: 20,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
+  },
+  depositBody: {
+    flex: 1,
+    gap: 6,
+  },
+  depositTitle: {
+    color: colors.text,
+    fontSize: type.body,
+    fontWeight: "700",
   },
 });

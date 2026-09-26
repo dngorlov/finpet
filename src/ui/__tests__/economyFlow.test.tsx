@@ -68,10 +68,10 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     await user.press(screen.getByRole("button", { name: "Понятно" }));
 
     await openMoney(user, "Журнал");
-    expect(screen.getByText("Покупка: Обед -12")).toBeOnTheScreen();
-    expect(screen.getAllByText("Покупка: Конфета -5").length).toBeGreaterThan(0);
-    expect(screen.getByText("Перевод в копилку -1")).toBeOnTheScreen();
-    expect(screen.getByText("Пособие +20")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Покупка: Обед -12")).toBeOnTheScreen();
+    expect(screen.getAllByLabelText("Покупка: Конфета -5").length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Перевод в копилку -1")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Пособие +20")).toBeOnTheScreen();
     await openTab(user, "Дом");
     expect(screen.getByText("1 / 90")).toBeOnTheScreen();
   },

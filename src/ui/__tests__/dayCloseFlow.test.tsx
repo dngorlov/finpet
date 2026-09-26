@@ -53,7 +53,7 @@ describe("Итоги дня", () => {
       expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
 
       await openMoney(user, "Журнал");
-      expect(screen.getAllByText("Пособие +20")).toHaveLength(2);
+      expect(screen.getAllByLabelText("Пособие +20")).toHaveLength(2);
       await user.press(screen.getByRole("button", { name: "Дом" }));
       expect(screen.getByText("День 2")).toBeOnTheScreen();
     },

@@ -92,7 +92,7 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       const closedActuals = ports.game.lastClosedDay(demoId)?.actual;
       expect(closedActuals).toEqual({ mandatory: 0, optional: 0, savings: 0 });
       await openMoney(user, "План");
-      expect(screen.getAllByText("вчера 0")).toHaveLength(3);
+      expect(screen.getAllByText("Вчера: 0")).toHaveLength(3);
       await openTab(user, "Дом");
 
       for (let n = 1; n < 5; n += 1) {
@@ -129,8 +129,8 @@ describe("Итоги дня + Демо-режим combined loop", () => {
       await openTab(user, "Дом");
 
       await openMoney(user, "Журнал");
-      expect(screen.getByText("Стартовый бюджет +100")).toBeOnTheScreen();
-      expect(screen.getByText("Пособие +20")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Стартовый бюджет +100")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Пособие +20")).toBeOnTheScreen();
       expect(screen.getByText("День 1")).toBeOnTheScreen();
       expect(screen.queryByText("День 2")).not.toBeOnTheScreen();
       expect(screen.queryByText("День 5")).not.toBeOnTheScreen();
