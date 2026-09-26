@@ -209,14 +209,13 @@ export function Legend({ rows }: { rows: readonly LegendRow[] }) {
         <View
           key={row.id}
           accessible
-          aria-label={moneyStrings.legendRow(row.label, row.amount, row.percent)}
+          aria-label={moneyStrings.legendRow(row.label, row.amount)}
           style={styles.legendRow}
         >
           <View style={[styles.legendDot, { backgroundColor: row.color }]} />
           <Text style={styles.legendLabel} numberOfLines={1}>
             {row.label}
           </Text>
-          <Text style={styles.legendPercent}>{moneyStrings.percent(row.percent)}</Text>
           <Amount value={row.amount} size={12} />
         </View>
       ))}
@@ -428,13 +427,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
     fontSize: type.body,
-  },
-  legendPercent: {
-    color: colors.subtle,
-    fontSize: 13,
-    fontWeight: "700",
-    minWidth: 40,
-    textAlign: "right",
   },
   pills: {
     flexDirection: "row",
