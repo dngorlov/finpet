@@ -8,7 +8,7 @@ const SPRITES = {
   home: require("../../../assets/icons/home.png"),
   gear: require("../../../assets/icons/gear.png"),
   mood: require("../../../assets/icons/mood.png"),
-  /** Red frown made from Andrei's mood face: «если отложить: настроение −N». */
+  /** Red frown made from Andrei's mood face: «если отложить: счастье −N». */
   "mood-down": require("../../../assets/icons/mood-down.png"),
   food: require("../../../assets/icons/food.png"),
 } satisfies Record<string, ImageSourcePropType>;

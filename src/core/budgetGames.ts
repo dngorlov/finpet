@@ -26,6 +26,15 @@ export function planAfterEvent(plan: BudgetSplit, event: { bucket: BudgetBucket;
 }
 
 /**
+ * The surprise takes `amount` out of the jar the child points at.
+ * Null when that jar cannot cover it — they pay with the steppers instead.
+ */
+export function stealFromJar(split: BudgetSplit, bucket: BudgetBucket, amount: number): BudgetSplit | null {
+  if (amount <= 0 || split[bucket] < amount) return null;
+  return { ...split, [bucket]: split[bucket] - amount };
+}
+
+/**
  * Which bucket paid most for the surprise — it picks the consequence line.
  * Null when nothing was cut (e.g. the child only moved coins around).
  */

@@ -27,7 +27,7 @@ function closeScoredDay(ports: ReturnType<typeof createFakePorts>, profileId: st
 }
 
 describe("Прогресс", () => {
-  it("shows Журнал rows for grant, Пособие, and a purchase", async () => {
+  it("shows Журнал rows for the grant and a purchase", async () => {
     const ports = createFakePorts();
     const profileId = seedReturningChild(ports);
     const day = ports.game.dayState(profileId);
@@ -37,7 +37,7 @@ describe("Прогресс", () => {
     await openMoney(user, "Журнал");
     expect(screen.getByText("День 1")).toBeOnTheScreen();
     expect(screen.getByLabelText("Покупка: Обед -12")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Пособие +20")).toBeOnTheScreen();
+    expect(screen.queryByLabelText("Пособие +20")).not.toBeOnTheScreen();
     expect(screen.getByText("Старт")).toBeOnTheScreen();
     expect(screen.getByLabelText("Стартовый бюджет +100")).toBeOnTheScreen();
 
@@ -63,7 +63,6 @@ describe("Прогресс", () => {
 
     const { user } = await renderApp(ports);
     await user.press(screen.getByRole("button", { name: "Следующий день" }));
-    await user.press(screen.getByRole("button", { name: "Понятно" }));
     await openMoney(user, "Журнал");
     expect(screen.getByLabelText("Задание: Что такое бюджет? +10")).toBeOnTheScreen();
     expect(screen.getByLabelText("Задание +8")).toBeOnTheScreen();
@@ -77,8 +76,10 @@ describe("Прогресс", () => {
     expect(screen.getByText("план 12 · потрачено 12")).toBeOnTheScreen();
     expect(screen.getByText("план 5 · потрачено 5")).toBeOnTheScreen();
     expect(screen.getByText("план 15 · потрачено 15")).toBeOnTheScreen();
-    expect(screen.getByText("Сытость и настроение без изменений")).toBeOnTheScreen();
-    expect(screen.getByText("Этап Новичок")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день: Сытость -15, покупка отменила")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день: Счастье -15, покупка отменила")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Этап 1 из 3, Новичок. Цель: Скейтборд, 15 из 90")).toBeOnTheScreen();
+    expect(screen.getByText("Новичок")).toBeOnTheScreen();
     expect(screen.getByText("Игровых дней: 1")).toBeOnTheScreen();
     expect(screen.getByText("Задания 1/12")).toBeOnTheScreen();
     expect(screen.getByText("Целей: 0")).toBeOnTheScreen();

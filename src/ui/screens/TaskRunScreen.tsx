@@ -3,10 +3,13 @@ import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { factFromSpending } from "../../core/budgetGames";
+import { replayVariety, shuffleAnswers, type ShopPose } from "../../core/shopPlay";
 import {
   chooseOption,
+  dealTask,
   earnedReward,
   endsGameDay,
+  isPickChoice,
   startTask,
   type BudgetSplit,
   type NextRef,
@@ -31,6 +34,7 @@ import { AllocateBoard, ReplanBoard } from "../games/BudgetBoard";
 import { CompareBoard } from "../games/CompareBoard";
 import { OptionTiles, SceneTiles, VerdictBanner } from "../games/GameParts";
 import { gameStrings } from "../games/gameStrings";
+import { PickBoard } from "../games/PickBoard";
 import { DreamGame, StepsGame } from "../games/SavingGames";
 import { SortBoard } from "../games/SortBoard";
 
@@ -59,23 +63,45 @@ export default function TaskRunScreen({ navigation, route }: Props) {
   /** План и факт: the child's plan and what the choices spent since. */
   const [plan, setPlan] = useState<BudgetSplit | null>(null);
   const [spent, setSpent] = useState<Partial<BudgetSplit>>({});
+  /** This visit's graph: a dealt mini-game, or the lesson unchanged. */
+  const [run, setRun] = useState<ReturnType<typeof dealTask> | null>(null);
+  /** Rounds cleared this visit, including a right answer after a retry. */
+  const [cleared, setCleared] = useState(0);
+  /** In-game purse. Never written to Баланс. */
+  const [kept, setKept] = useState(0);
+  /** Face while a board is in play. A scored answer still wins once it is showing. */
+  const [pose, setPose] = useState<ShopPose | null>(null);
+  /** The last shop buy was handed back. */
+  const [returned, setReturned] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       const profileId = meta.get(META_KEYS.activeProfileId);
       if (!profileId || !task) return;
       setProfile(game.getProfile(profileId));
-      const start = startTask(task);
+      const dealt = dealTask(task);
+      const alreadyPlayed = game
+        .listTaskProgress(profileId)
+        .some((row) => row.taskKey === task.id && row.status === "completed");
+      const seed = 1 + Math.floor(Math.random() * 997);
+      const shelved = alreadyPlayed ? replayVariety(dealt.nodes, seed) : dealt.nodes;
+      const visit = { ...dealt, nodes: shuffleAnswers(shelved, seed) };
+      setRun(visit);
+      const start = startTask(visit);
       setNodeId(start.nodeId);
       setResult(null);
       setSceneFeedback(null);
       setFirstVerdicts({});
       setPlan(null);
       setSpent({});
+      setCleared(0);
+      setKept(0);
+      setPose(null);
+      setReturned(false);
     }, [game, meta, task]),
   );
 
-  if (!task || !profile || !nodeId) {
+  if (!task || !run || !profile || !nodeId) {
     return (
       <Screen>
         <BackButton />
@@ -84,7 +110,7 @@ export default function TaskRunScreen({ navigation, route }: Props) {
     );
   }
 
-  const node = task.nodes.find((item) => item.id === nodeId);
+  const node = run.nodes.find((item) => item.id === nodeId);
   const kind = node?.kind ?? "choice";
   const explaining = result !== null;
   const withPet = (text: string) => text.split("{pet}").join(profile.petName);
@@ -97,7 +123,7 @@ export default function TaskRunScreen({ navigation, route }: Props) {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId) return;
     const day = game.dayState(profileId);
-    const earned = earnedReward(task, Object.values(verdicts));
+    const earned = earnedReward(run, Object.values(verdicts));
     const alreadyCompleted = game
       .listTaskProgress(profileId)
       .some((row) => row.taskKey === task.id && row.status === "completed");
@@ -126,13 +152,20 @@ export default function TaskRunScreen({ navigation, route }: Props) {
     }
     setNodeId(next);
     setResult(null);
+    setReturned(false);
+    setPose(null);
   };
 
   const choose = (optionIndex: number) => {
     const profileId = meta.get(META_KEYS.activeProfileId);
     if (!profileId || !node) return;
     const day = game.dayState(profileId);
-    const step = chooseOption(task, node.id, optionIndex);
+    const step = chooseOption(run, node.id, optionIndex);
+    const purse = node.options?.[optionIndex]?.kept ?? 0;
+    if (step.next !== "retry") {
+      if (step.verdict === "good") setCleared((current) => current + 1);
+      if (purse > 0) setKept((current) => current + purse);
+    }
     game.applyTaskStep(profileId, day.dayId, step);
     setProfile(game.getProfile(profileId));
     remember(node.id, step.verdict);
@@ -161,19 +194,25 @@ export default function TaskRunScreen({ navigation, route }: Props) {
     }
     if (!result) return;
     if (result.next === "retry") {
+      if (isPickChoice(node)) setReturned(true);
       setResult(null);
+      setPose("idle");
       return;
     }
     goTo(result.next, result, verdicts);
   };
 
   const tileMode = kind === "choice" && (node?.options?.every((option) => option.icon) ?? false);
+  const pickMode = kind === "choice" && node != null && isPickChoice(node);
   const footer =
     kind === "card" ? (
       <PrimaryButton label={node?.button ?? strings.taskCardNext} onPress={goNext} />
     ) : kind === "choice" && explaining ? (
-      <PrimaryButton label={result?.next === "retry" ? gameStrings.retry : strings.next} onPress={goNext} />
-    ) : kind === "choice" && !tileMode ? (
+      <PrimaryButton
+        label={result?.next === "retry" ? (pickMode ? gameStrings.repair : gameStrings.retry) : strings.next}
+        onPress={goNext}
+      />
+    ) : kind === "choice" && !tileMode && !pickMode ? (
       <>
         {node?.options?.map((option, index) => (
           <PrimaryButton key={`${node.id}-${index}`} label={withPet(option.label)} onPress={() => choose(index)} />
@@ -182,6 +221,10 @@ export default function TaskRunScreen({ navigation, route }: Props) {
     ) : null;
   const shownVerdict = result?.verdict;
   const isCard = kind === "card";
+  const rounds = run.nodes.filter((item) => (item.kind ?? "choice") === "choice");
+  const roundAt = rounds.findIndex((item) => item.id === node?.id);
+  const showMeter = task.deal != null && roundAt >= 0;
+  const showPurse = run.nodes.some((item) => item.options?.some((option) => (option.kept ?? 0) > 0));
 
   return (
     <Screen footer={footer}>
@@ -202,9 +245,21 @@ export default function TaskRunScreen({ navigation, route }: Props) {
           care={profile.care}
           mood={profile.mood}
           size={isCard ? 120 : 88}
-          pose={shownVerdict ? poseForVerdict(shownVerdict) : undefined}
+          pose={shownVerdict ? poseForVerdict(shownVerdict) : (pose ?? undefined)}
         />
+        {result && task.parent ? (
+          <Text style={styles.meterText}>
+            {result.verdict === "good" ? gameStrings.petGlad(profile.petName) : gameStrings.petThink(profile.petName)}
+          </Text>
+        ) : null}
       </View>
+      {showMeter ? (
+        <View style={styles.meter}>
+          <Text style={styles.meterText}>{gameStrings.round(roundAt + 1, rounds.length)}</Text>
+          <Text style={styles.meterText}>{gameStrings.cleared(cleared)}</Text>
+          {showPurse ? <Text style={styles.meterText}>{gameStrings.kept(kept)}</Text> : null}
+        </View>
+      ) : null}
       {node?.id === task.nodes[0]?.id && kind === "choice" ? (
         <CoinText text={withPet(task.intro)} style={styles.body} />
       ) : null}
@@ -220,7 +275,17 @@ export default function TaskRunScreen({ navigation, route }: Props) {
           <CoinText text={withPet(node.text)} style={kind === "choice" ? styles.section : styles.body} />
         </View>
       ) : null}
-      {kind === "choice" && node?.scene ? <SceneTiles tiles={node.scene} /> : null}
+      {kind === "choice" && node?.scene && !(pickMode && !explaining) ? <SceneTiles tiles={node.scene} /> : null}
+      {pickMode && node?.scene && node.options && !explaining ? (
+        <PickBoard
+          key={node.id}
+          tiles={node.scene}
+          options={node.options}
+          onChoose={choose}
+          returned={returned}
+          onPose={setPose}
+        />
+      ) : null}
       {tileMode && node?.options && !explaining ? (
         <OptionTiles options={node.options} onChoose={choose} withPet={withPet} />
       ) : null}
@@ -232,6 +297,7 @@ export default function TaskRunScreen({ navigation, route }: Props) {
           withPet={withPet}
           onAnswer={(index, verdict) => remember(`${node.id}#${index}`, verdict)}
           onDone={goNext}
+          onPose={setPose}
         />
       ) : null}
       {kind === "allocate" && node ? (
@@ -243,6 +309,7 @@ export default function TaskRunScreen({ navigation, route }: Props) {
             setSpent({});
             goNext();
           }}
+          onPose={setPose}
         />
       ) : null}
       {kind === "compare" && node ? (
@@ -262,6 +329,7 @@ export default function TaskRunScreen({ navigation, route }: Props) {
           outcomes={node.outcomes}
           withPet={withPet}
           onDone={goNext}
+          onPose={setPose}
         />
       ) : null}
       {kind === "steps" && node && node.goal ? (
@@ -274,6 +342,7 @@ export default function TaskRunScreen({ navigation, route }: Props) {
           temptations={node.temptations}
           petName={profile.petName}
           onDone={goNext}
+          onPose={setPose}
         />
       ) : null}
       {kind === "dream" && node ? (
@@ -337,6 +406,19 @@ const styles = StyleSheet.create({
   },
   petRow: {
     alignItems: "center",
+    gap: spacing.s,
+  },
+  meter: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.s,
+    justifyContent: "center",
+  },
+  meterText: {
+    color: colors.text,
+    fontSize: type.body,
+    fontWeight: "700",
   },
   cardHero: {
     alignItems: "center",

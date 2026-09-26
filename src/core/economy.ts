@@ -107,13 +107,13 @@ export interface CatalogItem {
   kind: "mandatory" | "optional";
   price: number;
   effect: MeterEffect;
-  /** Обед also raises Настроение. Absent on every other item. */
+  /** Обед also raises Счастье. Absent on every other item. */
   also?: MeterEffect;
   /** One-shot Желаемые leave Магазин after any purchase. */
   once?: boolean;
 }
 
-/** Meter moves a purchase applies. Обед returns both Сытость and Настроение. */
+/** Meter moves a purchase applies. Обед returns both Сытость and Счастье. */
 export function itemMeterEffects(item: Pick<CatalogItem, "effect" | "also">): MeterEffect[] {
   return item.also ? [item.effect, item.also] : [item.effect];
 }
@@ -125,23 +125,28 @@ export function meterDeltaMap(item: Pick<CatalogItem, "effect" | "also">): { car
   return deltas;
 }
 
-/** A due item feeds Сытость when one of its effects is care. Anything else is a non-food Счёт. */
-export function unpaidBillFlags(
-  dueIds: readonly string[],
-  boughtIds: ReadonlySet<string>,
+/**
+ * Which daily meter drops a day's Магазин purchases cancel.
+ * A purchase counts only when it was paid from Баланс and one of its effects feeds that meter.
+ * Buying the Цель from Копилка does not cancel a drop.
+ */
+export function dailyDropCovered(
+  purchases: readonly { itemId: string; paidFrom: "balance" | "savings" }[],
   catalog: readonly Pick<CatalogItem, "id" | "effect" | "also">[],
-): { missedFood: boolean; missedOtherBill: boolean } {
+): { care: boolean; mood: boolean } {
   const byId = new Map(catalog.map((item) => [item.id, item]));
-  let missedFood = false;
-  let missedOtherBill = false;
-  for (const id of dueIds) {
-    if (boughtIds.has(id)) continue;
-    const item = byId.get(id);
-    const feedsSatiety = item != null && itemMeterEffects(item).some((effect) => effect.meter === "care");
-    if (feedsSatiety) missedFood = true;
-    else missedOtherBill = true;
+  let care = false;
+  let mood = false;
+  for (const purchase of purchases) {
+    if (purchase.paidFrom === "savings") continue;
+    const item = byId.get(purchase.itemId);
+    if (!item) continue;
+    for (const effect of itemMeterEffects(item)) {
+      if (effect.meter === "care") care = true;
+      if (effect.meter === "mood") mood = true;
+    }
   }
-  return { missedFood, missedOtherBill };
+  return { care, mood };
 }
 
 /** Meters stay in 0–100 (§2.2). */
@@ -150,27 +155,52 @@ export function applyMeterDelta(current: number, delta: number): number {
 }
 
 export interface DayCloseMeters {
-  /** Today's Обед was due and not bought. */
-  missedFood: boolean;
-  /** Some other due Счёт was not bought. One drop, however many. */
-  missedOtherBill: boolean;
+  /** A Магазин purchase today feeds Сытость, so the daily drop does not land. */
+  careCovered: boolean;
+  /** A Магазин purchase today feeds Счастье, so the daily drop does not land. */
+  moodCovered: boolean;
   optionalSpend: number;
   /** Confirmed Желаемые bucket; null if the day had no confirmed plan. */
   optionalPlan: number | null;
+  /** План was open and never confirmed. */
+  planMissing: boolean;
 }
 
-/** Meter deltas applied at Итоги дня — not silent, always sourced as day-close. */
+/**
+ * План was available during this Игровой день. Completing «Планирование бюджета»
+ * is what ends that day, so the drop waits until a later day. Демо-режим has
+ * План open from the start.
+ */
+export function planOpenAtClose(input: {
+  isDemo: boolean;
+  planLessonCompleted: boolean;
+  planLessonEndsThisDay: boolean;
+}): boolean {
+  if (input.isDemo) return true;
+  if (input.planLessonEndsThisDay) return false;
+  return input.planLessonCompleted;
+}
+
+/**
+ * Meter deltas applied at Итоги дня. Every day starts from the default drop;
+ * a covering purchase cancels that meter's drop. Overspend and a missing План
+ * are separate Счастье drops.
+ */
 export function dayCloseMeterDeltas(input: DayCloseMeters): {
   care: number;
   mood: number;
-  missedNeed: number;
+  /** The daily Счастье drop that landed. 0 when a purchase cancelled it. */
+  dailyMood: number;
   overspend: number;
+  /** Счастье taken because an open План was never confirmed. */
+  noPlan: number;
 } {
-  const care = input.missedFood ? -METERS.missedFoodPenalty : 0;
-  const missedNeed = input.missedOtherBill ? -METERS.missedOtherBillPenalty : 0;
+  const care = input.careCovered ? 0 : -METERS.dailyCareDrop;
+  const dailyMood = input.moodCovered ? 0 : -METERS.dailyMoodDrop;
   const overspend =
     input.optionalPlan !== null && input.optionalSpend > input.optionalPlan
       ? -METERS.overspendMoodPenalty
       : 0;
-  return { care, mood: missedNeed + overspend, missedNeed, overspend };
+  const noPlan = input.planMissing ? -METERS.noPlanMoodPenalty : 0;
+  return { care, mood: dailyMood + overspend + noPlan, dailyMood, overspend, noPlan };
 }

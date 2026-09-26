@@ -17,5 +17,5 @@ The Питомец is already pixel art, and the chrome should feel more like th
 ## Consequences
 
 - Verdicts keep their words («Верно», «Есть цена», «Попробуй ещё»). The check and the warning are icons; «Есть цена» keeps 🤔 because there is no thinking-face icon. Difficulty is three stars, unused ones dimmed, and TalkBack hears «Сложность: N из 3».
-- The drumstick, pig, bow, chick, and the bank stay emoji. Настроение uses the smile. «Обязательные 0» uses the square exclamation, and «Обязательные +2» uses the check. Баланс uses the coins icon, Окрас the color swatch, the book the open book.
+- The drumstick, pig, bow, chick, and the bank stay emoji. Счастье uses the smile. «Обязательные 0» uses the square exclamation, and «Обязательные +2» uses the check. Баланс uses the coins icon, Окрас the color swatch, the book the open book.
 - The adult section uses the same buttons and icons. Its title is pixel at 16 sp.

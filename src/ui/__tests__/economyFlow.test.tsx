@@ -38,7 +38,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
     await user.press(screen.getByRole("button", { name: "Купить Конфета" }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
-    expect(screen.getByText("Настроение +5")).toBeOnTheScreen();
+    expect(screen.getByText("Счастье +5")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
@@ -52,8 +52,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     await user.press(screen.getByRole("button", { name: /^Мороженое/ }));
     expect(screen.queryByRole("button", { name: "Купить" })).not.toBeOnTheScreen();
     expect(screen.getByText(/Не хватает/)).toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Дождаться пособия" }));
-    expect(screen.getByText(/Пособие придёт/)).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Дождаться пособия" })).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Выполнить задание" }));
     expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Дом" }));
@@ -69,9 +68,9 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
     expect(screen.getByLabelText("Покупка: Обед -12")).toBeOnTheScreen();
     expect(screen.getAllByLabelText("Покупка: Конфета -5").length).toBeGreaterThan(0);
     expect(screen.getByLabelText("Перевод в копилку -1")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Пособие +20")).toBeOnTheScreen();
+    expect(screen.queryByLabelText("Пособие +20")).not.toBeOnTheScreen();
     await openTab(user, "Дом");
-    expect(screen.getByText("1 / 90")).toBeOnTheScreen();
+    expect(screen.getAllByText("1 / 90")).toHaveLength(2);
   },
   15000,
 );
@@ -88,7 +87,7 @@ describe("economy loop (Appendix A 5, 7–9)", () => {
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
       await confirmTinyPlan(user);
-      expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Баланс 100")).toBeOnTheScreen();
 
       await user.press(screen.getByRole("button", { name: "Магазин" }));
       // Обязательные start at today's Счета (Обед 12 + Проезд 8) + 1 from confirmTinyPlan.

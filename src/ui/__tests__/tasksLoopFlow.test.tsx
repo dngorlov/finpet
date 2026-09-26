@@ -60,7 +60,6 @@ describe("Задания combined loop", () => {
       await passAdultGate(user);
       await user.press(screen.getByRole("button", { name: "Демо-режим" }));
       await user.press(screen.getByRole("button", { name: "Готово" }));
-      await user.press(screen.getByRole("button", { name: "Понятно" }));
 
       await user.press(screen.getByRole("button", { name: "Карта" }));
       expect(screen.getAllByRole("button", { name: /, закрыто$/ })).toHaveLength(6);

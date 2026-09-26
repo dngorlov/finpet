@@ -45,7 +45,7 @@
       "kind": "optional",
       "price": 5,
       "effect": { "meter": "mood", "delta": 5 },
-      "description": "Сладкое для настроения"
+      "description": "Сладкое для счастья"
     },
     {
       "id": "ice-cream",

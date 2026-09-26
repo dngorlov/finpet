@@ -5,8 +5,9 @@ import {
   planKept,
   planMandatoryFloor,
   checkPurchase,
+  dailyDropCovered,
   dayCloseMeterDeltas,
-  unpaidBillFlags,
+  planOpenAtClose,
   validatePlan,
 } from "../economy";
 
@@ -41,52 +42,141 @@ describe("checkPurchase", () => {
 });
 
 describe("day-close meters", () => {
-  it("drops Сытость by 15 when today's Обед was skipped", () => {
+  const catalog = [
+    { id: "lunch", effect: { meter: "care" as const, delta: 10 }, also: { meter: "mood" as const, delta: 5 } },
+    { id: "transport", effect: { meter: "mood" as const, delta: 5 } },
+    { id: "candy", effect: { meter: "mood" as const, delta: 5 } },
+    { id: "skateboard", effect: { meter: "mood" as const, delta: 12 } },
+  ];
+
+  it("drops both meters by 15 when nothing in Магазин covered them", () => {
     expect(
-      dayCloseMeterDeltas({ missedFood: true, missedOtherBill: false, optionalSpend: 0, optionalPlan: 10 }),
-    ).toEqual({ care: -15, mood: 0, missedNeed: 0, overspend: 0 });
+      dayCloseMeterDeltas({
+        careCovered: false,
+        moodCovered: false,
+        optionalSpend: 0,
+        optionalPlan: 10,
+        planMissing: false,
+      }),
+    ).toEqual({
+      care: -15,
+      mood: -15,
+      dailyMood: -15,
+      overspend: 0,
+      noPlan: 0,
+    });
   });
 
-  it("drops Настроение by 15 once when a non-food Счёт was skipped", () => {
+  it("cancels a meter when a Баланс purchase feeds it", () => {
+    expect(dailyDropCovered([{ itemId: "lunch", paidFrom: "balance" }], catalog)).toEqual({
+      care: true,
+      mood: true,
+    });
+    expect(dailyDropCovered([{ itemId: "candy", paidFrom: "balance" }], catalog)).toEqual({
+      care: false,
+      mood: true,
+    });
     expect(
-      dayCloseMeterDeltas({ missedFood: false, missedOtherBill: true, optionalSpend: 0, optionalPlan: 10 }),
-    ).toEqual({ care: 0, mood: -15, missedNeed: -15, overspend: 0 });
+      dayCloseMeterDeltas({
+        careCovered: true,
+        moodCovered: false,
+        optionalSpend: 0,
+        optionalPlan: 10,
+        planMissing: false,
+      }),
+    ).toEqual({
+      care: 0,
+      mood: -15,
+      dailyMood: -15,
+      overspend: 0,
+      noPlan: 0,
+    });
   });
 
-  it("stacks a skipped non-food Счёт with Желаемые overspend", () => {
-    expect(
-      dayCloseMeterDeltas({ missedFood: true, missedOtherBill: true, optionalSpend: 12, optionalPlan: 7 }),
-    ).toEqual({ care: -15, mood: -20, missedNeed: -15, overspend: -5 });
+  it("does not let a Копилка purchase cancel the daily drop", () => {
+    expect(dailyDropCovered([{ itemId: "skateboard", paidFrom: "savings" }], catalog)).toEqual({
+      care: false,
+      mood: false,
+    });
   });
 
-  it("drops Настроение by 5 when optional spend exceeds the plan bucket", () => {
+  it("stacks the daily Счастье drop with Желаемые overspend", () => {
     expect(
-      dayCloseMeterDeltas({ missedFood: false, missedOtherBill: false, optionalSpend: 12, optionalPlan: 7 }),
-    ).toEqual({ care: 0, mood: -5, missedNeed: 0, overspend: -5 });
+      dayCloseMeterDeltas({
+        careCovered: false,
+        moodCovered: false,
+        optionalSpend: 12,
+        optionalPlan: 7,
+        planMissing: false,
+      }),
+    ).toEqual({
+      care: -15,
+      mood: -20,
+      dailyMood: -15,
+      overspend: -5,
+      noPlan: 0,
+    });
+  });
+
+  it("keeps the overspend drop after a purchase cancelled the daily one", () => {
+    expect(
+      dayCloseMeterDeltas({
+        careCovered: true,
+        moodCovered: true,
+        optionalSpend: 12,
+        optionalPlan: 7,
+        planMissing: false,
+      }),
+    ).toEqual({
+      care: 0,
+      mood: -5,
+      dailyMood: 0,
+      overspend: -5,
+      noPlan: 0,
+    });
   });
 
   it("does not punish optional spend when the day had no confirmed plan", () => {
     expect(
-      dayCloseMeterDeltas({ missedFood: false, missedOtherBill: false, optionalSpend: 12, optionalPlan: null }),
-    ).toEqual({ care: 0, mood: 0, missedNeed: 0, overspend: 0 });
+      dayCloseMeterDeltas({
+        careCovered: true,
+        moodCovered: true,
+        optionalSpend: 12,
+        optionalPlan: null,
+        planMissing: false,
+      }),
+    ).toEqual({
+      care: 0,
+      mood: 0,
+      dailyMood: 0,
+      overspend: 0,
+      noPlan: 0,
+    });
   });
 
-  it("treats a care effect as food and every other unpaid Счёт as one mood drop", () => {
-    const catalog = [
-      { id: "lunch", effect: { meter: "care" as const, delta: 10 }, also: { meter: "mood" as const, delta: 5 } },
-      { id: "transport", effect: { meter: "mood" as const, delta: 5 } },
-      { id: "school", effect: { meter: "mood" as const, delta: 5 } },
-    ];
-    const bought = new Set(["lunch"]);
+  it("drops Счастье again when an open План was never confirmed", () => {
+    expect(
+      dayCloseMeterDeltas({
+        careCovered: false,
+        moodCovered: false,
+        optionalSpend: 0,
+        optionalPlan: null,
+        planMissing: true,
+      }),
+    ).toEqual({
+      care: -15,
+      mood: -25,
+      dailyMood: -15,
+      overspend: 0,
+      noPlan: -10,
+    });
+  });
 
-    expect(unpaidBillFlags(["lunch", "transport", "school"], bought, catalog)).toEqual({
-      missedFood: false,
-      missedOtherBill: true,
-    });
-    expect(unpaidBillFlags(["lunch", "transport"], new Set<string>(), catalog)).toEqual({
-      missedFood: true,
-      missedOtherBill: true,
-    });
+  it("treats План as open in Демо-режим and after the lesson, not on the day that lesson ends", () => {
+    expect(planOpenAtClose({ isDemo: false, planLessonCompleted: false, planLessonEndsThisDay: false })).toBe(false);
+    expect(planOpenAtClose({ isDemo: false, planLessonCompleted: true, planLessonEndsThisDay: true })).toBe(false);
+    expect(planOpenAtClose({ isDemo: false, planLessonCompleted: true, planLessonEndsThisDay: false })).toBe(true);
+    expect(planOpenAtClose({ isDemo: true, planLessonCompleted: false, planLessonEndsThisDay: false })).toBe(true);
   });
 
   it("clamps meters to 0–100", () => {

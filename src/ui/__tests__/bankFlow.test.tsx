@@ -49,7 +49,7 @@ describe("Банк", () => {
       await user.press(screen.getByRole("button", { name: "Открыть вклад" }));
       expect(screen.getByText("Баланс -20")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Понятно" }));
-      expect(screen.getByLabelText("Баланс 100")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Баланс 80")).toBeOnTheScreen();
       expect(screen.getByLabelText("20 монет · +10% → 22")).toBeOnTheScreen();
       expect(screen.getByText("Вернётся через 3 дня")).toBeOnTheScreen();
 

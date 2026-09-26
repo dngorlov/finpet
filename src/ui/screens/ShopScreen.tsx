@@ -30,7 +30,7 @@ import {
   ItemTags,
   SegmentedTabs,
   ShopRow,
-  skipLine,
+  dailyDropPhrase,
   type RowFlags,
 } from "./shopParts";
 
@@ -67,12 +67,11 @@ export default function ShopScreen({ navigation }: Props) {
   const [savings, setSavings] = useState<SavingsView | null>(null);
   const [postponed, setPostponed] = useState<Set<string>>(new Set());
   const [drawer, setDrawer] = useState<Drawer>({ name: "closed" });
-  const [waiting, setWaiting] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [offerPickGoal, setOfferPickGoal] = useState(false);
 
-  // A new «оплатить Счета» hint turns the list back to Обязательное.
+  // A new «оплатить Счета» hint turns the list back to Необходимое.
   const [seenFocus, setSeenFocus] = useState(focus);
   if (focus !== seenFocus) {
     setSeenFocus(focus);
@@ -100,7 +99,6 @@ export default function ShopScreen({ navigation }: Props) {
   );
 
   const closeDrawer = () => {
-    setWaiting(false);
     setDrawer({ name: "closed" });
   };
 
@@ -111,7 +109,6 @@ export default function ShopScreen({ navigation }: Props) {
   };
 
   const openDrawer = (name: "buy" | "postpone", item: CatalogItemContent) => {
-    setWaiting(false);
     setDrawer(name === "buy" ? { name: "buy", item } : { name: "postpone", item });
   };
 
@@ -212,27 +209,22 @@ export default function ShopScreen({ navigation }: Props) {
     );
 
     if (drawer.name === "postpone") {
-      const skip = flags.due && !flags.bought ? skipLine(item) : null;
+      const drop = dailyDropPhrase(item);
       const planned = confirmedLeftover(day, item.kind) != null;
       return (
         <>
           {head}
           <CoinText text={shopStrings.postponeTitle(item.name)} style={styles.section} />
-          {skip ? (
+          <ItemEffects item={item} announce={false} />
+          {drop ? (
             <>
-              <ItemEffects item={item} showSkip announce={false} />
-              <CoinText
-                text={shopStrings.postponeDueExplain(item.name, strings[skip.meter], skip.delta, skip.shared)}
-                style={styles.warn}
-              />
+              <CoinText text={shopStrings.postponeDaily(drop)} style={styles.warn} />
               <CoinText text={shopStrings.postponeDueLater} style={styles.body} />
             </>
           ) : (
-            <>
-              <CoinText text={planned ? shopStrings.postponeKeepPlan : shopStrings.postponeKeep} style={styles.body} />
-              <CoinText text={shopStrings.postponeNoEffect} style={styles.body} />
-            </>
+            <CoinText text={shopStrings.postponeNoEffect} style={styles.body} />
           )}
+          <CoinText text={planned ? shopStrings.postponeKeepPlan : shopStrings.postponeKeep} style={styles.body} />
         </>
       );
     }
@@ -253,7 +245,7 @@ export default function ShopScreen({ navigation }: Props) {
       <>
         {head}
         <CoinText text={item.description} style={styles.body} />
-        <ItemEffects item={item} showSkip={flags.due && !flags.bought} announce />
+        <ItemEffects item={item} announce />
         {canPay ? (
           <CoinText text={strings.shopAfterBuy(balance - item.price)} style={styles.body} />
         ) : (
@@ -261,7 +253,6 @@ export default function ShopScreen({ navigation }: Props) {
         )}
         {item.once ? <CoinText text={strings.shopOnceLabel} style={styles.body} /> : null}
         {!canPay && flags.goal ? <CoinText text={strings.shopBlockedAlreadyGoal} style={styles.body} /> : null}
-        {waiting && !canPay ? <CoinText text={strings.shopWaitExplain} style={styles.body} /> : null}
         {canPay && !flags.goal ? (
           <View style={styles.confirm}>
             <CoinText coin text={strings.shopConfirmBuy(item.name, item.price)} style={styles.section} />
@@ -320,7 +311,6 @@ export default function ShopScreen({ navigation }: Props) {
         ) : (
           <PrimaryButton label={strings.gotIt} onPress={closeDrawer} />
         )}
-        <TextButton label={strings.shopWaitAllowance} onPress={() => setWaiting(true)} />
         <TextButton label={strings.shopDoTask} onPress={openMap} />
         {canPayPot ? <TextButton label={strings.gotIt} onPress={closeDrawer} /> : null}
       </>
@@ -355,6 +345,7 @@ export default function ShopScreen({ navigation }: Props) {
         <BackButton />
         <ScreenTitle style={styles.title}>{strings.navShop}</ScreenTitle>
         <SegmentedTabs options={TABS} value={tab} onChange={setTab} />
+        <CoinText text={shopStrings.dailyRule} style={styles.body} />
         {tabLeftover != null ? (
           <CoinText
             coin

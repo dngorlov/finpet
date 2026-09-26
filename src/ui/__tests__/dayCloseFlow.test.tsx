@@ -28,8 +28,6 @@ describe("Итоги дня", () => {
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
       expect(screen.getByText("День 2")).toBeOnTheScreen();
-      expect(screen.getByLabelText("Пособие +20 монет")).toBeOnTheScreen();
-      await user.press(screen.getByRole("button", { name: "Понятно" }));
       expect(screen.getByRole("button", { name: "Магазин" })).toBeEnabled();
       expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
 
@@ -37,7 +35,8 @@ describe("Итоги дня", () => {
       expect(screen.getByText("план 21 · потрачено 0")).toBeOnTheScreen();
       expect(screen.getAllByText("план 1 · потрачено 0")).toHaveLength(2);
       expect(screen.getByText("Каждый день: Сытость -15")).toBeOnTheScreen();
-      expect(screen.getByText("Каждый день: Настроение -15")).toBeOnTheScreen();
+      expect(screen.getByText("Каждый день: Счастье -15")).toBeOnTheScreen();
+      expect(screen.queryByText(/плана на день не было/)).not.toBeOnTheScreen();
       expect(screen.queryByText(/доверяет/)).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Назад" }));
 
@@ -55,7 +54,7 @@ describe("Итоги дня", () => {
       expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
 
       await openMoney(user, "Журнал");
-      expect(screen.getAllByLabelText("Пособие +20")).toHaveLength(2);
+      expect(screen.queryByLabelText("Пособие +20")).not.toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Дом" }));
       expect(screen.getByText("День 2")).toBeOnTheScreen();
     },
@@ -75,16 +74,32 @@ describe("Итоги дня", () => {
     ports.game.closeDay(profileId, content.catalog, content.bills);
     const { user } = await renderApp(ports);
     await user.press(screen.getByRole("button", { name: "Следующий день" }));
-    await user.press(screen.getByRole("button", { name: "Понятно" }));
     await user.press(screen.getByRole("button", { name: "Итоги" }));
 
     expect(screen.getByText("план 45 · потрачено 45")).toBeOnTheScreen();
     expect(screen.getByText("план 0 · потрачено 0")).toBeOnTheScreen();
     expect(screen.getByText("план 15 · потрачено 15")).toBeOnTheScreen();
     expect(screen.getByText("Каждый день: Сытость -15, покупка отменила")).toBeOnTheScreen();
-    expect(screen.getByText("Каждый день: Настроение -15, покупка отменила")).toBeOnTheScreen();
-    expect(screen.getByText("Этап Новичок")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день: Счастье -15, покупка отменила")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Этап 1 из 3, Новичок. Цель: Скейтборд, 15 из 90")).toBeOnTheScreen();
+    expect(screen.getByText("Новичок")).toBeOnTheScreen();
     expect(screen.queryByText(/Про!/)).not.toBeOnTheScreen();
+  });
+
+  it("explains the Счастье drop on Итоги дня when an open План was never confirmed", async () => {
+    const ports = createFakePorts();
+    const profileId = seedReturningChild(ports, { unlockMoney: true });
+    ports.game.closeDay(profileId, content.catalog, content.bills);
+    const { user } = await renderApp(ports);
+
+    expect(screen.getByText("Итоги дня")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Счастье -25")).toBeOnTheScreen();
+    expect(screen.getByText("Счастье -10: плана на день не было.")).toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Следующий день" }));
+    await user.press(screen.getByRole("button", { name: "Итоги" }));
+    expect(screen.getByText("Счастье -10: плана на день не было.")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день: Счастье -15")).toBeOnTheScreen();
   });
 
   it("uses Следующий день on a demo profile so the next Игровой день can open", async () => {
@@ -98,7 +113,7 @@ describe("Итоги дня", () => {
     ports.game.closeDay(profileId, content.catalog, content.bills);
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
-    expect(screen.getByLabelText("Пособие +20 монет")).toBeOnTheScreen();
+    expect(screen.queryByLabelText("Пособие +20 монет")).not.toBeOnTheScreen();
     expect(screen.queryByText("Новый день откроется завтра")).not.toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Закончить день" })).not.toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Магазин" })).toBeEnabled();

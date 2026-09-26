@@ -1,16 +1,17 @@
 import { and, desc, eq, isNotNull, isNull, like } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import type { Clock } from "../../core/clock";
-import { ECONOMY, METERS } from "../../core/config";
+import { ECONOMY, FEATURES, METERS } from "../../core/config";
 import { dayId as makeDayId } from "../../core/days";
 import {
   applyMeterDelta,
   billsForDay,
   checkPurchase,
+  dailyDropCovered,
   dayCloseMeterDeltas,
   itemMeterEffects,
   planKept,
-  unpaidBillFlags,
+  planOpenAtClose,
   validatePlan,
   type CatalogItem,
   type DayBills,
@@ -51,7 +52,7 @@ export type PurchaseResult =
   | { status: "ok"; stageExplanation?: string | null }
   | { status: "blocked"; missing: number };
 export type OpenDayResult =
-  | { status: "opened"; dayId: string; n: number; allowanceCredited: boolean }
+  | { status: "opened"; dayId: string; n: number }
   | { status: "blocked" };
 export type ConfirmPlanResult = { ok: true } | { ok: false; remainder: number };
 export type WithdrawResult = { ok: true; potAfter: number } | { ok: false; potAfter: number };
@@ -63,7 +64,7 @@ export interface DaySummaryView {
   facts: { mandatoryCovered: boolean; withinPlan: boolean; deposited: boolean };
   plan: PlanBuckets;
   actual: PlanBuckets;
-  meterDeltas: { care: number; mood: number; missedNeed: number; overspend: number };
+  meterDeltas: { care: number; mood: number; dailyMood: number; overspend: number; noPlan: number };
   stage: Stage;
   previousStage: Stage;
   stageExplanation: string | null;
@@ -449,8 +450,9 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       meterDeltas: {
         care: sum("care"),
         mood: sum("mood"),
-        missedNeed: sum("mood", "day_close_need"),
+        dailyMood: sum("mood", "day_close_need"),
         overspend: sum("mood", "day_close_overspend"),
+        noPlan: sum("mood", "day_close_no_plan"),
       },
       stage,
       previousStage: stage,
@@ -500,11 +502,23 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       .run();
   }
 
+  function planLessonCompleted(conn: GameDb, profileId: string): boolean {
+    const row = conn
+      .select()
+      .from(tables.taskProgress)
+      .where(
+        and(eq(tables.taskProgress.profileId, profileId), eq(tables.taskProgress.taskKey, FEATURES.planTaskId)),
+      )
+      .get();
+    return row?.status === "completed";
+  }
+
   function closeOpenDay(
     tx: GameDb,
     profileId: string,
     catalog: readonly CatalogItem[],
     bills: readonly DayBills[],
+    options?: { planLessonEndsThisDay?: boolean },
   ): DaySummaryView {
     const day = openDayRow(tx, profileId);
     if (!day) throw new Error("Нет открытого игрового дня");
@@ -533,16 +547,27 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     const optionalSpend = bought
       .filter((row) => row.kind === "optional" && row.paidFrom !== "savings")
       .reduce((sum, row) => sum + row.price, 0);
-    const unpaid = unpaidBillFlags(mandatoryIds, boughtIds, catalog);
+    const covered = dailyDropCovered(
+      bought.map((row) => ({ itemId: row.itemId, paidFrom: row.paidFrom })),
+      catalog,
+    );
     const deltas = dayCloseMeterDeltas({
-      missedFood: unpaid.missedFood,
-      missedOtherBill: unpaid.missedOtherBill,
+      careCovered: covered.care,
+      moodCovered: covered.mood,
       optionalSpend,
       optionalPlan: confirmed ? confirmed.optional : null,
+      planMissing:
+        confirmed === null &&
+        planOpenAtClose({
+          isDemo: profile(tx, profileId).isDemo === 1,
+          planLessonCompleted: planLessonCompleted(tx, profileId),
+          planLessonEndsThisDay: options?.planLessonEndsThisDay === true,
+        }),
     });
     if (deltas.care) applyMeter(tx, profileId, day.id, "care", deltas.care, "day_close_food");
-    if (deltas.missedNeed) applyMeter(tx, profileId, day.id, "mood", deltas.missedNeed, "day_close_need");
+    if (deltas.dailyMood) applyMeter(tx, profileId, day.id, "mood", deltas.dailyMood, "day_close_need");
     if (deltas.overspend) applyMeter(tx, profileId, day.id, "mood", deltas.overspend, "day_close_overspend");
+    if (deltas.noPlan) applyMeter(tx, profileId, day.id, "mood", deltas.noPlan, "day_close_no_plan");
     tx.insert(tables.dayScores)
       .values({
         id: newId("score"),
@@ -634,7 +659,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       return db.transaction((tx) => {
         const open = openDayRow(tx, profileId);
         if (open) {
-          return { status: "opened" as const, dayId: open.id, n: open.n, allowanceCredited: false };
+          return { status: "opened" as const, dayId: open.id, n: open.n };
         }
         const last = tx
           .select()
@@ -654,8 +679,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
             closedAt: null,
           })
           .run();
-        credit(tx, profileId, dayId, ECONOMY.allowance, "allowance", "allowance");
-        return { status: "opened" as const, dayId, n, allowanceCredited: true };
+        return { status: "opened" as const, dayId, n };
       });
     },
 
@@ -821,7 +845,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         const catalogItem = typeof item === "string" ? null : item;
         const key = typeof item === "string" ? item : item.id;
         if (catalogItem?.kind === "mandatory") {
-          throw new Error("Обязательное не может быть Целью");
+          throw new Error("Необходимое не может быть Целью");
         }
         if (catalogItem?.stage && catalogItem.stage !== stageFromCode(pet(tx, profileId).stage)) {
           throw new Error("Цель другого Этапа");
@@ -1095,7 +1119,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
 
     /**
      * `bills` is the Счета cycle from content: only the items due on this
-     * Игровой день count as «обязательное закрыто». An empty cycle falls back
+     * Игровой день count as «необходимое закрыто». An empty cycle falls back
      * to every mandatory catalog item.
      */
     closeDay(
@@ -1194,7 +1218,9 @@ export function createGameRepository(db: GameDb, clock: Clock) {
             .run();
         }
         if (lesson && firstCompletion && endsGameDay(lesson.task)) {
-          closeOpenDay(tx, profileId, lesson.catalog, lesson.bills ?? []);
+          closeOpenDay(tx, profileId, lesson.catalog, lesson.bills ?? [], {
+            planLessonEndsThisDay: taskId === FEATURES.planTaskId,
+          });
         }
         return reward;
       });

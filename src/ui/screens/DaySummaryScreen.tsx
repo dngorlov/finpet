@@ -3,34 +3,34 @@ import { BackHandler, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
-import type { DaySummaryView } from "../../data/repositories/gameRepository";
 import { BackButton } from "../components/BackButton";
-import { CoinText } from "../components/CoinText";
+import { CHART_COLORS } from "../components/DonutChart";
 import { ScreenTitle } from "../components/ScreenTitle";
-import { Card } from "../components/Card";
 import { PixelIcon } from "../components/Pictogram";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { StatusStrip } from "../components/StatusStrip";
 import type { RootStackParamList } from "../navigation/types";
-import { PetView } from "../pet/PetView";
 import { usePlayChrome } from "../navigation/playChrome";
 import { useSession } from "../session/SessionProvider";
-import { dayCloseLines, strings } from "../strings";
-import { colors, font, spacing, type } from "../theme";
+import { strings } from "../strings";
+import { moneyStrings } from "../stringsMoney";
+import { colors, font, radius, spacing, type } from "../theme";
+import { Amount, moneyColors, SectionTitle } from "./moneyParts";
+import { OpenedToolCard, openedToolOnDay, type OpenedTool } from "./openedTool";
+import { FactNote, MeterRow, PlanFactCard } from "./planFact";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DaySummary">;
 
-function meterReason(summary: DaySummaryView): string[] {
-  return dayCloseLines(summary.meterDeltas, true);
-}
-
-export default function DaySummaryScreen({ navigation }: Props) {
+export default function DaySummaryScreen({ navigation, route }: Props) {
   const { game, meta } = useSession();
   const { setTab } = usePlayChrome();
   const profileId = meta.get(META_KEYS.activeProfileId);
-  const summary = profileId ? game.lastClosedDay(profileId) : null;
   const profile = profileId ? game.getProfile(profileId) : null;
+  const summary = profileId ? game.lastClosedDay(profileId) : null;
+  const openedFromDay =
+    profileId && summary ? openedToolOnDay(game.listJournal(profileId), summary.n) : null;
+  const openedTool: OpenedTool | null = profile?.isDemo ? null : (route.params?.openedTool ?? openedFromDay);
 
   const beginNextDay = useCallback(() => {
     setTab("home");
@@ -51,7 +51,7 @@ export default function DaySummaryScreen({ navigation }: Props) {
     }, [beginNextDay]),
   );
 
-  if (!summary || !profile) {
+  if (!summary) {
     return (
       <Screen header={<StatusStrip />}>
         <BackButton />
@@ -60,46 +60,48 @@ export default function DaySummaryScreen({ navigation }: Props) {
     );
   }
 
-  const reasons = meterReason(summary);
+  const spent = summary.actual.mandatory + summary.actual.optional + summary.actual.savings;
+  const planned = summary.plan.mandatory + summary.plan.optional + summary.plan.savings;
 
   return (
     <Screen header={<StatusStrip />} footer={<PrimaryButton label={strings.nextDay} onPress={beginNextDay} />}>
       <BackButton onPress={beginNextDay} />
+      {openedTool ? <OpenedToolCard tool={openedTool} /> : null}
       <ScreenTitle style={styles.title}>{strings.daySummaryTitle}</ScreenTitle>
-      <View accessible role="text" aria-label={strings.dayAdvance(summary.n, summary.n + 1)} style={styles.advance}>
-        <View aria-hidden style={[styles.dayPill, styles.dayDone]}>
-          <Text style={[styles.dayLabel, styles.dayDoneLabel]}>{strings.journalDay(summary.n)}</Text>
+      <View style={styles.strip}>
+        <View accessible aria-label={strings.dayAdvance(summary.n, summary.n + 1)} style={styles.advance}>
+          <Text aria-hidden style={[styles.dayLabel, styles.dayDoneLabel]}>
+            {strings.journalDay(summary.n)}
+          </Text>
+          <PixelIcon name="arrow-right" size={18} color={moneyColors.heroSubtle} />
+          <View aria-hidden style={styles.dayNext}>
+            <Text style={[styles.dayLabel, styles.dayNextLabel]}>{strings.journalDay(summary.n + 1)}</Text>
+          </View>
         </View>
-        <PixelIcon name="arrow-right" color={colors.accentText} />
-        <View aria-hidden style={[styles.dayPill, styles.dayNext]}>
-          <Text style={[styles.dayLabel, styles.dayNextLabel]}>{strings.journalDay(summary.n + 1)}</Text>
+        <View style={styles.stats}>
+          <View accessible aria-label={moneyStrings.statA11y(strings.daySummarySpent, spent)} style={styles.stat}>
+            <Text aria-hidden style={styles.statLabel}>
+              {strings.daySummarySpent}
+            </Text>
+            <Amount value={spent} size={14} color={moneyColors.heroText} />
+          </View>
+          <View accessible aria-label={moneyStrings.statA11y(strings.daySummaryPlanned, planned)} style={styles.stat}>
+            <Text aria-hidden style={styles.statLabel}>
+              {strings.daySummaryPlanned}
+            </Text>
+            <Amount value={planned} size={14} color={moneyColors.heroText} />
+          </View>
         </View>
       </View>
-      <PetView
-        species={profile.species}
-        color={profile.color}
-        accessory={profile.accessory}
-        petName={profile.petName}
-        care={profile.care}
-        mood={profile.mood}
-        pose={summary.meterDeltas.care < 0 || summary.meterDeltas.mood < 0 ? "sad" : undefined}
-      />
-      <Card>
-        <Text style={styles.section}>{strings.bucketMandatory}</Text>
-        <CoinText coin text={strings.planVsActual(summary.plan.mandatory, summary.actual.mandatory)} style={styles.body} />
-        <Text style={styles.section}>{strings.bucketOptional}</Text>
-        <CoinText coin text={strings.planVsActual(summary.plan.optional, summary.actual.optional)} style={styles.body} />
-        <Text style={styles.section}>{strings.bucketSavings}</Text>
-        <CoinText coin text={strings.planVsActual(summary.plan.savings, summary.actual.savings)} style={styles.body} />
-      </Card>
-      <Card>
-        {reasons.map((line) => (
-          <Text key={line} style={styles.body}>
-            {line}
-          </Text>
-        ))}
-      </Card>
-      {summary.facts.mandatoryCovered ? null : <Text style={styles.body}>{strings.nextDayPlanNeeds}</Text>}
+      <SectionTitle>{strings.daySummaryPlan}</SectionTitle>
+      <PlanFactCard plan={summary.plan} actual={summary.actual} />
+      <MeterRow care={summary.meterDeltas.care} mood={summary.meterDeltas.mood} />
+      {summary.meterDeltas.noPlan < 0 ? (
+        <FactNote color={CHART_COLORS.mandatory} sprite="mood" text={strings.meterReasonNoPlan(summary.meterDeltas.noPlan)} />
+      ) : null}
+      {summary.facts.mandatoryCovered ? null : (
+        <FactNote color={CHART_COLORS.mandatory} icon="clipboard" text={strings.nextDayPlanNeeds} />
+      )}
     </Screen>
   );
 }
@@ -110,6 +112,13 @@ const styles = StyleSheet.create({
     fontSize: type.title,
     fontWeight: "700",
   },
+  strip: {
+    backgroundColor: moneyColors.heroFace,
+    borderRadius: radius.card,
+    gap: spacing.m,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.l,
+  },
   advance: {
     alignItems: "center",
     flexDirection: "row",
@@ -117,38 +126,37 @@ const styles = StyleSheet.create({
     gap: spacing.s,
     justifyContent: "center",
   },
-  dayPill: {
-    borderRadius: 12,
-    justifyContent: "center",
-    minHeight: 44,
-    paddingHorizontal: spacing.m,
-  },
-  dayDone: {
-    backgroundColor: colors.track,
-  },
   dayNext: {
-    backgroundColor: colors.raisedEdge,
+    backgroundColor: colors.highlight,
+    borderRadius: 10,
+    justifyContent: "center",
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
   },
   dayLabel: {
     fontFamily: font.pixel,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "400",
     includeFontPadding: false,
-    lineHeight: 24,
+    lineHeight: 22,
   },
   dayDoneLabel: {
-    color: colors.subtle,
+    color: moneyColors.heroText,
   },
   dayNextLabel: {
-    color: colors.card,
+    color: colors.raisedEdge,
   },
-  section: {
-    color: colors.text,
-    fontSize: type.section,
+  stats: {
+    flexDirection: "row",
+    gap: spacing.m,
+    justifyContent: "space-between",
+  },
+  stat: {
+    gap: 4,
+  },
+  statLabel: {
+    color: moneyColors.heroSubtle,
+    fontSize: 13,
     fontWeight: "700",
-  },
-  body: {
-    color: colors.text,
-    fontSize: type.body,
   },
 });

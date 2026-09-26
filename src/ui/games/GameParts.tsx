@@ -57,22 +57,39 @@ export function ProgressBar({ value, max, color = colors.fill }: { value: number
 }
 
 /** Picture tiles above a question: product + price tag, cash desk, wallet. */
-export function SceneTiles({ tiles }: { tiles: readonly SceneTile[] }) {
+export function SceneTiles({
+  tiles,
+  selected,
+  onToggle,
+  bounce,
+}: {
+  tiles: readonly SceneTile[];
+  /** Labels the child has included. Only tiles with `pick` toggle. */
+  selected?: ReadonlySet<string>;
+  onToggle?: (label: string) => void;
+  /** The card that did not fit the purse hops. */
+  bounce?: string;
+}) {
   return (
     <View style={styles.tiles}>
       {tiles.map((tile, index) => {
         const spoken = [tile.label, tile.was ? `было ${tile.was}` : null, tile.value, tile.sticker]
           .filter(Boolean)
           .join(", ");
-        return (
+        const interactive = Boolean(tile.pick && onToggle);
+        const on = selected?.has(tile.label) ?? false;
+        const body = (
           <View
-            key={`${tile.label}-${index}`}
-            accessible
-            aria-label={spoken}
+            key={interactive ? undefined : `${tile.label}-${index}`}
+            accessible={interactive ? undefined : true}
+            aria-label={interactive ? undefined : spoken}
             style={[
               styles.tile,
               tile.tone === "warn" ? styles.tileWarn : tile.tone === "good" ? styles.tileGood : null,
               tiles.length === 1 ? styles.tileWide : null,
+              interactive ? styles.tilePick : null,
+              on ? styles.tileOn : null,
+              bounce === tile.label ? styles.tileHop : null,
             ]}
           >
             {tile.sticker ? (
@@ -93,6 +110,19 @@ export function SceneTiles({ tiles }: { tiles: readonly SceneTile[] }) {
               {tile.value ? <Text style={styles.value}>{tile.value}</Text> : null}
             </View>
           </View>
+        );
+        if (!interactive) return body;
+        return (
+          <Pressable
+            key={`${tile.label}-${index}`}
+            role="button"
+            aria-label={spoken}
+            aria-selected={on}
+            onPress={() => onToggle?.(tile.label)}
+            style={styles.pickHit}
+          >
+            {body}
+          </Pressable>
         );
       })}
     </View>
@@ -210,7 +240,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderColor: colors.track,
     borderRadius: 16,
-    borderWidth: 2,
+    borderWidth: 3,
     gap: 2,
     minWidth: 96,
     paddingHorizontal: spacing.s,
@@ -227,6 +257,20 @@ const styles = StyleSheet.create({
   tileGood: {
     backgroundColor: VERDICT_TINT.good.fill,
     borderColor: VERDICT_TINT.good.edge,
+  },
+  tilePick: {
+    borderColor: colors.accent,
+    minHeight: minTarget,
+  },
+  tileOn: {
+    backgroundColor: colors.highlight,
+    borderColor: colors.raisedEdge,
+  },
+  tileHop: {
+    transform: [{ translateY: -6 }, { rotate: "-6deg" }],
+  },
+  pickHit: {
+    minHeight: minTarget,
   },
   sticker: {
     backgroundColor: "#BA1A1A",

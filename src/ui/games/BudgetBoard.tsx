@@ -6,7 +6,9 @@ import {
   planAfterEvent,
   replanPaidBy,
   splitSum,
+  stealFromJar,
 } from "../../core/budgetGames";
+import { jarIsWorried, otherJars, type ShopPose } from "../../core/shopPlay";
 import type { BudgetBucket, BudgetSplit } from "../../core/tasks";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { CHART_COLORS } from "../components/DonutChart";
@@ -81,12 +83,93 @@ function StepButton({ label, glyph, onPress, disabled }: { label: string; glyph:
       aria-disabled={Boolean(disabled)}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.step, disabled ? styles.stepOff : null, pressed ? styles.stepPressed : null]}
+      style={({ pressed }) => [styles.step, disabled ? styles.stepOff : null, pressed && !disabled ? styles.stepPressed : null]}
     >
-      <Text aria-hidden style={styles.stepGlyph}>
-        {glyph}
-      </Text>
+      <View style={[styles.stepFace, disabled ? styles.stepFaceOff : null]}>
+        <Text aria-hidden style={styles.stepGlyph}>
+          {glyph}
+        </Text>
+      </View>
     </Pressable>
+  );
+}
+
+function Jar({
+  bucket,
+  value,
+  total,
+  worried,
+  onPour,
+  onSteal,
+  stealAmount,
+}: {
+  bucket: BudgetBucket;
+  value: number;
+  total: number;
+  worried: boolean;
+  onPour?: () => void;
+  onSteal?: () => void;
+  stealAmount?: number;
+}) {
+  const copy = BUCKET_COPY[bucket];
+  const pct = total > 0 ? Math.max(8, Math.min(100, (value / total) * 100)) : 8;
+  const action = onSteal ?? onPour;
+  const actionLabel = onSteal && stealAmount != null ? gameStrings.jarSteal(copy.label, stealAmount) : onPour ? gameStrings.jarPour(copy.label) : undefined;
+  const body = (
+    <View style={[styles.jar, worried ? styles.jarWorried : null]}>
+      <View style={styles.jarGlass}>
+        <View style={[styles.jarFill, { height: `${value > 0 ? pct : 0}%`, backgroundColor: BUCKET_COLOR[bucket] }]} />
+      </View>
+      <Text aria-hidden style={styles.jarIcon}>
+        {copy.icon}
+      </Text>
+      <Text aria-hidden style={styles.jarValue}>
+        {value}
+      </Text>
+    </View>
+  );
+  return (
+    <View style={styles.jarCol}>
+      {action && actionLabel ? (
+        <Pressable role="button" aria-label={actionLabel} onPress={action}>
+          {body}
+        </Pressable>
+      ) : (
+        body
+      )}
+      {worried ? <Text style={styles.worried}>{gameStrings.jarWorried(copy.label)}</Text> : null}
+    </View>
+  );
+}
+
+function JarRow({
+  split,
+  total,
+  onPour,
+  steal,
+  locked,
+}: {
+  split: BudgetSplit;
+  total: number;
+  onPour?: (bucket: BudgetBucket) => void;
+  steal?: { amount: number; onSteal: (bucket: BudgetBucket) => void };
+  locked?: BudgetBucket;
+}) {
+  return (
+    <View style={styles.jars}>
+      {BUDGET_BUCKETS.map((bucket) => (
+        <Jar
+          key={bucket}
+          bucket={bucket}
+          value={split[bucket]}
+          total={total}
+          worried={jarIsWorried(split[bucket], otherJars(split, bucket))}
+          onPour={onPour ? () => onPour(bucket) : undefined}
+          onSteal={steal && bucket !== locked && split[bucket] >= steal.amount ? () => steal.onSteal(bucket) : undefined}
+          stealAmount={steal?.amount}
+        />
+      ))}
+    </View>
   );
 }
 
@@ -101,17 +184,33 @@ function StatusLine({ split, total }: { split: BudgetSplit; total: number }) {
       ) : status.kind === "over" ? (
         <InfoBanner tone="warn" text={gameStrings.allocOver(total)} />
       ) : (
-        <Text style={[gameStyles.body, styles.exact]}>{gameStrings.allocExact}</Text>
+        <>
+          <Text style={[gameStyles.body, styles.exact]}>{gameStrings.allocExact}</Text>
+          <Text style={[gameStyles.body, styles.exact]}>{gameStrings.jarLids}</Text>
+        </>
       )}
     </View>
   );
 }
 
 /** План и факт, step 1: split `total` into the three buckets, then confirm. */
-export function AllocateBoard({ total, onDone }: { total: number; onDone: (plan: BudgetSplit) => void }) {
+export function AllocateBoard({
+  total,
+  onDone,
+  onPose,
+}: {
+  total: number;
+  onDone: (plan: BudgetSplit) => void;
+  onPose?: (pose: ShopPose) => void;
+}) {
   const [split, setSplit] = useState<BudgetSplit>(EMPTY);
   const [ready, setReady] = useState(false);
   const exact = allocationStatus(split, total).kind === "exact";
+  const pour = (bucket: BudgetBucket) => {
+    const next = { ...split, [bucket]: split[bucket] + STEP };
+    setSplit(next);
+    onPose?.(allocationStatus(next, total).kind === "exact" ? "happy" : "idle");
+  };
   if (ready) {
     return (
       <View style={styles.root}>
@@ -124,9 +223,19 @@ export function AllocateBoard({ total, onDone }: { total: number; onDone: (plan:
   return (
     <View style={styles.root}>
       <StatusLine split={split} total={total} />
+      <JarRow split={split} total={total} onPour={pour} />
       <View style={gameStyles.panel}>
         {BUDGET_BUCKETS.map((bucket) => (
-          <BucketRow key={bucket} bucket={bucket} value={split[bucket]} onChange={(v) => setSplit((s) => ({ ...s, [bucket]: v }))} />
+          <BucketRow
+            key={bucket}
+            bucket={bucket}
+            value={split[bucket]}
+            onChange={(v) => {
+              const next = { ...split, [bucket]: v };
+              setSplit(next);
+              onPose?.(allocationStatus(next, total).kind === "exact" ? "happy" : "idle");
+            }}
+          />
         ))}
       </View>
       <PrimaryButton label={gameStrings.confirm} disabled={!exact} onPress={() => setReady(true)} />
@@ -146,6 +255,7 @@ export function ReplanBoard({
   outcomes,
   withPet,
   onDone,
+  onPose,
 }: {
   total: number;
   plan: BudgetSplit;
@@ -153,6 +263,7 @@ export function ReplanBoard({
   outcomes?: Partial<Record<BudgetBucket, string>>;
   withPet: (text: string) => string;
   onDone: () => void;
+  onPose?: (pose: ShopPose) => void;
 }) {
   const bumped = planAfterEvent(plan, event);
   const [split, setSplit] = useState<BudgetSplit>(bumped);
@@ -180,6 +291,21 @@ export function ReplanBoard({
         ))}
       </View>
       {splitSum(split) > total ? <InfoBanner tone="warn" text={gameStrings.replanNeed(splitSum(split), total)} /> : null}
+      <Text style={gameStyles.body}>{gameStrings.replanSteal}</Text>
+      <JarRow
+        split={split}
+        total={Math.max(total, splitSum(split))}
+        locked={event.bucket}
+        steal={{
+          amount: event.delta,
+          onSteal: (bucket) => {
+            const next = stealFromJar(split, bucket, event.delta);
+            if (!next) return;
+            setSplit(next);
+            onPose?.(allocationStatus(next, total).kind === "exact" ? "happy" : "sad");
+          },
+        }}
+      />
       <StatusLine split={split} total={total} />
       <View style={gameStyles.panel}>
         {BUDGET_BUCKETS.map((bucket) => (
@@ -252,22 +378,28 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   step: {
-    alignItems: "center",
-    backgroundColor: colors.raisedFace,
-    borderBottomColor: colors.raisedEdge,
-    borderBottomWidth: 4,
+    backgroundColor: colors.raisedEdge,
     borderRadius: 12,
     height: minTarget,
-    justifyContent: "center",
+    paddingBottom: 4,
     width: minTarget,
   },
   stepOff: {
     backgroundColor: colors.disabledFace,
-    borderBottomColor: colors.disabledFace,
   },
   stepPressed: {
-    borderBottomWidth: 0,
-    marginTop: 4,
+    paddingBottom: 0,
+    paddingTop: 4,
+  },
+  stepFace: {
+    alignItems: "center",
+    backgroundColor: colors.raisedFace,
+    borderRadius: 12,
+    flex: 1,
+    justifyContent: "center",
+  },
+  stepFaceOff: {
+    backgroundColor: colors.disabledFace,
   },
   stepGlyph: {
     color: colors.onRaised,
@@ -286,5 +418,51 @@ const styles = StyleSheet.create({
   oldPlanLabel: {
     color: colors.subtle,
     fontSize: type.body,
+  },
+  jars: {
+    flexDirection: "row",
+    gap: spacing.s,
+  },
+  jarCol: {
+    flex: 1,
+    gap: 4,
+  },
+  jar: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.track,
+    borderRadius: 18,
+    borderWidth: 3,
+    gap: 2,
+    minHeight: 96,
+    padding: spacing.s,
+  },
+  jarWorried: {
+    borderColor: "#BA1A1A",
+  },
+  jarGlass: {
+    backgroundColor: colors.track,
+    borderRadius: 8,
+    height: 48,
+    justifyContent: "flex-end",
+    overflow: "hidden",
+    width: "100%",
+  },
+  jarFill: {
+    width: "100%",
+  },
+  jarIcon: {
+    fontSize: 20,
+  },
+  jarValue: {
+    color: colors.text,
+    fontFamily: font.pixel,
+    fontSize: 14,
+  },
+  worried: {
+    color: "#BA1A1A",
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "center",
   },
 });

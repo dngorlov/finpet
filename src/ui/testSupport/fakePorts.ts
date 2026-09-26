@@ -1,12 +1,13 @@
-import { ECONOMY, METERS } from "../../core/config";
+import { ECONOMY, FEATURES, METERS } from "../../core/config";
 import {
   applyMeterDelta,
   billsForDay,
   checkPurchase,
+  dailyDropCovered,
   dayCloseMeterDeltas,
   itemMeterEffects,
   planKept,
-  unpaidBillFlags,
+  planOpenAtClose,
   validatePlan,
   type CatalogItem,
   type PlanBuckets,
@@ -157,6 +158,7 @@ function dayStateOf(row: StoredProfile): DayState {
 export function createFakePorts(): SessionPorts {
   const meta = new Map<string, string>();
   const profiles = new Map<string, StoredProfile>();
+  let planLessonEndsThisDay = false;
 
   const createProfile = (input: CreateProfileInput) => {
     const id = input.id ?? `p_${profiles.size + 1}`;
@@ -244,7 +246,7 @@ export function createFakePorts(): SessionPorts {
       openDay(profileId) {
         const row = requireRow(profiles, profileId);
         if (row.dayOpen) {
-          return { status: "opened" as const, dayId: row.dayId, n: row.dayN, allowanceCredited: false };
+          return { status: "opened" as const, dayId: row.dayId, n: row.dayN };
         }
         if (row.lastClosed) {
           row.dayN += 1;
@@ -254,13 +256,7 @@ export function createFakePorts(): SessionPorts {
         const dayId = `${profileId}#${row.dayN}`;
         row.dayOpen = true;
         row.dayId = dayId;
-        row.balance += ECONOMY.allowance;
-        appendJournal(row, {
-          amount: ECONOMY.allowance,
-          kind: "allowance",
-          labelKey: "allowance",
-        });
-        return { status: "opened" as const, dayId, n: row.dayN, allowanceCredited: true };
+        return { status: "opened" as const, dayId, n: row.dayN };
       },
       savingsState(profileId) {
         const row = requireRow(profiles, profileId);
@@ -413,7 +409,7 @@ export function createFakePorts(): SessionPorts {
         const row = requireRow(profiles, profileId);
         const catalogItem = typeof item === "string" ? null : item;
         const key = typeof item === "string" ? item : item.id;
-        if (catalogItem?.kind === "mandatory") throw new Error("Обязательное не может быть Целью");
+        if (catalogItem?.kind === "mandatory") throw new Error("Необходимое не может быть Целью");
         if (catalogItem?.stage && catalogItem.stage !== row.stage) throw new Error("Цель другого Этапа");
         if (catalogItem?.once && ownsItem(row, catalogItem.id)) throw new Error("Этот товар уже куплен");
         const existing = row.goals.find((goal) => goal.key === key);
@@ -551,11 +547,14 @@ export function createFakePorts(): SessionPorts {
           row.tasks.push({ taskKey: taskId, status: "completed", rewardPaid: bestReward > 0, bestReward });
         }
         if (lesson && firstCompletion && endsGameDay(lesson.task)) {
+          planLessonEndsThisDay = taskId === FEATURES.planTaskId;
           this.closeDay(profileId, lesson.catalog, lesson.bills ?? []);
         }
         return reward;
       },
       closeDay(profileId, catalog, bills = []) {
+        const lessonEndsThisDay = planLessonEndsThisDay;
+        planLessonEndsThisDay = false;
         const row = requireRow(profiles, profileId);
         if (!row.dayOpen) throw new Error("Нет открытого игрового дня");
         const bought = row.purchases.filter((item) => item.dayId === row.dayId);
@@ -572,12 +571,24 @@ export function createFakePorts(): SessionPorts {
         const optionalSpend = bought
           .filter((item) => item.kind === "optional" && item.paidFrom !== "savings")
           .reduce((sum, item) => sum + item.price, 0);
-        const unpaid = unpaidBillFlags(mandatoryIds, boughtIds, catalog);
+        const covered = dailyDropCovered(
+          bought.map((item) => ({ itemId: item.itemId, paidFrom: item.paidFrom })),
+          catalog,
+        );
         const meterDeltas = dayCloseMeterDeltas({
-          missedFood: unpaid.missedFood,
-          missedOtherBill: unpaid.missedOtherBill,
+          careCovered: covered.care,
+          moodCovered: covered.mood,
           optionalSpend,
           optionalPlan: confirmed ? confirmed.optional : null,
+          planMissing:
+            confirmed === null &&
+            planOpenAtClose({
+              isDemo: row.isDemo,
+              planLessonCompleted: row.tasks.some(
+                (task) => task.taskKey === FEATURES.planTaskId && task.status === "completed",
+              ),
+              planLessonEndsThisDay: lessonEndsThisDay,
+            }),
         });
         if (meterDeltas.care) row.care = applyMeterDelta(row.care, meterDeltas.care);
         if (meterDeltas.mood) row.mood = applyMeterDelta(row.mood, meterDeltas.mood);

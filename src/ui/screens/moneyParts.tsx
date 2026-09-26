@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { PixelIcon } from "../components/Pictogram";
 import { PixelSprite } from "../components/PixelSprite";
@@ -13,12 +13,20 @@ export const moneyColors = {
   heroText: "#FFFFFF",
   heroSubtle: colors.highlight,
   heroTrack: "#A66F1C",
-  /** Money in (≥4.5:1 on white). */
+  /** Money in (≥4.5:1 on white, 7.4:1). */
   plus: "#4F5B00",
-  minus: colors.text,
+  /** Money out (≥4.5:1 on white, 7.6:1). */
+  minus: "#9B2C14",
   goal: "#8C4A60",
   free: colors.disabledFace,
 } as const;
+
+/** Green when coins arrived, red when they left, muted at zero. */
+export function amountColor(amount: number): string {
+  if (amount > 0) return moneyColors.plus;
+  if (amount < 0) return moneyColors.minus;
+  return colors.subtle;
+}
 
 /** Amount in the pixel face with the coin sprite. */
 export function Amount({
@@ -46,19 +54,22 @@ export function HeroCard({
   caption,
   value,
   label,
+  signed,
   children,
 }: {
   caption: string;
   value: number;
   /** Spoken amount line. */
   label: string;
+  /** Show a leading + when this is money that just arrived. */
+  signed?: boolean;
   children?: ReactNode;
 }) {
   return (
     <View style={styles.hero}>
       <Text style={styles.heroCaption}>{caption}</Text>
       <View accessible aria-label={label}>
-        <Amount value={value} size={32} color={moneyColors.heroText} />
+        <Amount value={value} signed={signed} size={32} color={moneyColors.heroText} />
       </View>
       {children}
     </View>
@@ -91,13 +102,29 @@ export function ProgressBar({
 }
 
 /** Small stat tile: caption on top, pixel number below. */
-export function StatTile({ label, value, spoken, coin = true }: { label: string; value: number; spoken: string; coin?: boolean }) {
+export function StatTile({
+  label,
+  value,
+  spoken,
+  coin = true,
+  color,
+}: {
+  label: string;
+  value: number;
+  spoken: string;
+  coin?: boolean;
+  color?: string;
+}) {
   return (
     <View accessible aria-label={spoken} style={styles.tile}>
       <Text style={styles.tileLabel} numberOfLines={2}>
         {label}
       </Text>
-      {coin ? <Amount value={value} size={16} /> : <Text style={[styles.pixel, styles.tileNumber]}>{value}</Text>}
+      {coin ? (
+        <Amount value={value} size={16} color={color} />
+      ) : (
+        <Text style={[styles.pixel, styles.tileNumber, color ? { color } : null]}>{value}</Text>
+      )}
     </View>
   );
 }
@@ -182,7 +209,7 @@ export function OpRow({
   label: string;
   last?: boolean;
 }) {
-  const color = amount > 0 ? moneyColors.plus : amount < 0 ? moneyColors.minus : colors.subtle;
+  const color = amountColor(amount);
   return (
     <View accessible aria-label={label} style={[styles.op, last ? null : styles.opDivider]}>
       <View style={styles.opIcon}>
@@ -223,7 +250,7 @@ export function Legend({ rows }: { rows: readonly LegendRow[] }) {
   );
 }
 
-/** Pill tabs / chips row (periods, Траты / Доходы). */
+/** Pill tabs / chips row (Траты / Доходы, money sections). */
 export function PillRow<T extends string>({
   options,
   value,
@@ -248,21 +275,92 @@ export function PillRow<T extends string>({
             onPress={() => onChange(option.id)}
             style={[
               styles.pill,
-              grow ? styles.pillGrow : null,
+              grow ? styles.pillGrow : styles.pillRing,
               selected ? (grow ? styles.pillSegmentOn : styles.pillOn) : grow ? null : styles.pillOff,
             ]}
           >
-            <Text
-              style={[styles.pillText, selected && !grow ? styles.pillTextOn : null]}
-              numberOfLines={1}
-              adjustsFontSizeToFit={grow}
-              minimumFontScale={0.8}
-            >
-              {option.label}
-            </Text>
+            {grow ? (
+              <View style={[styles.pillSegmentFace, selected ? styles.pillSegmentFaceOn : null]}>
+                <Text style={styles.pillText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                  {option.label}
+                </Text>
+              </View>
+            ) : (
+              <Text
+                style={[styles.pillText, selected ? styles.pillTextOn : null]}
+                numberOfLines={1}
+              >
+                {option.label}
+              </Text>
+            )}
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+/** Compact menu: one chip, the rest of the choices drop open under it. */
+export function Dropdown<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: (current: string) => string;
+  options: readonly { id: T; label: string }[];
+  value: T;
+  onChange: (id: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const current = options.find((option) => option.id === value) ?? options[0];
+  return (
+    <View style={styles.dropdown}>
+      <Pressable
+        role="button"
+        aria-label={label(current.label)}
+        aria-expanded={open}
+        onPress={() => setOpen((was) => !was)}
+        style={styles.dropdownTrigger}
+      >
+        <Text style={styles.dropdownTriggerText} numberOfLines={1}>
+          {current.label}
+        </Text>
+        <View style={open ? styles.dropdownChevronOpen : null}>
+          <PixelIcon name="chevron-down" size={20} color={colors.text} />
+        </View>
+      </Pressable>
+      {open ? (
+        <View style={styles.dropdownList}>
+          {options.map((option, index) => {
+            const selected = option.id === value;
+            return (
+              <Pressable
+                key={option.id}
+                role="button"
+                aria-label={option.label}
+                aria-selected={selected}
+                onPress={() => {
+                  onChange(option.id);
+                  setOpen(false);
+                }}
+                style={[
+                  styles.dropdownOption,
+                  index < options.length - 1 ? styles.dropdownDivider : null,
+                  selected ? styles.dropdownOptionOn : null,
+                ]}
+              >
+                <Text style={styles.dropdownOptionText}>{option.label}</Text>
+                {selected ? (
+                  <PixelIcon name="check" size={20} color={colors.text} />
+                ) : (
+                  <View style={styles.dropdownCheck} />
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -447,23 +545,38 @@ const styles = StyleSheet.create({
     minHeight: minTarget,
     paddingHorizontal: spacing.m,
   },
+  pillRing: {
+    borderWidth: 1,
+  },
   pillGrow: {
+    backgroundColor: colors.track,
     borderRadius: 12,
     flex: 1,
-    paddingHorizontal: 4,
+    paddingBottom: 3,
+    paddingHorizontal: 0,
   },
   pillOff: {
     backgroundColor: colors.card,
     borderColor: colors.track,
-    borderWidth: 1,
   },
   pillOn: {
     backgroundColor: colors.text,
+    borderColor: colors.text,
   },
   pillSegmentOn: {
+    backgroundColor: colors.accent,
+  },
+  pillSegmentFace: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    backgroundColor: colors.track,
+    borderRadius: 12,
+    justifyContent: "center",
+    minHeight: minTarget - 3,
+    paddingHorizontal: 4,
+  },
+  pillSegmentFaceOn: {
     backgroundColor: colors.card,
-    borderBottomColor: colors.accent,
-    borderBottomWidth: 3,
   },
   pillText: {
     color: colors.text,
@@ -472,6 +585,59 @@ const styles = StyleSheet.create({
   },
   pillTextOn: {
     color: "#FFFFFF",
+  },
+  dropdown: {
+    alignSelf: "flex-start",
+    gap: 4,
+  },
+  dropdownTrigger: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.track,
+    borderRadius: 24,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: spacing.s,
+    minHeight: minTarget,
+    paddingHorizontal: spacing.m,
+  },
+  dropdownTriggerText: {
+    color: colors.text,
+    fontSize: type.body,
+    fontWeight: "700",
+  },
+  dropdownChevronOpen: {
+    transform: [{ rotate: "180deg" }],
+  },
+  dropdownList: {
+    backgroundColor: colors.card,
+    borderColor: colors.track,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  dropdownOption: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.m,
+    justifyContent: "space-between",
+    minHeight: minTarget,
+    paddingHorizontal: spacing.m,
+  },
+  dropdownOptionOn: {
+    backgroundColor: colors.highlight,
+  },
+  dropdownDivider: {
+    borderBottomColor: colors.track,
+    borderBottomWidth: 1,
+  },
+  dropdownOptionText: {
+    color: colors.text,
+    fontSize: type.body,
+    fontWeight: "700",
+  },
+  dropdownCheck: {
+    width: 20,
   },
   card: {
     backgroundColor: colors.card,

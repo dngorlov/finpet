@@ -42,13 +42,19 @@ describe("Этап на панели", () => {
     const { user } = await renderApp(ports);
 
     expect(screen.queryByRole("button", { name: "Закрыть" })).not.toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Этап Новичок" }));
+    await user.press(screen.getByRole("button", { name: "Этап 1 из 3, Новичок. Цель: Скейтборд, 0 из 90" }));
     expect(screen.getByRole("button", { name: "Закрыть" })).toBeOnTheScreen();
     expect(screen.getByText("Новичок")).toBeOnTheScreen();
+    expect(screen.queryByText("1 из 3")).not.toBeOnTheScreen();
+    expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
+    expect(screen.getByText("0 / 90")).toBeOnTheScreen();
+    expect(screen.getByText("Пух")).toBeOnTheScreen();
+    expect(screen.getByText("ФинПет")).toBeOnTheScreen();
+    expect(screen.queryByText(/•/)).not.toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Закрыть" }));
     expect(screen.queryByRole("button", { name: "Закрыть" })).not.toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "Этап Новичок" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Этап 1 из 3, Новичок. Цель: Скейтборд, 0 из 90" })).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Дом" })).toBeSelected();
   });
 
@@ -57,7 +63,7 @@ describe("Этап на панели", () => {
     seedReturningChild(ports);
     const { user } = await renderApp(ports);
 
-    await user.press(screen.getByRole("button", { name: "Этап Новичок" }));
+    await user.press(screen.getByRole("button", { name: "Этап 1 из 3, Новичок. Цель: Скейтборд, 0 из 90" }));
     expect(screen.queryByRole("button", { name: "Настройки" })).not.toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Дом" })).toBeOnTheScreen();
 
@@ -72,17 +78,17 @@ describe("Этап на панели", () => {
     seedReturningChild(ports);
     const { user } = await renderApp(ports);
 
-    await user.press(screen.getByRole("button", { name: "Этап Новичок" }));
+    await user.press(screen.getByRole("button", { name: "Этап 1 из 3, Новичок. Цель: Скейтборд, 0 из 90" }));
     await user.press(screen.getByRole("button", { name: "Дом" }));
     expect(screen.queryByRole("button", { name: "Закрыть" })).not.toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Дом" })).toBeSelected();
     expect(screen.getByRole("button", { name: "Магазин" })).toBeOnTheScreen();
 
-    await user.press(screen.getByRole("button", { name: "Этап Новичок" }));
+    await user.press(screen.getByRole("button", { name: "Этап 1 из 3, Новичок. Цель: Скейтборд, 0 из 90" }));
     await user.press(screen.getByRole("button", { name: "Карта" }));
     expect(screen.queryByRole("button", { name: "Закрыть" })).not.toBeOnTheScreen();
     expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "Этап Новичок" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Этап 1 из 3, Новичок. Цель: Скейтборд, 0 из 90" })).toBeOnTheScreen();
   });
 
   it("tucks on Android back and stays on the same tab", async () => {
@@ -106,7 +112,7 @@ describe("Этап на панели", () => {
       const { user } = await renderApp(ports);
 
       await user.press(screen.getByRole("button", { name: "Карта" }));
-      await user.press(screen.getByRole("button", { name: "Этап Новичок" }));
+      await user.press(screen.getByRole("button", { name: "Этап 1 из 3, Новичок. Цель: Скейтборд, 0 из 90" }));
       await act(() => {
         for (let index = handlers.length - 1; index >= 0; index -= 1) {
           if (handlers[index]()) return;
@@ -129,11 +135,11 @@ describe("Этап на панели", () => {
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Итоги" }));
-    expect(screen.queryByRole("button", { name: "Этап Новичок" })).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Этап 1 из 3, Новичок. Цель: Скейтборд, 0 из 90" })).not.toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Закрыть" })).not.toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    expect(screen.getByRole("button", { name: "Этап Новичок" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Этап 1 из 3, Новичок. Цель: Скейтборд, 0 из 90" })).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Закрыть" })).not.toBeOnTheScreen();
   });
 
@@ -143,8 +149,10 @@ describe("Этап на панели", () => {
     buyGoal(ports, goal("skateboard", 90));
     const { user } = await renderApp(ports);
 
-    expect(screen.getByRole("button", { name: "Этап Про" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Этап 2 из 3, Про. Выбери цель" })).toBeOnTheScreen();
     expect(screen.getByText("Про")).toBeOnTheScreen();
+    expect(screen.getByText("Пух")).toBeOnTheScreen();
+    expect(screen.getByText("ФинПет")).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Закрыть" })).not.toBeOnTheScreen();
     expect(screen.queryByText("Теперь ты Про!")).not.toBeOnTheScreen();
 
@@ -152,7 +160,7 @@ describe("Этап на панели", () => {
     await user.press(screen.getByRole("button", { name: "Настройки" }));
     await user.press(screen.getByRole("button", { name: "Назад" }));
 
-    expect(screen.getByRole("button", { name: "Этап Миллионер" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Этап 3 из 3, Миллионер. Выбери цель" })).toBeOnTheScreen();
     expect(screen.getByText("Миллионер")).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Закрыть" })).not.toBeOnTheScreen();
   });

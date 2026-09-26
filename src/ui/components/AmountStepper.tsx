@@ -25,6 +25,12 @@ type AmountStepperProps = {
   disabled?: boolean;
   /** Floor for −, hold-repeat, and the track (default 0). */
   min?: number;
+  /** Spoken amount when it should include the coin count, not only the visible label. */
+  amountLabel?: string;
+  /** Track fill. Defaults to the shared green. */
+  trackColor?: string;
+  /** Tighter label and a thin track. The −/+ targets stay at the minimum size. */
+  dense?: boolean;
 } & ({ showTrack?: false; max?: number } | { showTrack: true; max: number });
 
 export function AmountStepper({
@@ -36,6 +42,9 @@ export function AmountStepper({
   max,
   showTrack,
   min = 0,
+  amountLabel,
+  trackColor,
+  dense,
 }: AmountStepperProps) {
   const plusDisabled = Boolean(disabled) || (max != null && value >= max);
   const minusDisabled = Boolean(disabled) || value <= min;
@@ -165,7 +174,7 @@ export function AmountStepper({
       }}
       style={styles.step}
     >
-      <Text style={styles.stepLabel}>−</Text>
+      <Text style={[styles.stepLabel, dense ? styles.stepLabelDense : null]}>−</Text>
     </Pressable>
   );
 
@@ -185,7 +194,7 @@ export function AmountStepper({
       }}
       style={styles.step}
     >
-      <Text style={styles.stepLabel}>+</Text>
+      <Text style={[styles.stepLabel, dense ? styles.stepLabelDense : null]}>+</Text>
     </Pressable>
   );
 
@@ -193,8 +202,10 @@ export function AmountStepper({
 
   const heading = (
     <>
-      <Pictogram glyph={pictogram} />
-      <Text style={styles.label}>{label}</Text>
+      <Pictogram glyph={pictogram} size={dense ? 20 : 24} />
+      <Text style={[styles.label, dense ? styles.labelDense : null]} aria-label={amountLabel} numberOfLines={dense ? 1 : undefined}>
+        {label}
+      </Text>
     </>
   );
 
@@ -210,8 +221,8 @@ export function AmountStepper({
   }
 
   return (
-    <View style={styles.block}>
-      <View style={styles.row}>
+    <View style={[styles.block, dense ? styles.blockDense : null]}>
+      <View style={[styles.row, dense ? styles.rowDense : null]}>
         {heading}
         {valueText}
       </View>
@@ -226,8 +237,15 @@ export function AmountStepper({
           style={styles.trackHit}
           {...panResponder.panHandlers}
         >
-          <View style={styles.track}>
-            <View style={[styles.fill, { width: fillWidth }]} />
+          <View style={[styles.track, dense ? styles.trackDense : null]}>
+            <View
+              style={[
+                styles.fill,
+                dense ? styles.fillDense : null,
+                { width: fillWidth },
+                trackColor ? { backgroundColor: trackColor } : null,
+              ]}
+            />
           </View>
         </View>
         {plus}
@@ -240,11 +258,17 @@ const styles = StyleSheet.create({
   block: {
     gap: spacing.s,
   },
+  blockDense: {
+    gap: 4,
+  },
   row: {
     alignItems: "center",
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.s,
+  },
+  rowDense: {
+    flexWrap: "nowrap",
   },
   trackRow: {
     alignItems: "center",
@@ -257,6 +281,9 @@ const styles = StyleSheet.create({
     fontSize: type.body,
     fontWeight: "700",
   },
+  labelDense: {
+    flexShrink: 1,
+  },
   step: {
     alignItems: "center",
     justifyContent: "center",
@@ -267,6 +294,9 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: type.title,
     fontWeight: "700",
+  },
+  stepLabelDense: {
+    fontSize: type.section,
   },
   value: {
     color: colors.text,
@@ -285,9 +315,17 @@ const styles = StyleSheet.create({
     height: spacing.l,
     overflow: "hidden",
   },
+  trackDense: {
+    borderRadius: 8,
+    height: 16,
+  },
   fill: {
     backgroundColor: colors.fill,
     borderRadius: radius.card,
     height: spacing.l,
+  },
+  fillDense: {
+    borderRadius: 8,
+    height: 16,
   },
 });

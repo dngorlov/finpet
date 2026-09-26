@@ -30,6 +30,8 @@ export interface SceneTile {
   was?: string;
   sticker?: string;
   tone?: "plain" | "warn" | "good";
+  /** The child can tap this tile to include it in the answer («Что купить в первую очередь?»). */
+  pick?: boolean;
 }
 
 export interface TaskOption {
@@ -38,11 +40,23 @@ export interface TaskOption {
   icon?: string;
   /** Second line on a tile option, e.g. «5 штук». */
   hint?: string;
+  /**
+   * Pick-from-cards: scene labels this answer stands for. The child taps those
+   * cards instead of a written option. Order does not matter.
+   */
+  picks?: string[];
+  /** Pick-from-cards: any other combination. At most one per question. */
+  fallback?: boolean;
   /** План и факт: choosing this spends coins from a bucket. */
   spend?: { bucket: BudgetBucket; amount: number };
   next: NextRef;
   verdict: Verdict;
   explanation: string;
+  /**
+   * Coins this answer keeps inside the mini-game purse («Сэкономлено»).
+   * Not Баланс — the purse is only for this run.
+   */
+  kept?: number;
   effect?: TaskEffect;
   effects?: TaskEffect[];
   spawnTask?: string | null;
@@ -150,6 +164,11 @@ export interface TaskContent {
   parent?: string;
   /** Pin placeholder for a lesson still being written: visible, never playable. */
   comingSoon?: boolean;
+  /**
+   * Mini-game: each visit plays this many choice rounds, drawn from the pool
+   * between the opening card and the closing card. A lesson omits it.
+   */
+  deal?: number;
   nodes: TaskNode[];
 }
 
@@ -172,6 +191,57 @@ export interface TaskStepResult {
  * Generic task runner: a new task is data only (§5.3). Pure — the caller
  * applies effects/spawn/reward policy.
  */
+function shuffled(size: number, count: number): number[] {
+  const indexes = Array.from({ length: size }, (_, index) => index);
+  for (let i = indexes.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const swap = indexes[i]!;
+    indexes[i] = indexes[j]!;
+    indexes[j] = swap;
+  }
+  return indexes.slice(0, count);
+}
+
+/**
+ * A mini-game with `deal` plays that many rounds, in an order chosen for this
+ * visit, then the closing card. Success links are rewired along the deal;
+ * «retry» stays. The coin score uses only the dealt rounds, so 3 of 3 is a
+ * full reward. `order` pins the draw (tests); otherwise the pool is shuffled.
+ * A lesson, or a pool no bigger than `deal`, is returned as-is.
+ */
+export function dealTask(task: TaskContent, order?: readonly number[]): TaskContent {
+  const count = task.deal;
+  if (count == null || count < 1) return task;
+  const choices = task.nodes.filter((node) => (node.kind ?? "choice") === "choice");
+  const opener = task.nodes[0];
+  const closer = [...task.nodes].reverse().find((node) => node.kind === "card");
+  if (!opener || opener.kind !== "card" || !closer || closer.id === opener.id || choices.length <= count) {
+    return task;
+  }
+  const picked =
+    order &&
+    order.length >= count &&
+    new Set(order.slice(0, count)).size === count &&
+    order.slice(0, count).every((index) => index >= 0 && index < choices.length)
+      ? order.slice(0, count)
+      : shuffled(choices.length, count);
+  const dealt = picked.map((index) => choices[index]!);
+  const rewired = dealt.map((node, index) => {
+    const nextId = index + 1 < dealt.length ? dealt[index + 1]!.id : closer.id;
+    return {
+      ...node,
+      options: node.options?.map((option) => ({
+        ...option,
+        next: option.next === "retry" || option.next === "exit" ? option.next : nextId,
+      })),
+    };
+  });
+  return {
+    ...task,
+    nodes: [{ ...opener, next: rewired[0]!.id }, ...rewired, closer],
+  };
+}
+
 export function startTask(task: TaskContent): { nodeId: string; text: string; options: TaskOption[] } {
   const first = task.nodes[0];
   if (!first) throw new Error(`Задание ${task.id} без узлов`);
@@ -210,6 +280,11 @@ export function taskUnlockOrder(tasks: readonly TaskContent[]): TaskContent[] {
 /** Mini-games shown inside `parent`'s sheet, in file order. */
 export function childGames(parent: TaskContent, tasks: readonly TaskContent[]): TaskContent[] {
   return tasks.filter((t) => t.parent === parent.id && !t.correction);
+}
+
+/** Every mini-game, in file order. Each belongs to one Урок and stays off the map. */
+export function miniGames(tasks: readonly TaskContent[]): TaskContent[] {
+  return tasks.filter((t) => t.parent != null && !t.correction);
 }
 
 /** Everything a child can finish: pins that are ready plus their mini-games. */
@@ -295,6 +370,34 @@ export function earnedReward(task: TaskContent, firstVerdicts: readonly Verdict[
 /** Sorting one item is right or wrong — no «с ценой» middle. */
 export function sortVerdict(item: SortItem, chosenBin: number): Verdict {
   return item.bin === chosenBin ? "good" : "bad";
+}
+
+/** A choice the child answers by tapping scene cards, not option buttons. */
+export function isPickChoice(node: Pick<TaskNode, "options">): boolean {
+  return (node.options ?? []).some((option) => Boolean(option.fallback) || (option.picks?.length ?? 0) > 0);
+}
+
+/** Coins printed on a tile (`"10"`). Anything else counts as zero. */
+export function tileCoins(tile: SceneTile): number {
+  return tile.value != null && /^\d+$/.test(tile.value) ? Number(tile.value) : 0;
+}
+
+/** The wallet tile: a non-pick scene card with a coin amount, e.g. «Есть 20». */
+export function pickBudget(tiles: readonly SceneTile[]): number | null {
+  const purse = tiles.find((tile) => !tile.pick && tile.value != null && /^\d+$/.test(tile.value));
+  return purse ? Number(purse.value) : null;
+}
+
+/**
+ * Which option the tapped cards mean. Exact `picks` win (order ignored);
+ * otherwise the `fallback` option. -1 when nothing matches.
+ */
+export function matchPick(options: readonly TaskOption[], selected: readonly string[]): number {
+  const key = (labels: readonly string[]) => [...labels].sort().join("\0");
+  const want = key(selected);
+  const exact = options.findIndex((option) => option.picks != null && key(option.picks) === want);
+  if (exact >= 0) return exact;
+  return options.findIndex((option) => option.fallback);
 }
 
 /**

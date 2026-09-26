@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { roundsToGoal } from "../../core/budgetGames";
+import type { ShopPose } from "../../core/shopPlay";
 import type { SavingGoal, Temptation } from "../../core/tasks";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { strings } from "../strings";
@@ -84,6 +85,7 @@ export function StepsGame({
   temptations = [],
   petName,
   onDone,
+  onPose,
 }: {
   goal: SavingGoal;
   saved: number;
@@ -92,6 +94,7 @@ export function StepsGame({
   temptations?: readonly Temptation[];
   petName: string;
   onDone: () => void;
+  onPose?: (pose: ShopPose) => void;
 }) {
   const [saved, setSaved] = useState(start);
   const [round, setRound] = useState(1);
@@ -110,6 +113,7 @@ export function StepsGame({
     setSaved(next);
     const left = Math.max(0, goal.price - next);
     setMessage(`${gameStrings.putResult(n, left)}${n <= amounts[0]! && left > 0 ? ` ${gameStrings.smallStep}` : ""}`);
+    onPose?.("happy");
     nextRound();
   };
 
@@ -123,11 +127,14 @@ export function StepsGame({
           <PrimaryButton label={strings.next} onPress={onDone} />
         </>
       ) : temptation ? (
-        <View style={gameStyles.panel}>
-          <Text aria-hidden style={styles.temptIcon}>
-            {temptation.icon}
-          </Text>
-          <Text style={gameStyles.section}>{gameStrings.tempt(petName, temptation.name, temptation.price)}</Text>
+        <View style={styles.visitor}>
+          <Text style={styles.visitorKicker}>{gameStrings.visitorHere}</Text>
+          <View style={styles.speech}>
+            <Text aria-hidden style={styles.temptIcon}>
+              {temptation.icon}
+            </Text>
+            <Text style={gameStyles.section}>{gameStrings.tempt(petName, temptation.name, temptation.price)}</Text>
+          </View>
           <PrimaryButton
             label={gameStrings.temptBuy}
             onPress={() => {
@@ -135,6 +142,7 @@ export function StepsGame({
               setAvailable(left);
               setTempted((s) => new Set(s).add(temptation.round));
               setMessage(left > 0 ? gameStrings.temptBought(temptation.name, temptation.price, left) : gameStrings.temptBoughtNothing(temptation.name));
+              onPose?.("sad");
             }}
           />
           <PrimaryButton
@@ -142,6 +150,7 @@ export function StepsGame({
             onPress={() => {
               setTempted((s) => new Set(s).add(temptation.round));
               setMessage(gameStrings.temptKept);
+              onPose?.("happy");
             }}
           />
         </View>
@@ -302,6 +311,21 @@ const styles = StyleSheet.create({
   temptIcon: {
     fontSize: 48,
     textAlign: "center",
+  },
+  visitor: {
+    gap: spacing.s,
+  },
+  visitorKicker: {
+    color: colors.accentText,
+    fontSize: type.body,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  speech: {
+    backgroundColor: colors.highlight,
+    borderRadius: radius.card,
+    gap: spacing.s,
+    padding: spacing.m,
   },
   dreams: {
     flexDirection: "row",

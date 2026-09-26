@@ -68,7 +68,7 @@ describe("fake SessionGame M4 reads", () => {
     const childPorts = createFakePorts();
     const childId = seedReturningChild(childPorts);
     closeScoredDay(childPorts, childId);
-    expect(childPorts.game.openDay(childId)).toMatchObject({ status: "opened", n: 2, allowanceCredited: true });
+    expect(childPorts.game.openDay(childId)).toMatchObject({ status: "opened", n: 2 });
 
     const demoPorts = createFakePorts();
     const demoId = seedReturningChild(demoPorts, { isDemo: true, name: "Демо", petName: "Демо" });
@@ -76,7 +76,6 @@ describe("fake SessionGame M4 reads", () => {
     expect(demoPorts.game.openDay(demoId)).toMatchObject({
       status: "opened",
       n: 2,
-      allowanceCredited: true,
     });
     expect(demoPorts.game.dayState(demoId).open).toBe(true);
   });

@@ -29,6 +29,9 @@ const TABS: { id: Tab; label: string; icon: PixelIconName }[] = [
 /** Word tiles cycle through the warm palette so the grid reads as a game board. */
 const TILE_FILLS = [colors.badgeFill, colors.fill, colors.highlight, colors.accent] as const;
 
+/** 25% ink over the cream page, kept opaque so the tile lip never starts transparent. */
+const TILE_LIP = "#C8C1BC";
+
 const TOPIC_ICON: Record<TaskTopic, string> = {
   budget: strings.taskTopicBudgetIcon,
   savings: strings.taskTopicSavingsIcon,
@@ -43,7 +46,7 @@ function lessonCards(task: TaskContent) {
   return task.nodes.filter((node) => node.kind === "card");
 }
 
-/** Словарик: «Слова» are the kid terms as tiles, «Уроки» are a compact list of open уроки. */
+/** Словарик: «Слова» are the kid terms as tiles, «Уроки» are the unscored cards of open уроки. */
 export default function HandbookScreen() {
   const { game, meta, content } = useSession();
   const [tab, setTab] = useState<Tab>("words");
@@ -115,13 +118,11 @@ export default function HandbookScreen() {
                 role="button"
                 aria-label={term.term}
                 onPress={() => setOpenId(term.id)}
-                style={({ pressed }) => [
-                  styles.tile,
-                  { backgroundColor: TILE_FILLS[index % TILE_FILLS.length] },
-                  pressed ? styles.tilePressed : null,
-                ]}
+                style={({ pressed }) => [styles.tile, pressed ? styles.tilePressed : null]}
               >
-                <Text style={styles.tileLabel}>{term.term}</Text>
+                <View style={[styles.tileFace, { backgroundColor: TILE_FILLS[index % TILE_FILLS.length] }]}>
+                  <Text style={styles.tileLabel}>{term.term}</Text>
+                </View>
               </Pressable>
             ))}
           </View>
@@ -199,6 +200,7 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   segment: {
+    backgroundColor: colors.track,
     borderRadius: 12,
     flex: 1,
     paddingBottom: 4,
@@ -208,6 +210,7 @@ const styles = StyleSheet.create({
   },
   segmentFace: {
     alignItems: "center",
+    backgroundColor: colors.track,
     borderRadius: 12,
     flexDirection: "row",
     gap: spacing.s,
@@ -235,20 +238,24 @@ const styles = StyleSheet.create({
     gap: spacing.s + 4,
   },
   tile: {
-    alignItems: "center",
-    borderBottomColor: "rgba(34, 26, 18, 0.25)",
-    borderBottomWidth: 5,
+    backgroundColor: TILE_LIP,
     borderRadius: 16,
     flexBasis: "46%",
     flexGrow: 1,
-    justifyContent: "center",
-    minHeight: 96,
     minWidth: minTarget,
-    padding: spacing.m,
+    paddingBottom: 5,
   },
   tilePressed: {
-    borderBottomWidth: 0,
-    marginTop: 5,
+    paddingBottom: 0,
+    paddingTop: 5,
+  },
+  tileFace: {
+    alignItems: "center",
+    borderRadius: 16,
+    flexGrow: 1,
+    justifyContent: "center",
+    minHeight: 91,
+    padding: spacing.m,
   },
   tileLabel: {
     color: colors.text,

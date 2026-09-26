@@ -7,7 +7,8 @@ export type RootStackParamList = {
   Results: undefined;
   Handbook: undefined;
   Settings: undefined;
-  DaySummary: undefined;
+  /** Set when the lesson that just ended the day opened a money tool. */
+  DaySummary: { openedTool?: "savings" | "plan" | "bank" } | undefined;
   AdultGate: undefined;
   Demo: undefined;
   TaskRun: { taskId: string };

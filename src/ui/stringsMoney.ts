@@ -62,9 +62,10 @@ export const moneyStrings = {
 
   // План
   planCaption: "Можно распределить",
+  /** Draft heading: the job, not a chart title. */
+  planHow: "Раздели на три кучки",
   planSplit: "Как делим",
   planFree: "Свободно",
-  planChartCenter: "всего",
   planChartA11y: (parts: readonly ShareLine[]) =>
     parts.length === 0 ? "План пока пустой" : `План на сегодня: ${shareList(parts)}`,
   planYesterday: (n: number) => `Вчера: ${n}`,
@@ -78,15 +79,15 @@ export const moneyStrings = {
   periodYesterday: "Вчера",
   periodThree: "3 дня",
   periodAll: "Всё время",
+  periodMenu: (label: string) => `${label}, другие дни`,
   flowSpend: "Траты",
   flowIncome: "Доходы",
-  catMandatory: "Обязательное",
+  catMandatory: "Необходимое",
   catOptional: "Желаемое",
   catGoal: "Цель",
   catSavings: "Копилка",
   catBank: "Банк",
   catOther: "Другое",
-  incAllowance: "Пособие",
   incTasks: "Задания",
   incStart: "Стартовый бюджет",
   incBank: "Банк",

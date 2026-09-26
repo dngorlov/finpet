@@ -20,7 +20,7 @@ const catalogItemSchema = z.object({
   kind: z.enum(["mandatory", "optional"]),
   price: z.number().int().nonnegative(),
   effect: meterEffectSchema,
-  /** Обед also raises Настроение. */
+  /** Обед also raises Счастье. */
   also: meterEffectSchema.optional(),
   description: z.string().min(1),
   once: z.boolean().optional().default(false),
@@ -90,7 +90,7 @@ const termSchema = z.object({
 
 const termsFileSchema = z.object({
   contentVersion: z.literal(CONTENT_VERSION),
-  terms: z.array(termSchema).length(11),
+  terms: z.array(termSchema).length(10),
 });
 
 const INTRO_IDS = ["welcome", "goal", "decisions", "appearance", "name", "budget"] as const;
@@ -139,6 +139,7 @@ const sceneTileSchema = z.object({
   was: z.string().min(1).optional(),
   sticker: z.string().min(1).optional(),
   tone: z.enum(["plain", "warn", "good"]).optional(),
+  pick: z.boolean().optional(),
 });
 
 const savingGoalSchema = z.object({
@@ -152,9 +153,15 @@ const taskOptionSchema = z.object({
   icon: z.string().min(1).optional(),
   hint: z.string().min(1).optional(),
   spend: z.object({ bucket: bucketSchema, amount: z.number().int().nonnegative() }).optional(),
+  /** Scene labels the child taps for this answer («Что купить в первую очередь»). */
+  picks: z.array(z.string().min(1)).min(1).optional(),
+  /** Any other combination of those cards. */
+  fallback: z.boolean().optional(),
   next: z.string().min(1),
   verdict: z.enum(["good", "warn", "bad"]),
   explanation: z.string().min(1),
+  /** In-game purse only («Сэкономлено»), never Баланс. */
+  kept: z.number().int().nonnegative().optional(),
   effect: taskEffectObjectSchema.optional(),
   effects: z.array(taskEffectObjectSchema).optional(),
   spawnTask: z.string().nullable().optional(),
@@ -207,6 +214,36 @@ const taskNodeSchema = z
     if (kind === "choice" && !node.options) {
       ctx.addIssue({ code: "custom", message: `Узел ${node.id}: у вопроса нет вариантов` });
     }
+    const picking = node.options?.some((option) => option.fallback || option.picks) ?? false;
+    if (picking) {
+      const cards = new Set(node.scene?.filter((tile) => tile.pick).map((tile) => tile.label) ?? []);
+      if (cards.size === 0) {
+        ctx.addIssue({ code: "custom", message: `Узел ${node.id}: выбор карточками требует scene с pick` });
+      }
+      const fallbacks = node.options?.filter((option) => option.fallback) ?? [];
+      if (fallbacks.length !== 1) {
+        ctx.addIssue({ code: "custom", message: `Узел ${node.id}: нужен один вариант fallback` });
+      }
+      const seen = new Set<string>();
+      for (const option of node.options ?? []) {
+        if (option.fallback && option.picks) {
+          ctx.addIssue({ code: "custom", message: `Узел ${node.id}: у fallback не бывает picks` });
+        }
+        if (!option.fallback && !option.picks) {
+          ctx.addIssue({ code: "custom", message: `Узел ${node.id}: у «${option.label}» нет карточек` });
+        }
+        const key = [...(option.picks ?? [])].sort().join("\0");
+        if (option.picks && seen.has(key)) {
+          ctx.addIssue({ code: "custom", message: `Узел ${node.id}: набор «${option.label}» повторяется` });
+        }
+        if (option.picks) seen.add(key);
+        for (const label of option.picks ?? []) {
+          if (!cards.has(label)) {
+            ctx.addIssue({ code: "custom", message: `Узел ${node.id}: «${label}» не карточка для выбора` });
+          }
+        }
+      }
+    }
     if (kind !== "choice" && !node.next) {
       ctx.addIssue({ code: "custom", message: `Узел ${node.id}: нет next` });
     }
@@ -254,6 +291,8 @@ const taskSchema = z.object({
   requires: z.string().min(1).optional(),
   parent: z.string().min(1).optional(),
   comingSoon: z.boolean().optional(),
+  /** Each visit deals this many choice rounds from the pool. */
+  deal: z.number().int().positive().optional(),
   nodes: z.array(taskNodeSchema).min(1),
 });
 

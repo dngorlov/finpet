@@ -47,11 +47,11 @@ describe("Мини-игры из обновлённого сценария", () 
     expect(screen.queryByRole("button", { name: "Больше: Желания" })).not.toBeOnTheScreen();
     await press(user, "Меньше: Нужное", 2);
     await press(user, "Подтвердить");
-    expect(screen.getByLabelText(/Ты урезал обязательное/)).toBeOnTheScreen();
+    expect(screen.getByLabelText(/Ты урезал необходимое/)).toBeOnTheScreen();
     await press(user, "Готово");
     await press(user, "Продолжить");
     // No right/wrong in the game → full reward.
-    expect(screen.getByLabelText("+15 монет")).toBeOnTheScreen();
+    expect(screen.getByLabelText("+35 монет")).toBeOnTheScreen();
   }, 20000);
 
   it("Шаг за шагом: contributions fill the bar, a temptation shrinks the round, the goal ends the game", async () => {
@@ -74,7 +74,7 @@ describe("Мини-игры из обновлённого сценария", () 
     expect(screen.getByLabelText("🎉 Цель достигнута! Ты накопил 50 из 50 монет.")).toBeOnTheScreen();
     await press(user, "Дальше");
     await press(user, "Продолжить");
-    expect(screen.getByLabelText("+15 монет")).toBeOnTheScreen();
+    expect(screen.getByLabelText("+35 монет")).toBeOnTheScreen();
   }, 20000);
 
   it("Финансовая мечта: pick a dream, make the first deposit, and try a daily pace", async () => {
@@ -92,7 +92,7 @@ describe("Мини-игры из обновлённого сценария", () 
     expect(screen.getByLabelText(/цель через 4 дня. Успеешь за 5 дней!/)).toBeOnTheScreen();
     await press(user, "Дальше");
     await press(user, "Продолжить");
-    expect(screen.getByLabelText("+15 монет")).toBeOnTheScreen();
+    expect(screen.getByLabelText("+35 монет")).toBeOnTheScreen();
   }, 20000);
 
   it("Правильный платёж: compares the tag with the till, stops a wrong payment, and picks card or cash", async () => {
@@ -118,4 +118,36 @@ describe("Мини-игры из обновлённого сценария", () 
     await press(user, "Проверить");
     expect(screen.getByRole("status", { name: "Верно" })).toBeOnTheScreen();
   }, 20000);
+
+  it("Скидка или ловушка: each visit is three buy-or-leave rounds and a right answer fills the purse", async () => {
+    const ports = createFakePorts();
+    const profileId = seedReturningChild(ports);
+    const day = ports.game.dayState(profileId);
+    ports.game.claimTaskReward(profileId, day.dayId, "payments_shop", 35);
+    const user = userEvent.setup();
+    await render(<FinPetApp ports={ports} />);
+
+    await user.press(screen.getByRole("button", { name: "Карта" }));
+    await user.press(screen.getByRole("button", { name: "Мини-игры" }));
+    await user.press(screen.getByRole("button", { name: "Играть: Скидка или ловушка" }));
+    await user.press(screen.getByRole("button", { name: "Начать" }));
+
+    expect(screen.getByText("Раунд 1 из 3")).toBeOnTheScreen();
+    expect(screen.getByText("Верно: 0")).toBeOnTheScreen();
+    expect(screen.getByText("Сэкономлено: 0 монет")).toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Купить" }));
+    if (screen.queryByRole("button", { name: "Попробовать ещё" })) {
+      await user.press(screen.getByRole("button", { name: "Попробовать ещё" }));
+      await user.press(screen.getByRole("button", { name: "Пройти мимо" }));
+    }
+
+    expect(screen.getByText("Пух радуется!")).toBeOnTheScreen();
+    expect(screen.getByText("Верно: 1")).toBeOnTheScreen();
+    expect(screen.getByText(/Сэкономлено: [1-9]/)).toBeOnTheScreen();
+    expect(screen.queryByText("Сэкономлено: 0 монет")).not.toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Дальше" }));
+    expect(screen.getByText("Раунд 2 из 3")).toBeOnTheScreen();
+  });
 });

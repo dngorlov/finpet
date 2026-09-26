@@ -6,12 +6,10 @@ export const ECONOMY = {
   /** Стартовый бюджет: granted once at profile creation (§2.1). */
   startingBudget: 100,
   /**
-   * Пособие: credited on first open of each new Игровой день (§2.1).
-   * 20 so that Счета (~27/day on average, see catalog.json `bills`) plus a
-   * Цель are reachable over the 5-day demo only with a kept План and Задания.
+   * Unscored correction Задания (`taskRewardDue`). A scored mission pays up to
+   * its own `reward` in tasks.json: a pinned Урок is 30 or 35 (the old daily
+   * stipend folded into the lesson that ends the day), a mini-game is 10 or 15.
    */
-  allowance: 20,
-  /** Задание reward: first correct completion only (§2.1). */
   taskReward: 10,
 } as const;
 
@@ -21,12 +19,14 @@ export const METERS = {
   /** Initial meter values at profile creation (not settled in ROADMAP; midpoint chosen). */
   initialCare: 50,
   initialMood: 50,
-  /** Сытость penalty when a day closes with today's Обед unpaid. */
-  missedFoodPenalty: 15,
-  /** Настроение penalty when a day closes with another unpaid Счёт. Once, not per item. */
-  missedOtherBillPenalty: 15,
-  /** Настроение penalty when actual optional spend exceeds the plan bucket (§2.2). */
+  /** Сытость taken at the end of every Игровой день, unless a Магазин purchase that feeds it cancelled the drop. */
+  dailyCareDrop: 15,
+  /** Счастье taken at the end of every Игровой день, unless a Магазин purchase that feeds it cancelled the drop. */
+  dailyMoodDrop: 15,
+  /** Счастье penalty when actual optional spend exceeds the plan bucket (§2.2). */
   overspendMoodPenalty: 5,
+  /** Счастье taken when an open План was never confirmed. A closed План does not pay this. */
+  noPlanMoodPenalty: 10,
 } as const;
 
 export const SAVINGS = {

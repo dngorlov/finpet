@@ -33,7 +33,7 @@ _Avoid_: награда, подарок
 ### Economy
 
 **Игровой день (Game Day)**:
-One numbered cycle of the game economy, starting at 1: plan → income → purchases → savings → feedback. A profile begins on day 1, already open. The first completion of a pinned Урок ends the open day. The next one begins when the child leaves Итоги дня. The calendar does not start one.
+One numbered cycle of the game economy, starting at 1. A profile begins on day 1, already open. The first completion of a pinned Урок ends the open day and pays that урок's coins. The next day begins when the child leaves Итоги дня. The calendar does not start one.
 _Avoid_: период, уровень, сессия, календарный день
 
 **Баланс (Balance)**:
@@ -44,12 +44,8 @@ _Avoid_: кошелёк, счёт
 The coins granted once when a Child profile is created.
 _Avoid_: приветственный подарок
 
-**Пособие (Allowance)**:
-The recurring income credited once when an Игровой день begins. Coins from the Урок that ended the previous day are not Пособие.
-_Avoid_: ежедневный доход, логин-бонус
-
 **План (Plan)**:
-The day's promised split of available coins into Обязательные, Желаемые, and Копилка — a promise, not a coin movement. It stays Закрыто until the Урок «Планирование бюджета» is completed; a closed one lets the Игровой день end with no promise, and an open one still waits for confirmation. When the shelf has no Желаемые, that bucket stays at 0 and is not offered.
+The day's promised split of available coins into Обязательные, Желаемые, and Копилка — a promise, not a coin movement. It stays Закрыто until the Урок «Планирование бюджета» is completed; a closed one lets the Игровой день end with no promise, and an open one still waits for confirmation. An open one left unconfirmed drops Счастье when the day ends. When the shelf has no Желаемые, that bucket stays at 0 and is not offered.
 _Avoid_: бюджет, бронь, список покупок
 
 **Итоги дня (Day summary)**:
@@ -61,14 +57,14 @@ The reopenable record of the last closed Игровой день — its plan ve
 _Avoid_: Прогресс, отчёт, итоги дня, очки
 
 **Обязательные расходы (Mandatory expenses)**:
-Purchases the pet needs (food, school supplies, transport, medicine). Skipping today's Обед hurts Сытость. Skipping any other of today's Счета hurts Настроение once. Neither happens while Магазин is Закрыто.
+Purchases the pet needs (food, school supplies, transport, medicine). Every Игровой день takes 15 from Сытость and 15 from Счастье. A Магазин purchase that feeds a meter cancels that meter's drop for the day. Buying the Цель from Копилка does not.
 
 **Счета (Day bills)**:
 The mandatory items due on a given Game Day, from a fixed content cycle. The План's Обязательные cannot be set below them, unless Магазин is Закрыто.
 _Avoid_: список обязательных, долги, нужное, необходимое
 
 **Желаемые расходы (Optional expenses)**:
-Non-essential purchases that lift Настроение. The shelf is Конфета and Мороженое. Spending more than the План promised drops Настроение once. A Цель is not a Желаемое.
+Non-essential purchases that lift Счастье. The shelf is Конфета and Мороженое. Spending more than the План promised drops Счастье once. A Цель is not a Желаемое.
 _Avoid_: приятное, хотелки
 
 **Три решения (The three decision types)**:
@@ -114,12 +110,12 @@ The extra item the pet wears — one of the three designer accessories.
 _Avoid_: украшение, шапка, hat
 
 **Сытость (Satiety)**:
-The pet meter fed by buying Обед.
+The pet meter fed by buying Обед. Every Игровой день it falls by 15 unless a Магазин purchase that feeds it cancelled the drop.
 _Avoid_: здоровье, забота, голод
 
-**Настроение (Mood)**:
-The pet meter fed by Желаемые расходы, by Обязательные other than Обед, by Обед, and by buying the Цель.
-_Avoid_: счастье, радость
+**Счастье (Mood)**:
+The pet meter fed by Желаемые расходы, by Обязательные other than Обед, by Обед, and by buying the Цель. Every Игровой день it falls by 15 unless a Магазин purchase that feeds it cancelled the drop. Spending more than the План promised for Желаемые drops it once more. An open План left unconfirmed drops it once more; a closed План does not. Buying the Цель from Копилка does not cancel the daily drop.
+_Avoid_: настроение, радость
 
 **Этап (Stage)**:
 The pet's development level — Новичок, then Про, then Миллионер. It advances one step when the child buys the Цель, and in no other way.
@@ -136,7 +132,7 @@ An optional, kid-visible chat assistant on Дом that answers money questions i
 _Avoid_: чат-бот, ИИ-друг
 
 **Урок (Lesson)**:
-A pinned Задание made of unscored theory cards followed by scored questions. Once it is open, those cards can be read in Словарик. A mini-game may belong to it and is played from the pin.
+A pinned Задание made of unscored theory cards followed by scored questions. Once it is open, those cards can be read in Словарик. A mini-game may belong to it. The child plays that game from Мини-игры on Карта, and also from the pin, once the Урок is done.
 _Avoid_: теория, лекция, тест
 
 **Задание (Task)**:
@@ -148,7 +144,7 @@ The single next action suggested under the meters. It points at a Задание
 _Avoid_: Задание, квест, подсказка, туториал
 
 **Карта заданий (Mission map)**:
-The map of Moscow districts where each Урок is a pin. The short name is Карта. «Что такое бюджет?», «Что такое сбережения», and «Планирование бюджета» are open at first; finishing «Что такое бюджет?» opens the first Урок of every topic that is still closed; after that each topic goes in order. The Игровой день never locks a pin. A replay, a mini-game, or a correction does not end the day.
+The map of Moscow districts where each Урок is a pin. The short name is Карта. Мини-игры on Карта lists every mini-game. «Что такое бюджет?», «Что такое сбережения», and «Планирование бюджета» are open at first; finishing «Что такое бюджет?» opens the first Урок of every topic that is still closed; after that each topic goes in order. The Игровой день never locks a pin. A replay, a mini-game, or a correction does not end the day.
 _Avoid_: список заданий, уровни
 
 **Журнал (History)**:

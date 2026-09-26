@@ -21,25 +21,25 @@ describe("Магазин", () => {
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
-    expect(screen.getByRole("button", { name: "Обязательное" })).toBeSelected();
+    expect(screen.getByRole("button", { name: "Необходимое" })).toBeSelected();
     expect(
       screen.getByRole("button", {
-        name: "Обед. 12 монет. Сытость +10. Настроение +5. Если не купить Обед, Сытость −15",
+        name: "Обед. 12 монет. Сытость +10. Счастье +5",
       }),
     ).toBeOnTheScreen();
     expect(
       screen.getByRole("button", {
-        name: "Проезд. 8 монет. Настроение +5. Если не купить Проезд, Настроение −15 один раз",
+        name: "Проезд. 8 монет. Счастье +5",
       }),
     ).toBeOnTheScreen();
     expect(
-      screen.getByRole("button", { name: "Школьные принадлежности. 10 монет. Настроение +5" }),
+      screen.getByRole("button", { name: "Школьные принадлежности. 10 монет. Счастье +5" }),
     ).toBeOnTheScreen();
-    expect(screen.getAllByText(/если отложить: .* −15/, { includeHiddenElements: true })).toHaveLength(2);
-    expect(screen.getByText("если отложить: сытость −15", { includeHiddenElements: true })).toBeOnTheScreen();
-    // The tab names the category and «если отложить» marks today's Счёт — no extra tags.
+    expect(screen.getByText("Каждый день сытость -15 и счастье -15. Покупка в Магазине это отменяет.")).toBeOnTheScreen();
+    expect(screen.queryByText(/не купишь|если отложить/)).not.toBeOnTheScreen();
     expect(screen.queryByText("Счёт на сегодня", { includeHiddenElements: true })).not.toBeOnTheScreen();
-    expect(screen.getAllByText("Обязательное", { includeHiddenElements: true })).toHaveLength(1);
+    expect(screen.getAllByText("Необходимое", { includeHiddenElements: true })).toHaveLength(1);
+    expect(screen.getAllByText("Желаемое", { includeHiddenElements: true })).toHaveLength(1);
     expect(screen.getByText("🍱", { includeHiddenElements: true })).toBeOnTheScreen();
     expect(screen.queryByText("Счёт")).not.toBeOnTheScreen();
     expect(screen.queryByText("монет")).not.toBeOnTheScreen();
@@ -51,22 +51,22 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Купить Обед" }));
     expect(screen.getByText(lunch.description)).toBeOnTheScreen();
     expect(screen.getByLabelText("Сытость +10")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Если не купить Обед, Сытость −15")).toBeOnTheScreen();
-    expect(screen.getByLabelText("после покупки: 108 монет")).toBeOnTheScreen();
+    expect(screen.queryByText(/не купишь/)).not.toBeOnTheScreen();
+    expect(screen.getByLabelText("после покупки: 88 монет")).toBeOnTheScreen();
     expect(screen.getByText("Купить Обед за 12?")).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Купить Обед" })).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Купить" }));
 
     expect(screen.getByText("Баланс -12")).toBeOnTheScreen();
     expect(screen.getByText("Сытость +10")).toBeOnTheScreen();
-    expect(screen.getByText("Настроение +5")).toBeOnTheScreen();
+    expect(screen.getByText("Счастье +5")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     expect(screen.getByText("Куплено", { includeHiddenElements: true })).toBeOnTheScreen();
-    expect(screen.getByLabelText("Баланс 108")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 88")).toBeOnTheScreen();
     expect(screen.getByLabelText("Сытость 60")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    expect(screen.getByLabelText("Баланс 108")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 88")).toBeOnTheScreen();
     expect(screen.getByLabelText("Сытость 60")).toBeOnTheScreen();
   });
 
@@ -81,12 +81,12 @@ describe("Магазин", () => {
     expect(screen.getByText(candy.description)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText("Баланс -5")).toBeOnTheScreen();
-    expect(screen.getByText("Настроение +5")).toBeOnTheScreen();
+    expect(screen.getByText("Счастье +5")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
-    expect(screen.getByLabelText("Баланс 115")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Настроение 55")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 95")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Счастье 55")).toBeOnTheScreen();
   });
 
   it("shows Конфета and Мороженое, and no shelf Цели", async () => {
@@ -116,8 +116,7 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Купить Мороженое" }));
     expect(screen.queryByRole("button", { name: "Купить" })).not.toBeOnTheScreen();
     expect(screen.getByText(/Не хватает/)).toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Дождаться пособия" }));
-    expect(screen.getByText(/Пособие придёт/)).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Дождаться пособия" })).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Выполнить задание" }));
     expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
   });
@@ -135,7 +134,7 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Назад" }));
     expect(screen.queryByText(lunch.description)).not.toBeOnTheScreen();
     expect(screen.getByRole("button", { name: /^Проезд/ })).toBeOnTheScreen();
-    expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 100")).toBeOnTheScreen();
   });
 
   it("postpones a due Счёт after showing the penalty, then brings it back", async () => {
@@ -146,14 +145,14 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Отложить Обед" }));
     expect(screen.getByText("Отложить Обед?")).toBeOnTheScreen();
-    expect(screen.getByText("Если не купить Обед до конца дня, Сытость −15.")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день сытость -15 и счастье -15. Покупка это отменяет.")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Отложить" }));
     expect(screen.queryByText("Отложить Обед?")).not.toBeOnTheScreen();
     expect(screen.getByRole("button", { name: /^Обед.*Отложено$/ })).toBeOnTheScreen();
     expect(screen.getByText("Отложено", { includeHiddenElements: true })).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Отложить Обед" })).not.toBeOnTheScreen();
-    expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 100")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Вернуть Обед" }));
     expect(screen.getByRole("button", { name: "Отложить Обед" })).toBeOnTheScreen();
@@ -170,7 +169,7 @@ describe("Магазин", () => {
     expect(screen.getByRole("button", { name: "Желаемое" })).toBeSelected();
     await user.press(screen.getByRole("button", { name: "Отложить Конфета" }));
     expect(screen.getByLabelText("Деньги останутся у тебя.")).toBeOnTheScreen();
-    expect(screen.getByText("Питомец ничего не потеряет.")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день счастье -15. Покупка это отменяет.")).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Назад" }));
     expect(screen.getByRole("button", { name: "Отложить Конфета" })).toBeOnTheScreen();
@@ -184,7 +183,7 @@ describe("Магазин", () => {
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Отложить Проезд" }));
-    expect(screen.getByText("Если не купить Проезд до конца дня, Настроение −15 один раз.")).toBeOnTheScreen();
+    expect(screen.getByText("Каждый день счастье -15. Покупка это отменяет.")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Отложить" }));
     await user.press(screen.getByRole("button", { name: "Купить Проезд" }));
     await user.press(screen.getByRole("button", { name: "Купить" }));
@@ -193,7 +192,7 @@ describe("Магазин", () => {
     expect(screen.getByRole("button", { name: /^Проезд.*Куплено$/ })).toBeOnTheScreen();
     expect(screen.queryByText("Отложено", { includeHiddenElements: true })).not.toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Отложить Проезд" })).not.toBeOnTheScreen();
-    expect(screen.getByLabelText("Баланс 112")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 92")).toBeOnTheScreen();
   });
   it("marks today's unpaid Счета when opened from Текущая задача", async () => {
     const ports = createFakePorts();
@@ -201,7 +200,7 @@ describe("Магазин", () => {
     const { user } = await renderApp(ports);
 
     await user.press(screen.getByRole("button", { name: "Текущая задача: купить нужное в Магазине" }));
-    expect(screen.getByRole("button", { name: "Обязательное" })).toBeSelected();
+    expect(screen.getByRole("button", { name: "Необходимое" })).toBeSelected();
     expect(screen.getByRole("button", { name: /^Обед/ })).toBeSelected();
     expect(screen.getByRole("button", { name: /^Проезд/ })).toBeSelected();
     expect(screen.getByRole("button", { name: /^Школьные принадлежности/ })).not.toBeSelected();

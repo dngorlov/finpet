@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
 import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
 import { CoinText } from "../components/CoinText";
 import { Fab, FabStack } from "../components/Fab";
@@ -8,7 +8,8 @@ import { PetView } from "../pet/PetView";
 import { poseFromMeters } from "../pet/keys";
 import { strings } from "../strings";
 import { homeStrings } from "../stringsHome";
-import { colors, font, radius, spacing } from "../theme";
+import { shopStrings } from "../stringsShop";
+import { colors, font, minTarget, radius, spacing } from "../theme";
 
 /** Before the first layout pass (and in jest, which never lays out). */
 const FALLBACK_PET = 240;
@@ -16,6 +17,8 @@ const FALLBACK_PET = 240;
 const FLOOR_SHARE = 0.3;
 /** How long a pet line stays up. */
 const SPEECH_MS = 3500;
+/** Quiet gap before the pet starts the next line on its own. */
+const QUIET_MS = 8000;
 
 export type HomePet = {
   species: string;
@@ -34,6 +37,12 @@ function petLines(pet: HomePet): readonly string[] {
   return homeStrings.petLinesIdle;
 }
 
+/** Which pool the pet is speaking from. Hungry wins over the pose. */
+function speechMood(pet: HomePet) {
+  if (pet.care < 30) return "hungry" as const;
+  return poseFromMeters(pet.care, pet.mood);
+}
+
 /**
  * Главная like «Говорящий Том»: the pet stands big in a pixel room, the day and
  * the Цель float as small pills on top, Магазин and Итоги are round buttons
@@ -43,32 +52,66 @@ export function HomeScene({
   pet,
   day,
   waiting,
-  allowanceCredited,
   goalName,
   accumulated,
   cost,
   onShop,
   onResults,
+  dayTip,
+  onDayTip,
+  dropRef,
+  onDropLayout,
 }: {
   pet: HomePet;
   day: number;
   waiting: boolean;
-  allowanceCredited: boolean;
   goalName: string;
   accumulated: number;
   cost: number;
   onShop: () => void;
   onResults: () => void;
+  /** «День N» explanation is open. The screen behind owns the tap-outside catcher. */
+  dayTip: boolean;
+  onDayTip: (open: boolean) => void;
+  /** Anchor for the tap shield that keeps the explanation from closing itself. */
+  dropRef?: Ref<View>;
+  onDropLayout?: () => void;
 }) {
   const [box, setBox] = useState({ width: 0, height: 0 });
   const [line, setLine] = useState<string | null>(null);
+  const petRef = useRef(pet);
+  petRef.current = pet;
   const turn = useRef(0);
+  const showRef = useRef<() => void>(() => {});
+  const mood = speechMood(pet);
 
   useEffect(() => {
-    if (!line) return;
-    const timer = setTimeout(() => setLine(null), SPEECH_MS);
-    return () => clearTimeout(timer);
-  }, [line]);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    turn.current = 0;
+
+    const show = () => {
+      const lines = petLines(petRef.current);
+      setLine(lines[turn.current % lines.length] ?? null);
+      turn.current += 1;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (cancelled) return;
+        setLine(null);
+        timer = setTimeout(() => {
+          if (!cancelled) show();
+        }, QUIET_MS);
+      }, SPEECH_MS);
+    };
+
+    showRef.current = show;
+    show();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [mood]);
 
   const onLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
@@ -85,11 +128,7 @@ export function HomeScene({
   // Nudge left so the pet clears the round buttons on the right.
   const petLeft = measured ? Math.max(spacing.s, Math.round((box.width - petSize) / 2 - spacing.l)) : undefined;
 
-  const say = () => {
-    const lines = petLines(pet);
-    setLine(lines[turn.current % lines.length] ?? null);
-    turn.current += 1;
-  };
+  const say = () => showRef.current();
 
   const progress = cost > 0 ? Math.max(0, Math.min(1, accumulated / cost)) : 0;
 
@@ -148,6 +187,15 @@ export function HomeScene({
         <View style={styles.hudRow}>
           <View style={styles.dayPill}>
             <Text style={styles.dayText}>{strings.journalDay(day)}</Text>
+            <Pressable
+              role="button"
+              aria-label={shopStrings.dailyDropHint}
+              accessibilityState={{ expanded: dayTip }}
+              onPress={() => onDayTip(!dayTip)}
+              style={styles.dayInfo}
+            >
+              <PixelIcon name="info-box" size={20} color={colors.card} />
+            </Pressable>
           </View>
           <View
             accessible
@@ -176,19 +224,17 @@ export function HomeScene({
             )}
           </View>
         </View>
-        {waiting || allowanceCredited ? (
+        {dayTip ? (
+          <View ref={dropRef} onLayout={onDropLayout} style={styles.drop}>
+            <Text style={styles.dropText}>{shopStrings.dailyRule}</Text>
+          </View>
+        ) : null}
+        {waiting ? (
           <View style={styles.hudRow}>
-            {waiting ? (
-              <View style={[styles.pill, styles.pillWaiting]}>
-                <PixelIcon name="clock" size={16} color={colors.subtle} />
-                <Text style={styles.pillText}>{strings.waitingBanner}</Text>
-              </View>
-            ) : null}
-            {allowanceCredited ? (
-              <View style={[styles.pill, styles.pillAllowance]}>
-                <CoinText text={strings.allowanceRibbon} style={styles.pillText} />
-              </View>
-            ) : null}
+            <View style={[styles.pill, styles.pillWaiting]}>
+              <PixelIcon name="clock" size={16} color={colors.subtle} />
+              <Text style={styles.pillText}>{strings.waitingBanner}</Text>
+            </View>
           </View>
         ) : null}
       </View>
@@ -322,11 +368,18 @@ const styles = StyleSheet.create({
     gap: spacing.s,
   },
   dayPill: {
+    alignItems: "center",
     backgroundColor: colors.raisedEdge,
     borderRadius: 12,
+    flexDirection: "row",
+    minHeight: minTarget,
+    paddingLeft: spacing.m,
+  },
+  dayInfo: {
+    alignItems: "center",
+    height: minTarget,
     justifyContent: "center",
-    minHeight: 44,
-    paddingHorizontal: spacing.m,
+    width: minTarget,
   },
   dayText: {
     color: colors.card,
@@ -335,6 +388,19 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     includeFontPadding: false,
     lineHeight: 24,
+  },
+  drop: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.card,
+    borderRadius: radius.card,
+    maxWidth: "100%",
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+  },
+  dropText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "700",
   },
   goal: {
     backgroundColor: colors.card,
@@ -387,9 +453,6 @@ const styles = StyleSheet.create({
   },
   pillWaiting: {
     backgroundColor: colors.card,
-  },
-  pillAllowance: {
-    backgroundColor: colors.highlight,
   },
   pillText: {
     color: colors.text,

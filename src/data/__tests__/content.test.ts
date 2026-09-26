@@ -81,26 +81,25 @@ describe("loadContent", () => {
     expect(content.bills.some((day) => day.items.includes("medicine") && day.note)).toBe(true);
   });
 
-  it("ships the eleven Словарик terms including План", () => {
+  it("ships the Словарик terms including План", () => {
     expect(content.terms.map((t) => t.term)).toEqual([
       "Баланс",
       "Копилка",
       "Цель",
-      "Пособие",
       "План",
       "Обязательные расходы",
       "Желаемые расходы",
       "Сытость",
-      "Настроение",
+      "Счастье",
       "Этап",
       "Игровой день",
     ]);
-    expect(content.terms).toHaveLength(11);
+    expect(content.terms).toHaveLength(10);
     expect(content.terms.find((t) => t.id === "plan")).toEqual({
       id: "plan",
       term: "План",
       definition:
-        "Обещание, как разделить сегодняшние монеты: обязательное, желаемое и копилка. Подтвердить план монеты не тратит.",
+        "Обещание, как разделить сегодняшние монеты: необходимое, желаемое и копилка. Подтвердить план монеты не тратит.",
     });
     expect(content.terms.find((t) => t.id === "savings")).toEqual({
       id: "savings",
@@ -118,12 +117,13 @@ describe("loadContent", () => {
       id: "optional",
       term: "Желаемые расходы",
       definition:
-        "Покупки не из обязательных: они поднимают настроение. Сейчас это конфета и мороженое.",
+        "Покупки не из обязательных: они поднимают счастье. Сейчас это конфета и мороженое.",
     });
     expect(content.terms.find((t) => t.id === "mood")).toEqual({
       id: "mood",
-      term: "Настроение",
-      definition: "Как радуется питомец. Растёт от обеда, от других обязательных покупок, от желаемых и когда покупаешь цель.",
+      term: "Счастье",
+      definition:
+        "Как радуется питомец. Растёт от покупок в магазине и когда покупаешь цель. Каждый день падает на 15, пока покупка в магазине это не отменит.",
     });
   });
 
@@ -155,6 +155,18 @@ describe("loadContent", () => {
       "Что дешевле?",
       "Охота за ценником",
     ]);
+    for (const id of ["payments_sale_trap", "payments_cheaper", "payments_price_hunt"]) {
+      const game = content.tasks.find((task) => task.id === id);
+      const choices = game?.nodes.filter((node) => (node.kind ?? "choice") === "choice") ?? [];
+      expect(game?.deal).toBe(3);
+      expect(choices.length).toBeGreaterThan(3);
+      expect(choices.every((node) => node.text.includes("{pet}"))).toBe(true);
+    }
+    const trap = content.tasks.find((task) => task.id === "payments_sale_trap");
+    for (const node of trap?.nodes.filter((item) => (item.kind ?? "choice") === "choice") ?? []) {
+      expect(node.options?.map((option) => option.label)).toEqual(["Купить", "Пройти мимо"]);
+      expect(node.options?.some((option) => (option.kept ?? 0) > 0)).toBe(true);
+    }
     expect(content.tasks.some((t) => t.id === "budget_fix_backpack" && t.correction)).toBe(true);
     const spawn = content.tasks
       .find((t) => t.id === "budget_plan")

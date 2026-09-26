@@ -1,14 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { STAGE_NAMES } from "../../core/stages";
 import { playableTasks } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DaySummaryView, JournalEntry, TaskProgressView } from "../../data/repositories/gameRepository";
-import { Badge } from "../components/Badge";
-import { CoinText } from "../components/CoinText";
 import { PixelIcon } from "../components/Pictogram";
-import { PixelSprite, type SpriteName } from "../components/PixelSprite";
+import type { SpriteName } from "../components/PixelSprite";
+import { StageCardPlate } from "../components/StageCard";
 import { useSession } from "../session/SessionProvider";
 import { dayCloseLines, strings } from "../strings";
 import { CHART_COLORS, DonutChart } from "../components/DonutChart";
@@ -25,17 +23,19 @@ import {
 } from "./journalStats";
 import {
   Amount,
+  amountColor,
   Legend,
   MoneyCard,
   moneyColors,
+  Dropdown,
   OpRow,
   PillRow,
-  ProgressBar,
   SectionTitle,
   StatTile,
   TileRow,
   type LegendRow,
 } from "./moneyParts";
+import { FactNote, MeterRow, PlanFactCard } from "./planFact";
 
 function journalLabel(
   entry: JournalEntry,
@@ -81,11 +81,19 @@ function effectSections(deltas: DaySummaryView["meterDeltas"]): EffectSection[] 
       sprite: "mood",
     },
   ];
-  if (lines[2]) {
+  if (deltas.overspend < 0) {
     sections.push({
       key: "overspend",
-      line: lines[2],
+      line: strings.meterReasonOverspend(deltas.overspend),
       tint: CHART_COLORS.optional,
+      sprite: "mood",
+    });
+  }
+  if (deltas.noPlan < 0) {
+    sections.push({
+      key: "noPlan",
+      line: strings.meterReasonNoPlan(deltas.noPlan),
+      tint: CHART_COLORS.mandatory,
       sprite: "mood",
     });
   }
@@ -98,6 +106,13 @@ function markInk(tint: string) {
   return moneyColors.heroText;
 }
 
+type CardFace = {
+  petName: string;
+  goalName: string;
+  accumulated: number;
+  cost: number;
+};
+
 function useRecord() {
   const { game, meta, content } = useSession();
   const [rows, setRows] = useState<JournalEntry[]>([]);
@@ -105,20 +120,32 @@ function useRecord() {
   const [tasks, setTasks] = useState<TaskProgressView[]>([]);
   const [goalCount, setGoalCount] = useState(0);
   const [today, setToday] = useState(1);
+  const [card, setCard] = useState<CardFace | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       const profileId = meta.get(META_KEYS.activeProfileId);
       if (!profileId) return;
+      const profile = game.getProfile(profileId);
+      const savings = game.savingsState(profileId);
+      const active = savings.activeGoal;
+      const goalItem = active ? content.goals.find((item) => item.id === active.key) : undefined;
+      const cost = active?.cost ?? 0;
       setRows(game.listJournal(profileId));
       setToday(game.dayState(profileId).n);
       setLastClosed(game.lastClosedDay(profileId));
       setTasks(game.listTaskProgress(profileId));
       setGoalCount(game.boughtAsActiveGoalCount(profileId));
-    }, [game, meta]),
+      setCard({
+        petName: profile.petName,
+        goalName: goalItem?.name ?? "",
+        accumulated: cost - (active?.remaining ?? 0),
+        cost,
+      });
+    }, [content, game, meta]),
   );
 
-  return { content, rows, lastClosed, tasks, goalCount, today };
+  return { content, rows, lastClosed, tasks, goalCount, today, card };
 }
 
 const PERIODS: { id: JournalPeriod; label: string }[] = [
@@ -143,7 +170,6 @@ const CATEGORY: Record<JournalFlow, Record<string, { label: string; color: strin
     other: { label: moneyStrings.catOther, color: CHART_COLORS.other, icon: "coins" },
   },
   income: {
-    allowance: { label: moneyStrings.incAllowance, color: CHART_COLORS.allowance, icon: "sun" },
     tasks: { label: moneyStrings.incTasks, color: CHART_COLORS.tasks, icon: "map" },
     start: { label: moneyStrings.incStart, color: CHART_COLORS.mandatory, icon: "party-popper" },
     bank: { label: moneyStrings.incBank, color: CHART_COLORS.bank, icon: "coins" },
@@ -202,21 +228,24 @@ export function JournalPanel() {
 
   return (
     <>
-      <PillRow options={PERIODS} value={period} onChange={setPeriod} />
+      <Dropdown label={moneyStrings.periodMenu} options={PERIODS} value={period} onChange={setPeriod} />
       <TileRow>
         <StatTile
           label={moneyStrings.tileIn}
           value={stats.cameIn}
+          color={stats.cameIn > 0 ? moneyColors.plus : colors.subtle}
           spoken={moneyStrings.statA11y(moneyStrings.tileIn, stats.cameIn)}
         />
         <StatTile
           label={moneyStrings.tileOut}
           value={stats.wentOut}
+          color={stats.wentOut > 0 ? moneyColors.minus : colors.subtle}
           spoken={moneyStrings.statA11y(moneyStrings.tileOut, stats.wentOut)}
         />
         <StatTile
           label={moneyStrings.tileNet}
           value={stats.net}
+          color={amountColor(stats.net)}
           spoken={moneyStrings.statA11y(moneyStrings.tileNet, stats.net)}
         />
       </TileRow>
@@ -229,6 +258,7 @@ export function JournalPanel() {
             slices={legend.map((row) => ({ id: row.id, label: row.label, value: row.amount, color: row.color }))}
             centerValue={flowTotal}
             centerCaption={flowLabel.toLowerCase()}
+            centerColor={flowTotal > 0 ? (flow === "spend" ? moneyColors.minus : moneyColors.plus) : colors.subtle}
             accessibilityLabel={moneyStrings.journalChartA11y(flowLabel, periodLabel, legend)}
           />
         </View>
@@ -248,7 +278,7 @@ export function JournalPanel() {
               <Text role="heading" style={styles.dayTitle}>
                 {dayN === 0 ? strings.journalStart : strings.journalDay(dayN)}
               </Text>
-              <Text aria-hidden style={styles.dayNet}>
+              <Text aria-hidden style={[styles.dayNet, { color: amountColor(dayNet) }]}>
                 {moneyStrings.journalDayTotal(dayNet)}
               </Text>
             </View>
@@ -281,14 +311,14 @@ export function JournalPanel() {
 }
 
 export function ResultsBody() {
-  const { content, lastClosed, tasks, goalCount } = useRecord();
+  const { content, lastClosed, tasks, goalCount, card } = useRecord();
   const topicTasks = playableTasks(content.tasks);
   const completedTopics = tasks.filter((row) => {
     if (row.status !== "completed") return false;
     return topicTasks.some((task) => task.id === row.taskKey);
   }).length;
 
-  if (!lastClosed) {
+  if (!lastClosed || !card) {
     return (
       <MoneyCard>
         <Text style={styles.body}>{strings.resultsEmpty}</Text>
@@ -297,41 +327,40 @@ export function ResultsBody() {
   }
 
   const effects = effectSections(lastClosed.meterDeltas);
+  const spent = lastClosed.actual.mandatory + lastClosed.actual.optional + lastClosed.actual.savings;
+  const planned = lastClosed.plan.mandatory + lastClosed.plan.optional + lastClosed.plan.savings;
 
   return (
     <>
-      <View style={styles.hero}>
-        <Text style={styles.heroDay}>{strings.resultsLastDay(lastClosed.n)}</Text>
-        <Badge icon={strings.stageIcon} word={strings.stageWord} value={STAGE_NAMES[lastClosed.stage]} />
-      </View>
-      <BucketSection
-        icon="clipboard"
-        label={strings.bucketMandatory}
-        color={CHART_COLORS.mandatory}
-        plan={lastClosed.plan.mandatory}
-        actual={lastClosed.actual.mandatory}
+      <StageCardPlate
+        stage={lastClosed.stage}
+        petName={card.petName}
+        goalName={card.goalName}
+        accumulated={card.accumulated}
+        cost={card.cost}
       />
-      <BucketSection
-        icon="smile"
-        label={strings.bucketOptional}
-        color={CHART_COLORS.optional}
-        plan={lastClosed.plan.optional}
-        actual={lastClosed.actual.optional}
-      />
-      <BucketSection
-        icon="arrow-down"
-        label={strings.bucketSavings}
-        color={CHART_COLORS.savings}
-        plan={lastClosed.plan.savings}
-        actual={lastClosed.actual.savings}
-      />
-      {effects.map((effect) => (
-        <View key={effect.key} style={[styles.effect, { borderLeftColor: effect.tint }]}>
-          <View style={[styles.mark, { backgroundColor: effect.tint }]}>
-            <PixelSprite name={effect.sprite} size={24} />
+      <View style={styles.strip}>
+        <Text style={styles.dayLabel}>{strings.resultsLastDay(lastClosed.n)}</Text>
+        <View style={styles.stats}>
+          <View accessible aria-label={moneyStrings.statA11y(strings.daySummarySpent, spent)} style={styles.stat}>
+            <Text aria-hidden style={styles.statLabel}>
+              {strings.daySummarySpent}
+            </Text>
+            <Amount value={spent} size={14} color={moneyColors.heroText} />
           </View>
-          <Text style={styles.effectLine}>{effect.line}</Text>
+          <View accessible aria-label={moneyStrings.statA11y(strings.daySummaryPlanned, planned)} style={styles.stat}>
+            <Text aria-hidden style={styles.statLabel}>
+              {strings.daySummaryPlanned}
+            </Text>
+            <Amount value={planned} size={14} color={moneyColors.heroText} />
+          </View>
         </View>
+      </View>
+      <SectionTitle>{strings.daySummaryPlan}</SectionTitle>
+      <PlanFactCard plan={lastClosed.plan} actual={lastClosed.actual} />
+      <MeterRow care={lastClosed.meterDeltas.care} mood={lastClosed.meterDeltas.mood} />
+      {effects.map((effect) => (
+        <FactNote key={effect.key} color={effect.tint} sprite={effect.sprite} text={effect.line} />
       ))}
       <SectionTitle>{strings.resultsOverall}</SectionTitle>
       <MoneyCard tight>
@@ -344,34 +373,6 @@ export function ResultsBody() {
         <CountRow icon="star" tint={moneyColors.goal} text={strings.resultsGoalsAchieved(goalCount)} last />
       </MoneyCard>
     </>
-  );
-}
-
-function BucketSection({
-  icon,
-  label,
-  color,
-  plan,
-  actual,
-}: {
-  icon: PixelIconName;
-  label: string;
-  color: string;
-  plan: number;
-  actual: number;
-}) {
-  return (
-    <View style={[styles.bucket, { borderLeftColor: color }]}>
-      <View style={styles.bucketTop}>
-        <View style={[styles.mark, { backgroundColor: color }]}>
-          <PixelIcon name={icon} size={22} color={markInk(color)} />
-        </View>
-        <Text style={styles.bucketLabel}>{label}</Text>
-        <Amount value={actual} size={16} />
-      </View>
-      <ProgressBar value={actual} max={Math.max(plan, actual)} color={color} />
-      <CoinText coin text={strings.planVsActual(plan, actual)} style={styles.planLine} />
-    </View>
   );
 }
 
@@ -397,54 +398,32 @@ function CountRow({
 }
 
 const styles = StyleSheet.create({
-  hero: {
+  strip: {
     backgroundColor: moneyColors.heroFace,
     borderRadius: radius.card,
-    gap: spacing.s,
-    padding: spacing.m + 4,
+    gap: spacing.m,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.l,
   },
-  heroDay: {
+  dayLabel: {
     color: moneyColors.heroText,
     fontFamily: font.pixel,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "400",
-    lineHeight: 28,
+    lineHeight: 22,
   },
-  bucket: {
-    backgroundColor: colors.card,
-    borderLeftWidth: 8,
-    borderRadius: radius.card,
-    gap: spacing.s,
-    padding: spacing.m,
-  },
-  bucketTop: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.s,
-  },
-  bucketLabel: {
-    color: colors.text,
-    flex: 1,
-    fontSize: type.body,
-    fontWeight: "700",
-  },
-  planLine: {
-    color: colors.subtle,
-    fontSize: type.body,
-  },
-  effect: {
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderLeftWidth: 8,
-    borderRadius: radius.card,
+  stats: {
     flexDirection: "row",
     gap: spacing.m,
-    padding: spacing.m,
+    justifyContent: "space-between",
   },
-  effectLine: {
-    color: colors.text,
-    flex: 1,
-    fontSize: type.body,
+  stat: {
+    gap: 4,
+  },
+  statLabel: {
+    color: moneyColors.heroSubtle,
+    fontSize: 13,
+    fontWeight: "700",
   },
   mark: {
     alignItems: "center",
@@ -492,7 +471,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   dayNet: {
-    color: colors.subtle,
     fontFamily: font.pixel,
     fontSize: 12,
   },

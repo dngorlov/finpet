@@ -2,6 +2,7 @@
  * Single home for RU user-facing strings (ROADMAP §3). Vocabulary must match
  * CONTEXT.md; body text stays ≥16 sp per the UX constraints.
  */
+import { METERS } from "../core/config";
 const SPECIES_NAMES: Record<string, string> = {
   sp1: "Вид 1",
   sp2: "Вид 2",
@@ -48,6 +49,11 @@ export const strings = {
   planReady: "План готов",
   finishDayNeedPlan: "Сначала составь план дня",
   daySummaryTitle: "Итоги дня",
+  daySummarySpent: "Потрачено",
+  daySummaryPlanned: "В плане",
+  daySummaryPlan: "План и факт",
+  daySummaryChart: (parts: readonly { label: string; n: number }[]) =>
+    `Факт дня: ${parts.map((part) => `${part.label} ${part.n}`).join(", ")}`,
   dayAdvance: (from: number, to: number) => `День ${from} → День ${to}`,
   waitTomorrow: "Ждём завтра!",
   nextDay: "Следующий день",
@@ -60,17 +66,12 @@ export const strings = {
   scoreYesIcon: "✅",
   scoreNoIcon: "⚠️",
   scoreFact: (word: string, points: number) => `${word} ${points > 0 ? `+${points}` : "+0"}`,
-  meterReasonUnchanged: (label: string) => `${label} без изменений`,
-  nextDayPlanNeeds: "Завтра сначала запланируй обязательное.",
-  allowanceRibbon: "Пособие +20 монет",
-  allowanceDayChip: "Начало игрового дня",
+  nextDayPlanNeeds: "Завтра сначала запланируй необходимое.",
 
   feedbackBalance: (n: number) => `Баланс ${n > 0 ? "+" : ""}${n}`,
   feedbackSavings: (n: number) => `Копилка ${n > 0 ? "+" : ""}${n}`,
   feedbackCare: (n: number) => `Сытость ${n > 0 ? "+" : ""}${n}`,
-  feedbackMood: (n: number) => `Настроение ${n > 0 ? "+" : ""}${n}`,
-  feedbackCauseAllowance: "Потому что начался новый игровой день.",
-  feedbackNextAllowance: "Что дальше: составь план дня.",
+  feedbackMood: (n: number) => `Счастье ${n > 0 ? "+" : ""}${n}`,
   feedbackCausePurchase: "Потому что ты купил вещь для питомца.",
   feedbackNextPurchase: "Что дальше: сверься с планом или отложи в копилку.",
   feedbackCauseSavingsIn: "Потому что ты положил монеты в копилку.",
@@ -79,8 +80,6 @@ export const strings = {
   feedbackNextSavingsOut: "Что дальше: подумай, нужна ли трата сегодня.",
   feedbackCauseGoal: "Потому что копилка дошла до цели.",
   feedbackNextGoal: "Что дальше: выбери новую цель, если хочешь копить снова.",
-  feedbackCauseTaskReward: "Потому что ты выполнил задание.",
-  feedbackNextTaskReward: "Что дальше: выбери ещё задание или вернись в магазин.",
   feedbackCauseTaskScene: "Потому что в задании нашлись монеты.",
   feedbackNextTaskScene: "Что дальше: проверь сдачу и иди дальше.",
 
@@ -106,6 +105,8 @@ export const strings = {
     `${title}, ${state === "locked" ? "закрыто" : state === "done" ? "пройдено" : state === "soon" ? "скоро" : "открыто"}`,
   missionSoon: "Урок скоро появится.",
   missionGames: "Мини-игры",
+  missionGamesLead: "Каждая игра относится к уроку и открывается, когда этот урок пройден.",
+  missionGameLesson: (title: string) => `Урок: ${title}`,
   missionPlayGame: (title: string) => `Играть: ${title}`,
   missionCorrections: "Исправить ошибку",
   taskCardNext: "Дальше",
@@ -114,7 +115,34 @@ export const strings = {
   taskScore: (points: string, total: number) => `Верно с первого раза: ${points} из ${total}`,
   taskEarned: (n: number) => `+${n} ${coinsWord(n)}`,
   taskNoTopUp: "Новых монет нет — это не лучше прошлого результата.",
+  taskBalanceWas: "Было",
+  taskResultRun: "Результат",
+  taskResultRecord: "Лучший",
+  taskResultMore: "Ещё можно",
+  taskResultCollected: "Собрано",
+  taskResultStat: (label: string, n: number) => `${label}: ${n} монет`,
   taskBackToMap: "На карту",
+  toolOpenedKicker: "Открылось",
+  toolOpened: {
+    savings: {
+      name: "Копилка",
+      glyph: "🐷",
+      where: "В «Деньгах» можно копить на цель.",
+      spoken: "Открылось: Копилка. В «Деньгах» можно копить на цель.",
+    },
+    plan: {
+      name: "План",
+      glyph: "📋",
+      where: "В «Деньгах» можно разделить монеты на сегодня.",
+      spoken: "Открылось: План. В «Деньгах» можно разделить монеты на сегодня.",
+    },
+    bank: {
+      name: "Банк",
+      glyph: "🏦",
+      where: "В «Деньгах» можно открыть вклад.",
+      spoken: "Открылось: Банк. В «Деньгах» можно открыть вклад.",
+    },
+  },
   taskSpawned: "Новое задание появилось в списке!",
   verdictLabel: (verdict: "good" | "warn" | "bad") => {
     if (verdict === "good") return "Верно";
@@ -127,15 +155,12 @@ export const strings = {
     return "⚠️";
   },
 
-  shopMandatoryTab: "Обязательное",
+  shopMandatoryTab: "Необходимое",
   shopOptionalTab: "Желаемое",
   shopPrice: (n: number) => `${n} монет`,
   shopAfterBuy: (n: number) => `после покупки: ${n} монет`,
   shopMeterDelta: (n: number) => `+${n}`,
   shopMeterA11y: (meter: string, delta: number) => `${meter} +${delta}`,
-  shopSkipDelta: (n: number) => `−${n}`,
-  shopSkipA11y: (name: string, meter: string, delta: number, shared: boolean) =>
-    shared ? `Если не купить ${name}, ${meter} −${delta} один раз` : `Если не купить ${name}, ${meter} −${delta}`,
   shopGoalChip: "Цель",
   shopOnceChip: "Один раз",
   shopShortfall: (n: number) => `Не хватает ${n}`,
@@ -149,9 +174,7 @@ export const strings = {
   shopConfirmReplaceGoal: (name: string, pot: number) => `Цель станет ${name}. В копилке останется ${pot}.`,
   shopBuyActiveGoalWarn: (pot: number) => `Это твоя Цель. После покупки Цель снимется, в копилке останется ${pot}.`,
   shopBlockedAlreadyGoal: "Это уже твоя Цель. Копи дальше в Копилке.",
-  shopWaitAllowance: "Дождаться пособия",
   shopDoTask: "Выполнить задание",
-  shopWaitExplain: "Пособие придёт в следующий игровой день. Можно сделать задание или отложить покупку.",
 
   goalPickerTitle: "Выбери цель",
   goalDrop: "Без цели",
@@ -181,7 +204,6 @@ export const strings = {
   savingsChooseNewGoal: "Выбрать новую цель",
   savingsBuyFromSavings: "Купить из копилки",
   savingsLater: "Позже",
-  savingsDropGoal: "Убрать цель",
   savingsConfirmReplace: (name: string, pot: number) => `Цель станет ${name}. В копилке останется ${pot}.`,
   savingsAchievedBadge: "сбылась",
   savingsRemaining: (n: number) => `осталось ${n}`,
@@ -199,10 +221,12 @@ export const strings = {
   resultsScoreMandatory: (earned: boolean) => (earned ? "Обязательные +2" : "Обязательные 0"),
   resultsScoreWithinPlan: (earned: boolean) => (earned ? "По плану +1" : "По плану 0"),
   scoreDeposited: (earned: boolean) => (earned ? "Копилка +1" : "Копилка 0"),
-  meterReasonSkippedFood: (n: number) => `Сытость ${n}: пропущен обед`,
-  meterReasonSkippedNeed: (n: number) => `Настроение ${n}: пропущены обязательные расходы`,
-  meterReasonOverspend: (n: number) => `Настроение ${n}: желаемое сверх плана.`,
-  meterReasonNoChange: "Сытость и настроение без изменений",
+  /** «Каждый день: Сытость -15» — the drop landed. */
+  meterDailyApplied: (meter: string, n: number) => `Каждый день: ${meter} ${n}`,
+  /** «Каждый день: Сытость -15, покупка отменила» — a Магазин purchase cancelled it. */
+  meterDailyKept: (meter: string, n: number) => `Каждый день: ${meter} ${n}, покупка отменила`,
+  meterReasonOverspend: (n: number) => `Счастье ${n}: желаемое сверх плана.`,
+  meterReasonNoPlan: (n: number) => `Счастье ${n}: плана на день не было.`,
   journalStart: "Старт",
   journalDay: (n: number) => `День ${n}`,
   journalStartingGrant: "Стартовый бюджет",
@@ -271,14 +295,16 @@ export const strings = {
 
   care: "Сытость",
   careIcon: "🍗",
-  mood: "Настроение",
+  mood: "Счастье",
   moodIcon: "☺",
   needsMissedIcon: "!",
   meterLine: (label: string, value: number) => `${label} ${value}`,
   balanceWord: "Баланс",
   savingsWord: "Копилка",
   stageWord: "Этап",
-  stageA11y: (name: string) => `Этап ${name}`,
+  stagePlace: (current: number, total: number) => `${current} из ${total}`,
+  stageA11y: (name: string, current: number, total: number, progress: string) =>
+    `Этап ${current} из ${total}, ${name}. ${progress}`,
   balanceBadge: (n: number) => `Баланс ${n}`,
   savingsBadge: (n: number) => `Копилка ${n}`,
   goalRatio: (have: number, cost: number) => `${have} / ${cost}`,
@@ -387,20 +413,23 @@ function daysWord(n: number): string {
   return "дней";
 }
 
-/** Итоги lines for a closed day. `showUnchanged` keeps a calm line for a meter that did not move. */
-export function dayCloseLines(
-  deltas: { care: number; missedNeed: number; overspend: number },
-  showUnchanged: boolean,
-): string[] {
-  const lines: string[] = [];
-  if (deltas.care < 0) lines.push(strings.meterReasonSkippedFood(deltas.care));
-  else if (showUnchanged) lines.push(strings.meterReasonUnchanged(strings.care));
-  if (deltas.missedNeed < 0) lines.push(strings.meterReasonSkippedNeed(deltas.missedNeed));
+/** Итоги lines for a closed day: the daily drop, and whether a purchase cancelled it. */
+export function dayCloseLines(deltas: {
+  care: number;
+  dailyMood: number;
+  overspend: number;
+  noPlan: number;
+}): string[] {
+  const lines = [
+    deltas.care < 0
+      ? strings.meterDailyApplied(strings.care, deltas.care)
+      : strings.meterDailyKept(strings.care, -METERS.dailyCareDrop),
+    deltas.dailyMood < 0
+      ? strings.meterDailyApplied(strings.mood, deltas.dailyMood)
+      : strings.meterDailyKept(strings.mood, -METERS.dailyMoodDrop),
+  ];
   if (deltas.overspend < 0) lines.push(strings.meterReasonOverspend(deltas.overspend));
-  if (deltas.missedNeed >= 0 && deltas.overspend >= 0) {
-    if (showUnchanged) lines.push(strings.meterReasonUnchanged(strings.mood));
-    else if (lines.length === 0) lines.push(strings.meterReasonNoChange);
-  }
+  if (deltas.noPlan < 0) lines.push(strings.meterReasonNoPlan(deltas.noPlan));
   return lines;
 }
 

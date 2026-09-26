@@ -28,13 +28,7 @@ function DeltaRow({ icon, label }: { icon: string; label: string }) {
   );
 }
 
-export function FeedbackCard({
-  model,
-  onDismiss,
-}: {
-  model: FeedbackModel;
-  onDismiss: () => void;
-}) {
+export function FeedbackCard({ model, onDismiss }: { model: FeedbackModel; onDismiss: () => void }) {
   const { deltas } = model;
 
   return (

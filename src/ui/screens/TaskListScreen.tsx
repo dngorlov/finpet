@@ -4,6 +4,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   childGames,
+  miniGames,
   missionPrerequisite,
   rewardLeft,
   taskUnlockOrder,
@@ -65,6 +66,7 @@ export default function TaskListScreen() {
   const [progress, setProgress] = useState<TaskProgressView[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [gamesOpen, setGamesOpen] = useState(false);
   const [outer, setOuter] = useState({ width: 0, height: 0 });
   const [headerHeight, setHeaderHeight] = useState(0);
   const [panelHeight, setPanelHeight] = useState(0);
@@ -270,11 +272,29 @@ export default function TaskListScreen() {
       </ScrollView>
       <FabStack bottom={measured ? pad + panelHeight + spacing.s : spacing.m}>
         <Fab
+          label={strings.missionGames}
+          icon={<PixelIcon name="play" size={32} color={colors.onRaised} />}
+          onPress={() => setGamesOpen(true)}
+        />
+        <Fab
           label={strings.glossaryTitle}
           icon={<PixelIcon name="book-open" size={32} color={colors.onRaised} />}
           onPress={() => navigation.navigate("Handbook")}
         />
       </FabStack>
+      <GamesSheet
+        visible={gamesOpen}
+        games={miniGames(content.tasks).map((task) => ({
+          task,
+          state: stateOf(task),
+          parent: content.tasks.find((item) => item.id === task.parent) ?? null,
+        }))}
+        onClose={() => setGamesOpen(false)}
+        onPlay={(taskId) => {
+          setGamesOpen(false);
+          navigation.navigate("TaskRun", { taskId });
+        }}
+      />
       {selected ? (
         <MissionDetails
           visible={detailsOpen}
@@ -337,6 +357,7 @@ function MissionPanel({
         </View>
         <View style={styles.panelTitle}>
           <CoinText text={task.title} style={styles.cardTitle} />
+          <CoinText text={task.intro} style={styles.body} />
         </View>
         {task.difficulty && state !== "soon" ? <DifficultyMarks level={task.difficulty} /> : null}
       </View>
@@ -415,22 +436,90 @@ function GameRow({
                 pressed && !locked ? styles.gameChipPressed : null,
               ]}
             >
-              <PixelIcon
-                name={locked ? "lock" : child.state === "done" ? "check" : "play"}
-                size={20}
-                color={locked ? colors.subtle : colors.onRaised}
-              />
-              <CoinText
-                inline
-                labelled={false}
-                text={child.task.title}
-                style={[styles.gameLabel, locked ? styles.gameLabelLocked : null]}
-              />
+              <View
+                style={[
+                  styles.gameChipFace,
+                  locked ? styles.gameChipFaceLocked : child.state === "done" ? styles.gameChipFaceDone : null,
+                ]}
+              >
+                <PixelIcon
+                  name={locked ? "lock" : child.state === "done" ? "check" : "play"}
+                  size={20}
+                  color={locked ? colors.subtle : colors.onRaised}
+                />
+                <CoinText
+                  inline
+                  labelled={false}
+                  text={child.task.title}
+                  style={[styles.gameLabel, locked ? styles.gameLabelLocked : null]}
+                />
+              </View>
             </Pressable>
           );
         })}
       </ScrollView>
     </View>
+  );
+}
+
+/** Every mini-game, with the Урок it belongs to. Locked until that Урок is done. */
+function GamesSheet({
+  visible,
+  games,
+  onClose,
+  onPlay,
+}: {
+  visible: boolean;
+  games: { task: TaskContent; state: PinState; parent: TaskContent | null }[];
+  onClose: () => void;
+  onPlay: (taskId: string) => void;
+}) {
+  return (
+    <BottomSheet visible={visible} onClose={onClose}>
+      <Text style={styles.sheetTitle}>{strings.missionGames}</Text>
+      <Text style={styles.sheetBody}>{strings.missionGamesLead}</Text>
+      {games.map((child) => {
+        const locked = child.state === "locked" || child.state === "soon";
+        return (
+          <Pressable
+            key={child.task.id}
+            role="button"
+            aria-label={strings.missionPlayGame(child.task.title)}
+            aria-disabled={locked}
+            accessibilityHint={
+              locked && child.parent ? strings.missionLockedAfter(child.parent.title) : undefined
+            }
+            disabled={locked}
+            onPress={() => onPlay(child.task.id)}
+            style={({ pressed }) => [
+              styles.catalogHit,
+              pressed && !locked ? styles.gameChipPressed : null,
+            ]}
+          >
+            <Card>
+              <View style={styles.catalogRow}>
+                <PixelIcon
+                  name={locked ? "lock" : child.state === "done" ? "check" : "play"}
+                  size={24}
+                  color={locked ? colors.subtle : colors.accentText}
+                />
+                <View style={styles.catalogCopy}>
+                  <CoinText text={child.task.title} style={styles.cardTitle} />
+                  {child.parent ? (
+                    <Text style={styles.body}>{strings.missionGameLesson(child.parent.title)}</Text>
+                  ) : null}
+                  {locked && child.parent ? (
+                    <Text style={[styles.body, styles.lockedText]}>
+                      {strings.missionLockedAfter(child.parent.title)}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            </Card>
+          </Pressable>
+        );
+      })}
+    </BottomSheet>
   );
 }
 
@@ -634,27 +723,34 @@ const styles = StyleSheet.create({
     paddingRight: 88,
   },
   gameChip: {
+    backgroundColor: colors.raisedFace,
+    borderRadius: 12,
+    paddingBottom: 4,
+  },
+  gameChipDone: {
+    backgroundColor: colors.fill,
+  },
+  gameChipLocked: {
+    backgroundColor: colors.disabledFace,
+  },
+  gameChipPressed: {
+    paddingBottom: 0,
+    paddingTop: 4,
+  },
+  gameChipFace: {
     alignItems: "center",
     backgroundColor: colors.highlight,
-    borderBottomColor: colors.raisedFace,
-    borderBottomWidth: 4,
     borderRadius: 12,
     flexDirection: "row",
     gap: 6,
-    minHeight: minTarget,
+    minHeight: minTarget - 4,
     paddingHorizontal: spacing.m,
   },
-  gameChipDone: {
+  gameChipFaceDone: {
     backgroundColor: colors.track,
-    borderBottomColor: colors.fill,
   },
-  gameChipLocked: {
+  gameChipFaceLocked: {
     backgroundColor: colors.track,
-    borderBottomColor: colors.disabledFace,
-  },
-  gameChipPressed: {
-    borderBottomWidth: 0,
-    marginTop: 4,
   },
   gameLabel: {
     color: colors.onRaised,
@@ -663,6 +759,19 @@ const styles = StyleSheet.create({
   },
   gameLabelLocked: {
     color: colors.subtle,
+  },
+  catalogHit: {
+    minHeight: minTarget,
+  },
+  catalogRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.s,
+  },
+  catalogCopy: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
   },
   sheetTitle: {
     color: colors.text,

@@ -30,17 +30,14 @@ const journal: JournalEntry[] = [
   entry(3, "purchase", 0, "skateboard"),
   entry(3, "savings_out", 4),
   entry(3, "bank_out", 22),
-  entry(3, "allowance", 20),
   entry(2, "bank_in", -20),
   entry(2, "purchase", -90, "skateboard"),
   entry(2, "savings_in", -10),
   entry(2, "task_reward", 10),
-  entry(2, "allowance", 20),
   entry(1, "savings_in", -6),
   entry(1, "purchase", -5, "candy"),
   entry(1, "purchase", -12, "lunch"),
   entry(1, "task_scene", 8),
-  entry(1, "allowance", 20),
   entry(0, "starting_grant", 100),
 ];
 
@@ -78,26 +75,23 @@ describe("classify", () => {
 describe("journalStats", () => {
   it("totals spending and income for the chosen period", () => {
     const stats = journalStats(journal, "yesterday", 3, lookup);
-    expect(stats.entries).toHaveLength(5);
+    expect(stats.entries).toHaveLength(4);
     expect(stats.spend).toEqual([
       { category: "goal", amount: 90, percent: 75 },
       { category: "savings", amount: 10, percent: 8 },
       { category: "bank", amount: 20, percent: 17 },
     ]);
-    expect(stats.income).toEqual([
-      { category: "allowance", amount: 20, percent: 67 },
-      { category: "tasks", amount: 10, percent: 33 },
-    ]);
-    expect(stats.cameIn).toBe(30);
+    expect(stats.income).toEqual([{ category: "tasks", amount: 10, percent: 100 }]);
+    expect(stats.cameIn).toBe(10);
     expect(stats.wentOut).toBe(120);
-    expect(stats.net).toBe(-90);
+    expect(stats.net).toBe(-110);
   });
 
   it("counts day 1 with the Стартовый бюджет over all time", () => {
     const stats = journalStats(journal, "all", 3, lookup);
-    expect(stats.cameIn).toBe(100 + 20 + 8 + 20 + 10 + 20 + 22 + 4);
+    expect(stats.cameIn).toBe(100 + 8 + 10 + 22 + 4);
     expect(stats.wentOut).toBe(12 + 5 + 6 + 10 + 90 + 20);
-    expect(stats.income.map((row) => row.category)).toEqual(["allowance", "tasks", "start", "bank", "fromSavings"]);
+    expect(stats.income.map((row) => row.category)).toEqual(["tasks", "start", "bank", "fromSavings"]);
     expect(stats.income.reduce((sum, row) => sum + row.percent, 0)).toBe(100);
   });
 
@@ -117,9 +111,9 @@ describe("percents", () => {
 describe("groupByDay", () => {
   it("puts the newest day first and keeps Старт as day 0", () => {
     expect(groupByDay(journal).map(([day, rows]) => [day, rows.length])).toEqual([
-      [3, 4],
-      [2, 5],
-      [1, 5],
+      [3, 3],
+      [2, 4],
+      [1, 4],
       [0, 1],
     ]);
   });

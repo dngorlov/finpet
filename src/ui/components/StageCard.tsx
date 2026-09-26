@@ -8,23 +8,32 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { STAGE_NAMES, type Stage } from "../../core/stages";
+import Svg, { Path } from "react-native-svg";
+import { STAGE_CODES, STAGE_NAMES, type Stage } from "../../core/stages";
+import { homeStrings } from "../stringsHome";
 import { strings } from "../strings";
 import { font, minTarget, spacing } from "../theme";
 
-/** ISO/IEC 7810 ID-1. Width / height. */
-const CARD_RATIO = 85.6 / 53.98;
+/** Width / height. A little shorter than ISO/IEC 7810 ID-1 (85.6 / 53.98). */
+const CARD_RATIO = 1.8;
+
+/** Новичок is 1, Про is 2, Миллионер is 3. */
+const STAGE_TOTAL = 3;
+
+function stageNumber(stage: Stage): number {
+  return STAGE_CODES[stage] + 1;
+}
 
 function cardSize(width: number) {
   const cardWidth = Math.max(width - spacing.m * 2, minTarget);
   return { cardWidth, cardHeight: cardWidth / CARD_RATIO };
 }
 
-function tuckedOffset(cardHeight: number) {
-  return Math.max(cardHeight - minTarget, 0);
+function tuckedOffset(width: number) {
+  return Math.max(cardSize(width).cardHeight - minTarget, 0);
 }
 
-type FaceKind = "sticker" | "sport" | "metal";
+type FaceKind = "sticker" | "club" | "metal";
 
 type Face = {
   background: string;
@@ -51,9 +60,9 @@ const FACES: Record<Stage, Face> = {
     band: "#10243F",
     ink: "#E7FF57",
     accent: "#C6F135",
-    radius: 0,
+    radius: 2,
     fontFamily: font.pro,
-    kind: "sport",
+    kind: "club",
   },
   millionaire: {
     background: "#141414",
@@ -68,11 +77,19 @@ const FACES: Record<Stage, Face> = {
 
 export function StageCard({
   stage,
+  petName,
+  goalName,
+  accumulated,
+  cost,
   open,
   onOpen,
   onClose,
 }: {
   stage: Stage;
+  petName: string;
+  goalName: string;
+  accumulated: number;
+  cost: number;
   open: boolean;
   onOpen: () => void;
   onClose: () => void;
@@ -80,20 +97,24 @@ export function StageCard({
   const { width } = useWindowDimensions();
   const face = FACES[stage];
   const name = STAGE_NAMES[stage];
+  const number = stageNumber(stage);
+  const progress =
+    goalName && cost > 0 ? homeStrings.goalA11y(goalName, accumulated, cost) : strings.goalEmptyPrompt;
+  const label = strings.stageA11y(name, number, STAGE_TOTAL, progress);
   const { cardHeight } = cardSize(width);
-  const [slide] = useState(
-    () => new Animated.Value(tuckedOffset(cardSize(Dimensions.get("window").width).cardHeight)),
-  );
+  const [shift] = useState(() => new Animated.Value(tuckedOffset(Dimensions.get("window").width)));
 
   useEffect(() => {
     if (!open) return;
-    slide.setValue(tuckedOffset(cardHeight));
-    Animated.timing(slide, {
+    shift.setValue(Math.max(cardHeight - minTarget, 0));
+    Animated.timing(shift, {
       toValue: 0,
       duration: 240,
       useNativeDriver: true,
     }).start();
-  }, [cardHeight, open, slide]);
+  }, [cardHeight, open, shift]);
+
+  const faceProps = { face, name, number, petName, goalName, accumulated, cost, reserveClose: true };
 
   return (
     <>
@@ -104,11 +125,11 @@ export function StageCard({
       >
         <Pressable
           role="button"
-          aria-label={strings.stageA11y(name)}
+          aria-label={label}
           onPress={onOpen}
           style={[styles.face, faceShell(face), { height: cardHeight }]}
         >
-          <CardFace face={face} name={name} />
+          <CardFace {...faceProps} />
         </Pressable>
       </View>
       {open ? (
@@ -124,10 +145,10 @@ export function StageCard({
           style={[
             styles.openCard,
             faceShell(face),
-            { height: cardHeight, transform: [{ translateY: slide }] },
+            { height: cardHeight, transform: [{ translateY: shift }] },
           ]}
         >
-          <CardFace face={face} name={name} />
+          <CardFace {...faceProps} />
           <Pressable
             role="button"
             aria-label={strings.close}
@@ -151,63 +172,161 @@ function faceShell(face: Face) {
   };
 }
 
-function CardFace({ face, name }: { face: Face; name: string }) {
+/** The full Этап card, already open. Итоги shows this; the play shell peeks the same face. */
+export function StageCardPlate({
+  stage,
+  petName,
+  goalName,
+  accumulated,
+  cost,
+}: {
+  stage: Stage;
+  petName: string;
+  goalName: string;
+  accumulated: number;
+  cost: number;
+}) {
+  const face = FACES[stage];
+  const name = STAGE_NAMES[stage];
+  const number = stageNumber(stage);
+  const progress =
+    goalName && cost > 0 ? homeStrings.goalA11y(goalName, accumulated, cost) : strings.goalEmptyPrompt;
+
+  return (
+    <View
+      accessible
+      accessibilityLabel={strings.stageA11y(name, number, STAGE_TOTAL, progress)}
+      style={[styles.plateCard, faceShell(face)]}
+    >
+      <CardFace
+        face={face}
+        name={name}
+        number={number}
+        petName={petName}
+        goalName={goalName}
+        accumulated={accumulated}
+        cost={cost}
+        reserveClose={false}
+      />
+    </View>
+  );
+}
+
+function CardFace({
+  face,
+  name,
+  number,
+  petName,
+  goalName,
+  accumulated,
+  cost,
+  reserveClose,
+}: {
+  face: Face;
+  name: string;
+  number: number;
+  petName: string;
+  goalName: string;
+  accumulated: number;
+  cost: number;
+  reserveClose: boolean;
+}) {
+  const hasGoal = goalName.length > 0 && cost > 0;
+  const ink = { color: face.ink, fontFamily: face.fontFamily };
+
   return (
     <View style={styles.face}>
-      <View style={[styles.band, { backgroundColor: face.band }]}>
-        <Text
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          style={[styles.title, { color: face.ink, fontFamily: face.fontFamily }]}
-        >
+      <View style={[styles.band, reserveClose ? null : styles.bandOpen, { backgroundColor: face.band }]}>
+        <StageMarks face={face} number={number} />
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[styles.title, ink]}>
           {name}
         </Text>
       </View>
-      <Ornament face={face} />
+      <View style={styles.plate}>
+        <View style={styles.chipRow}>
+          <Chip sharp={face.kind === "club"} />
+          <Contactless color={face.ink} />
+        </View>
+        <View style={styles.footer}>
+          <View style={styles.identity}>
+            <View style={styles.goalPair}>
+              {hasGoal ? (
+                <Text numberOfLines={1} style={[styles.pan, ink]}>
+                  {strings.goalRatio(accumulated, cost)}
+                </Text>
+              ) : null}
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.holder, ink]}>
+                {hasGoal ? goalName : strings.goalEmptyPrompt}
+              </Text>
+            </View>
+            {petName ? (
+              <Text numberOfLines={1} style={[styles.emboss, ink]}>
+                {petName}
+              </Text>
+            ) : null}
+          </View>
+          <Text style={[styles.logo, { color: face.ink }]}>{strings.appName}</Text>
+        </View>
+      </View>
     </View>
   );
 }
 
-function Ornament({ face }: { face: Face }) {
-  if (face.kind === "sticker") {
-    return (
-      <View aria-hidden style={styles.ornament}>
-        <Chip color={face.accent} />
-        <View style={styles.dots}>
-          {["a", "b", "c", "d", "e"].map((key) => (
-            <View key={key} style={[styles.dot, { backgroundColor: face.accent }]} />
-          ))}
-        </View>
-      </View>
-    );
-  }
-  if (face.kind === "sport") {
-    return (
-      <View aria-hidden style={styles.ornament}>
-        <Chip color={face.accent} sharp />
-        <View style={styles.stripes}>
-          {[0, 1, 2].map((index) => (
-            <View
-              key={index}
-              style={[styles.stripe, { backgroundColor: face.accent, left: 24 + index * 36 }]}
-            />
-          ))}
-        </View>
-      </View>
-    );
-  }
+function StageMarks({ face, number }: { face: Face; number: number }) {
   return (
-    <View aria-hidden style={styles.ornament}>
-      <View style={[styles.hairline, { backgroundColor: face.accent }]} />
-      <Chip color={face.accent} />
+    <View aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.marks}>
+      {([1, 2, 3] as const).map((step) => (
+        <View
+          key={step}
+          style={[
+            styles.dot,
+            {
+              backgroundColor: step <= number ? face.ink : "transparent",
+              borderColor: face.ink,
+            },
+          ]}
+        />
+      ))}
     </View>
   );
 }
 
-function Chip({ color, sharp = false }: { color: string; sharp?: boolean }) {
+/** Gold contact module. The grid is the pads a terminal reads. */
+function Chip({ sharp }: { sharp: boolean }) {
   return (
-    <View style={[styles.chip, sharp ? styles.chipSharp : null, { borderColor: color }]}>
-      <View style={[styles.chipLine, { backgroundColor: color }]} />
+    <View aria-hidden style={[styles.chip, sharp ? styles.chipSharp : null]}>
+      <View style={styles.chipSpine} />
+      <View style={[styles.chipBar, styles.chipBarHigh]} />
+      <View style={[styles.chipBar, styles.chipBarLow]} />
+    </View>
+  );
+}
+
+/** Four arcs on the right of the card — the contactless mark. */
+const WAVE_RADII = [7, 12, 17, 22] as const;
+
+function Contactless({ color }: { color: string }) {
+  const originX = 2;
+  const originY = 30;
+  return (
+    <View
+      aria-hidden
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={styles.contactless}
+    >
+      <Svg width={26} height={32} viewBox="0 0 26 32">
+        {WAVE_RADII.map((radius) => (
+          <Path
+            key={radius}
+            d={`M${originX} ${originY - radius} A ${radius} ${radius} 0 0 1 ${originX + radius} ${originY}`}
+            fill="none"
+            stroke={color}
+            strokeLinecap="round"
+            strokeWidth={1.75}
+          />
+        ))}
+      </Svg>
     </View>
   );
 }
@@ -231,65 +350,122 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: "hidden",
   },
+  plateCard: {
+    aspectRatio: CARD_RATIO,
+    overflow: "hidden",
+    width: "100%",
+  },
   band: {
-    height: minTarget,
-    justifyContent: "center",
-    paddingHorizontal: minTarget,
-  },
-  title: {
-    fontSize: 20,
-    textAlign: "center",
-  },
-  ornament: {
-    flex: 1,
-    padding: spacing.m,
-  },
-  dots: {
+    alignItems: "center",
     flexDirection: "row",
     gap: spacing.s,
-    marginTop: spacing.m,
+    height: minTarget,
+    paddingLeft: spacing.m,
+    paddingRight: minTarget,
+  },
+  bandOpen: {
+    paddingRight: spacing.m,
+  },
+  marks: {
+    flexDirection: "row",
+    flexShrink: 0,
+    gap: spacing.s,
   },
   dot: {
     borderRadius: 8,
+    borderWidth: 2,
     height: 16,
-    opacity: 0.85,
     width: 16,
   },
-  stripes: {
-    bottom: 0,
-    left: 0,
-    overflow: "hidden",
-    position: "absolute",
-    right: 0,
-    top: 0,
+  title: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: "400",
   },
-  stripe: {
-    height: 180,
-    opacity: 0.35,
-    position: "absolute",
-    top: -20,
-    transform: [{ rotate: "-28deg" }],
-    width: 14,
+  plate: {
+    flex: 1,
+    justifyContent: "space-between",
+    paddingBottom: spacing.m,
+    paddingHorizontal: spacing.m,
+    paddingTop: spacing.m,
   },
-  hairline: {
-    height: 1,
-    marginBottom: spacing.m,
-    opacity: 0.9,
+  chipRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  pan: {
+    fontSize: 22,
+    fontWeight: "400",
+    letterSpacing: 4,
+  },
+  footer: {
+    alignItems: "flex-end",
+    flexDirection: "row",
+    gap: spacing.s,
+  },
+  identity: {
+    flex: 1,
+  },
+  goalPair: {
+    gap: 2,
+  },
+  holder: {
+    fontSize: 16,
+    fontWeight: "400",
+    letterSpacing: 1,
+  },
+  emboss: {
+    fontSize: 13,
+    fontWeight: "400",
+    letterSpacing: 2,
+    marginTop: spacing.s,
+    textTransform: "uppercase",
+  },
+  logo: {
+    flexShrink: 0,
+    fontFamily: font.pixel,
+    fontSize: 12,
+    fontWeight: "400",
+    includeFontPadding: false,
+    lineHeight: 16,
   },
   chip: {
-    borderRadius: 6,
-    borderWidth: 2,
-    height: 28,
-    justifyContent: "center",
-    paddingHorizontal: 4,
-    width: 36,
+    backgroundColor: "#E4C56A",
+    borderColor: "#7A5A28",
+    borderRadius: 5,
+    borderWidth: 1.5,
+    height: 32,
+    overflow: "hidden",
+    width: 42,
   },
   chipSharp: {
     borderRadius: 0,
   },
-  chipLine: {
-    height: 2,
-    opacity: 0.8,
+  chipSpine: {
+    backgroundColor: "#7A5A28",
+    bottom: 0,
+    left: "48%",
+    position: "absolute",
+    top: 0,
+    width: 1.5,
+  },
+  chipBar: {
+    backgroundColor: "#7A5A28",
+    height: 1.5,
+    left: 0,
+    position: "absolute",
+    right: 0,
+  },
+  chipBarHigh: {
+    top: "34%",
+  },
+  chipBarLow: {
+    top: "66%",
+  },
+  contactless: {
+    height: 32,
+    width: 26,
   },
   scrim: {
     backgroundColor: "rgba(34, 26, 18, 0.45)",

@@ -30,7 +30,7 @@ describe("Копилка", () => {
 
     expect(screen.getByText("Баланс -1")).toBeOnTheScreen();
     expect(screen.getByText("Копилка +1")).toBeOnTheScreen();
-    expect(screen.queryByText(/Настроение/)).not.toBeOnTheScreen();
+    expect(screen.queryByText(/Счастье/)).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     expect(screen.queryByText(stringsDash())).not.toBeOnTheScreen();
     expect(screen.getByText(/примерно 89/)).toBeOnTheScreen();
@@ -82,7 +82,7 @@ describe("Копилка", () => {
     expect(screen.getAllByText(/Мечта сбылась/).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Купить из копилки" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Позже" }).length).toBeGreaterThan(0);
-    expect(screen.queryByText("Настроение +10")).not.toBeOnTheScreen();
+    expect(screen.queryByText("Счастье +10")).not.toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Выбрать новую цель" })).not.toBeOnTheScreen();
 
     while (screen.queryAllByRole("button", { name: "Позже" }).length > 0) {
@@ -94,7 +94,7 @@ describe("Копилка", () => {
     expect(screen.getByRole("button", { name: "Купить из копилки" })).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Купить из копилки" }));
-    expect(screen.getByText("Настроение +12")).toBeOnTheScreen();
+    expect(screen.getByText("Счастье +12")).toBeOnTheScreen();
     expect(screen.getByText("Копилка -90")).toBeOnTheScreen();
     expect(screen.getByText("Теперь ты Про!")).toBeOnTheScreen();
     expect(screen.queryByText(/Баланс/)).not.toBeOnTheScreen();

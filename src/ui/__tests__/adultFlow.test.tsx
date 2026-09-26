@@ -31,7 +31,7 @@ describe("Взрослый раздел contents and persistence", () => {
     playSomeEconomy(ports, childId);
     const { user } = await renderApp(ports);
 
-    expect(screen.getByLabelText("Баланс 103")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 83")).toBeOnTheScreen();
     await passAdultGate(user);
     expect(screen.getByText("Бюджет: сделано 1 из 3")).toBeOnTheScreen();
     expect(screen.getByText("Копилки: ещё впереди")).toBeOnTheScreen();
@@ -45,11 +45,10 @@ describe("Взрослый раздел contents and persistence", () => {
     expect(screen.getByRole("button", { name: "Готово" })).toBeDisabled();
     await user.type(screen.getByRole("textbox", { name: "Введи: сбросить" }), "сбросить");
     await user.press(screen.getByRole("button", { name: "Готово" }));
-    await user.press(screen.getByRole("button", { name: "Понятно" }));
 
-    expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 100")).toBeOnTheScreen();
     expect(screen.getByLabelText(/Питомец Пух/)).toBeOnTheScreen();
-    expect(screen.getByText("Выбери цель")).toBeOnTheScreen();
+    expect(screen.getAllByText("Выбери цель")).toHaveLength(2);
     expect(ports.game.listTaskProgress(ports.meta.get("activeProfileId")!)).toEqual([]);
   });
 
@@ -59,8 +58,8 @@ describe("Взрослый раздел contents and persistence", () => {
     playSomeEconomy(ports, childId);
     const { view } = await renderApp(ports);
 
-    expect(screen.getByLabelText("Баланс 103")).toBeOnTheScreen();
-    expect(screen.getByText("15 / 90")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 83")).toBeOnTheScreen();
+    expect(screen.getAllByText("15 / 90")).toHaveLength(2);
     expect(screen.getByLabelText("Сытость 60")).toBeOnTheScreen();
     expect(ports.game.listTaskProgress(childId)).toEqual([
       { taskKey: "budget_what", status: "completed", rewardPaid: true, bestReward: 10 },
@@ -69,9 +68,9 @@ describe("Взрослый раздел contents and persistence", () => {
     await view.unmount();
     await render(<FinPetApp ports={ports} />);
 
-    expect(screen.getByLabelText("Баланс 103")).toBeOnTheScreen();
-    expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
-    expect(screen.getByText("15 / 90")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 83")).toBeOnTheScreen();
+    expect(screen.getAllByText("Скейтборд")).toHaveLength(2);
+    expect(screen.getAllByText("15 / 90")).toHaveLength(2);
     expect(screen.getByLabelText("Сытость 60")).toBeOnTheScreen();
     expect(screen.getByLabelText(/Питомец Пух/)).toBeOnTheScreen();
     expect(ports.game.listTaskProgress(childId)).toEqual([
@@ -109,7 +108,6 @@ describe("Взрослый раздел contents and persistence", () => {
     await passAdultGate(user);
     await user.press(screen.getByRole("button", { name: "Демо-режим" }));
     await user.press(screen.getByRole("button", { name: "Готово" }));
-    await user.press(screen.getByRole("button", { name: "Понятно" }));
 
     await passAdultGate(user);
     expect(screen.getByRole("button", { name: "Сбросить демо" })).toBeOnTheScreen();

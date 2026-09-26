@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BackHandler, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { BANK, ECONOMY, FEATURES } from "../../core/config";
+import { BANK, FEATURES } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
 import { PixelSprite } from "../components/PixelSprite";
@@ -15,6 +15,7 @@ import { usePlayChrome } from "../navigation/playChrome";
 import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
+import { shopStrings } from "../stringsShop";
 import { completedTaskIds } from "../tasks/model";
 import { moneyStrings } from "../stringsMoney";
 import { colors, minTarget, spacing, type } from "../theme";
@@ -32,7 +33,6 @@ type HubModel = {
   profile: ProfileView;
   savings: SavingsView;
   day: DayState;
-  allowanceCredited: boolean;
   goalName: string;
   accumulated: number;
   cost: number;
@@ -55,6 +55,30 @@ export default function MainScreen({ navigation }: Props) {
   const [hub, setHub] = useState<HubModel | null>(null);
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
   const [cardOpen, setCardOpen] = useState(false);
+  const [dayTip, setDayTip] = useState(false);
+  const [dropBox, setDropBox] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const shellRef = useRef<View>(null);
+  const dropRef = useRef<View>(null);
+  const closeDayTip = useCallback(() => {
+    setDropBox(null);
+    setDayTip(false);
+  }, []);
+  const placeDropShield = useCallback(() => {
+    const drop = dropRef.current;
+    const shell = shellRef.current;
+    if (!drop || !shell || typeof drop.measureLayout !== "function") return;
+    drop.measureLayout(
+      shell,
+      (x, y, width, height) => {
+        setDropBox((current) =>
+          current && current.x === x && current.y === y && current.width === width && current.height === height
+            ? current
+            : { x, y, width, height },
+        );
+      },
+      () => setDropBox(null),
+    );
+  }, []);
 
   const loadHub = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
@@ -73,12 +97,10 @@ export default function MainScreen({ navigation }: Props) {
     const goalItem = activeGoal ? content.goals.find((item) => item.id === activeGoal.key) : undefined;
     const cost = activeGoal?.cost ?? 0;
     const remaining = activeGoal?.remaining ?? 0;
-    const creditedNow = opened.status === "opened" && opened.allowanceCredited;
-    setHub((current) => ({
+    setHub({
       profile,
       savings,
       day,
-      allowanceCredited: creditedNow || (current?.profile.id === profile.id && current.allowanceCredited),
       goalName: goalItem?.name ?? "",
       accumulated: cost - remaining,
       cost,
@@ -86,15 +108,9 @@ export default function MainScreen({ navigation }: Props) {
       savingsOpen,
       planOpen,
       bankOpen,
-    }));
+    });
     const bankPaid = bank && bank.paid > 0 ? bank : null;
-    if (opened.status === "opened" && opened.allowanceCredited) {
-      setFeedback({
-        deltas: { balance: ECONOMY.allowance + (bankPaid?.paid ?? 0) },
-        chip: strings.allowanceDayChip,
-        cause: bankPaid ? strings.feedbackBankReturned(bankPaid.paid, bankPaid.interest) : undefined,
-      });
-    } else if (bankPaid) {
+    if (bankPaid) {
       setFeedback({
         deltas: { balance: bankPaid.paid },
         cause: strings.feedbackBankReturned(bankPaid.paid, bankPaid.interest),
@@ -117,6 +133,10 @@ export default function MainScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (dayTip) {
+          closeDayTip();
+          return true;
+        }
         if (cardOpen) {
           setCardOpen(false);
           return true;
@@ -129,7 +149,7 @@ export default function MainScreen({ navigation }: Props) {
         return true;
       });
       return () => subscription.remove();
-    }, [cardOpen, setTab, tab]),
+    }, [cardOpen, closeDayTip, dayTip, setTab, tab]),
   );
 
   useFocusEffect(
@@ -169,7 +189,7 @@ export default function MainScreen({ navigation }: Props) {
   const current = options.find((option) => option.id === money) ?? options[0];
 
   return (
-    <View style={styles.shell}>
+    <View ref={shellRef} style={styles.shell}>
       <View style={styles.aboveTabs}>
         <View
           accessibilityElementsHidden={cardOpen}
@@ -190,12 +210,15 @@ export default function MainScreen({ navigation }: Props) {
                 }}
                 day={hub.day.n}
                 waiting={waiting}
-                allowanceCredited={hub.allowanceCredited}
                 goalName={hub.goalName}
                 accumulated={hub.accumulated}
                 cost={hub.cost}
                 onShop={() => navigation.navigate("Shop")}
                 onResults={() => navigation.navigate("Results")}
+                dayTip={dayTip}
+                onDayTip={(open) => (open ? setDayTip(true) : closeDayTip())}
+                dropRef={dropRef}
+                onDropLayout={placeDropShield}
               />
             ) : null}
             {tab === "map" ? <TaskListScreen /> : null}
@@ -220,6 +243,10 @@ export default function MainScreen({ navigation }: Props) {
         </View>
         <StageCard
           stage={hub.profile.stage}
+          petName={hub.profile.petName}
+          goalName={hub.goalName}
+          accumulated={hub.accumulated}
+          cost={hub.cost}
           open={cardOpen}
           onOpen={() => setCardOpen(true)}
           onClose={() => setCardOpen(false)}
@@ -244,6 +271,7 @@ export default function MainScreen({ navigation }: Props) {
                 aria-selected={selected}
                 onPress={() => {
                   setCardOpen(false);
+                  closeDayTip();
                   setTab(id);
                 }}
                 style={styles.tab}
@@ -271,6 +299,32 @@ export default function MainScreen({ navigation }: Props) {
           })}
         </View>
       </View>
+      {dayTip ? (
+        <Pressable
+          role="button"
+          aria-label={shopStrings.dailyDropClose}
+          aria-hidden
+          onPress={closeDayTip}
+          style={styles.dayTipScrim}
+        />
+      ) : null}
+      {dayTip && dropBox ? (
+        <View pointerEvents="box-none" style={styles.dayTipScrim}>
+          <Pressable
+            accessible={false}
+            aria-hidden
+            onPress={() => {}}
+            style={{
+              backgroundColor: "transparent",
+              height: dropBox.height,
+              left: dropBox.x,
+              position: "absolute",
+              top: dropBox.y,
+              width: dropBox.width,
+            }}
+          />
+        </View>
+      ) : null}
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}
     </View>
   );
@@ -280,6 +334,14 @@ const styles = StyleSheet.create({
   shell: {
     backgroundColor: colors.background,
     flex: 1,
+  },
+  dayTipScrim: {
+    backgroundColor: "transparent",
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
   },
   aboveTabs: {
     flex: 1,
@@ -318,6 +380,7 @@ const styles = StyleSheet.create({
     minHeight: minTarget,
   },
   token: {
+    backgroundColor: colors.track,
     borderRadius: 14,
     overflow: "hidden",
     paddingBottom: 4,
@@ -331,6 +394,7 @@ const styles = StyleSheet.create({
   },
   tokenFace: {
     alignItems: "center",
+    backgroundColor: colors.track,
     borderRadius: 14,
     justifyContent: "center",
     minHeight: 36,

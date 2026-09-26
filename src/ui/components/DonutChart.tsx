@@ -16,6 +16,7 @@ export function DonutChart({
   thickness = 28,
   centerValue,
   centerCaption,
+  centerColor,
   accessibilityLabel,
 }: {
   slices: readonly DonutSlice[];
@@ -23,6 +24,7 @@ export function DonutChart({
   thickness?: number;
   centerValue?: number | string;
   centerCaption?: string;
+  centerColor?: string;
   accessibilityLabel: string;
 }) {
   const total = slices.reduce((sum, slice) => sum + Math.max(0, slice.value), 0);
@@ -59,7 +61,7 @@ export function DonutChart({
           : null}
       </Svg>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.center]}>
-        <Text aria-hidden style={styles.value}>
+        <Text aria-hidden style={[styles.value, centerColor ? { color: centerColor } : null]}>
           {centerValue ?? total}
         </Text>
         {centerCaption ? (
@@ -78,7 +80,6 @@ export const CHART_COLORS = {
   optional: "#F7A115",
   savings: "#6B7A00",
   bank: "#3F6A8A",
-  allowance: "#6B7A00",
   tasks: "#F7A115",
   other: "#9C8A76",
 } as const;

@@ -20,8 +20,6 @@ const tint = {
   optionalTile: "#E9F0C4",
   goalTag: "#FFE08A",
   neutralTag: colors.track,
-  /** Calm sand, not alarm red: a skipped bill is a choice with a cost, not a failure (Т/З 8.1, 8.4). */
-  loss: "#F3E3CF",
   gain: "#EEF3D2",
 } as const;
 
@@ -45,21 +43,13 @@ function meterWord(meter: "care" | "mood") {
   return meter === "care" ? strings.care : strings.mood;
 }
 
-function feedsSatiety(item: CatalogItemContent) {
-  return itemMeterEffects(item).some((effect) => effect.meter === "care");
-}
-
-/** What a due Счёт costs the pet if the day closes unpaid. */
-export function skipLine(item: CatalogItemContent) {
-  const food = feedsSatiety(item);
-  const meter = food ? ("care" as const) : ("mood" as const);
-  const delta = food ? METERS.missedFoodPenalty : METERS.missedOtherBillPenalty;
-  return {
-    meter,
-    delta,
-    shared: !food,
-    spoken: strings.shopSkipA11y(item.name, meterWord(meter), delta, !food),
-  };
+/** «сытость -15 и счастье -15» for the meters this purchase can cancel. Null when it feeds none. */
+export function dailyDropPhrase(item: CatalogItemContent): string | null {
+  const meters = new Set(itemMeterEffects(item).map((effect) => effect.meter));
+  const parts: string[] = [];
+  if (meters.has("care")) parts.push(shopStrings.dailyCare(METERS.dailyCareDrop));
+  if (meters.has("mood")) parts.push(shopStrings.dailyMood(METERS.dailyMoodDrop));
+  return parts.length > 0 ? parts.join(" и ") : null;
 }
 
 export function rowAnnouncement(item: CatalogItemContent, balance: number, flags: RowFlags) {
@@ -67,7 +57,6 @@ export function rowAnnouncement(item: CatalogItemContent, balance: number, flags
   for (const effect of itemMeterEffects(item)) {
     parts.push(strings.shopMeterA11y(meterWord(effect.meter), effect.delta));
   }
-  if (flags.due && !flags.bought) parts.push(skipLine(item).spoken);
   if (flags.goal) parts.push(strings.shopGoalChip);
   if (flags.bought) parts.push(strings.shopBought);
   if (item.once) parts.push(strings.shopOnceChip);
@@ -116,7 +105,7 @@ function Tag({ label, fill, icon }: { label: string; fill: string; icon?: PixelI
 /**
  * State tags: Цель, Куплено, Один раз, Отложено. No category or «Счёт на
  * сегодня» (Дима, 2026-09-26): the tab already says the category, and the
- * «если отложить: …» line already marks today's Счёт.
+ * day's drop is stated once above the list.
  */
 export function ItemTags({ item, flags }: { item: CatalogItemContent; flags: RowFlags }) {
   if (!flags.goal && !flags.bought && !item.once && !flags.postponed) return null;
@@ -134,16 +123,7 @@ export function ItemTags({ item, flags }: { item: CatalogItemContent; flags: Row
  * Pet effects with Andrei's food / mood sprites. `announce` gives each line its
  * own spoken name (drawer); in a row the row label already says it all.
  */
-export function ItemEffects({
-  item,
-  showSkip,
-  announce,
-}: {
-  item: CatalogItemContent;
-  showSkip: boolean;
-  announce: boolean;
-}) {
-  const skip = showSkip ? skipLine(item) : null;
+export function ItemEffects({ item, announce }: { item: CatalogItemContent; announce: boolean }) {
   return (
     <View style={styles.effects} {...(announce ? {} : hiddenFromReader)}>
       {itemMeterEffects(item).map((effect) => (
@@ -157,16 +137,6 @@ export function ItemEffects({
           <Text style={styles.effectText}>{shopStrings.effectGain(effect.delta, meterWordLower(effect.meter))}</Text>
         </View>
       ))}
-      {skip ? (
-        <View
-          style={[styles.effect, { backgroundColor: tint.loss }]}
-          accessible={announce}
-          accessibilityLabel={announce ? skip.spoken : undefined}
-        >
-          <PixelSprite name={skip.meter === "mood" ? "mood-down" : meterSprite(skip.meter)} size={16} />
-          <Text style={styles.effectText}>{shopStrings.effectSkip(skip.delta, meterWordLower(skip.meter))}</Text>
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -196,8 +166,10 @@ export function RowButton({
         pressed ? styles.rowButtonPressed : null,
       ]}
     >
-      <PixelIcon name={icon} size={20} color={primary ? colors.onRaised : colors.accentText} />
-      <Text style={[styles.rowButtonLabel, primary ? styles.rowButtonLabelPrimary : null]}>{label}</Text>
+      <View style={[styles.rowButtonFace, primary ? styles.rowButtonFacePrimary : null]}>
+        <PixelIcon name={icon} size={20} color={primary ? colors.onRaised : colors.accentText} />
+        <Text style={[styles.rowButtonLabel, primary ? styles.rowButtonLabelPrimary : null]}>{label}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -225,7 +197,9 @@ export function SegmentedTabs<T extends string>({
             onPress={() => onChange(option.value)}
             style={[styles.segment, selected ? styles.segmentOn : null]}
           >
-            <Text style={[styles.segmentLabel, selected ? styles.segmentLabelOn : null]}>{option.label}</Text>
+            <View style={[styles.segmentFace, selected ? styles.segmentFaceOn : null]}>
+              <Text style={[styles.segmentLabel, selected ? styles.segmentLabelOn : null]}>{option.label}</Text>
+            </View>
           </Pressable>
         );
       })}
@@ -268,7 +242,7 @@ export function ShopRow({
           <Text style={styles.name}>{item.name}</Text>
           <View {...hiddenFromReader} style={styles.rowDetails}>
             <ItemTags item={item} flags={flags} />
-            <ItemEffects item={item} showSkip={flags.due && !flags.bought} announce={false} />
+            <ItemEffects item={item} announce={false} />
           </View>
         </View>
         <View style={styles.rowPrice}>
@@ -391,24 +365,30 @@ const styles = StyleSheet.create({
     textAlignVertical: "center",
   },
   rowButton: {
-    alignItems: "center",
     borderRadius: 12,
     flex: 1,
-    flexDirection: "row",
-    gap: spacing.s,
-    justifyContent: "center",
-    minHeight: minTarget,
-    paddingHorizontal: spacing.m,
   },
   rowButtonPrimary: {
-    backgroundColor: colors.raisedFace,
-    borderBottomColor: colors.raisedEdge,
-    borderBottomWidth: 3,
+    backgroundColor: colors.raisedEdge,
+    paddingBottom: 3,
   },
   rowButtonSecondary: {
     backgroundColor: colors.card,
     borderColor: colors.disabledFace,
     borderWidth: 2,
+  },
+  rowButtonFace: {
+    alignItems: "center",
+    borderRadius: 12,
+    flexDirection: "row",
+    flexGrow: 1,
+    gap: spacing.s,
+    justifyContent: "center",
+    minHeight: minTarget,
+    paddingHorizontal: spacing.m,
+  },
+  rowButtonFacePrimary: {
+    backgroundColor: colors.raisedFace,
   },
   rowButtonPressed: {
     opacity: 0.75,
@@ -429,17 +409,24 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   segment: {
-    alignItems: "center",
+    backgroundColor: colors.track,
     borderRadius: 12,
     flex: 1,
-    justifyContent: "center",
-    minHeight: minTarget,
-    paddingHorizontal: spacing.s,
+    paddingBottom: 3,
   },
   segmentOn: {
+    backgroundColor: colors.accent,
+  },
+  segmentFace: {
+    alignItems: "center",
+    backgroundColor: colors.track,
+    borderRadius: 12,
+    justifyContent: "center",
+    minHeight: minTarget - 3,
+    paddingHorizontal: spacing.s,
+  },
+  segmentFaceOn: {
     backgroundColor: colors.card,
-    borderBottomColor: colors.accent,
-    borderBottomWidth: 3,
   },
   segmentLabel: {
     color: colors.subtle,

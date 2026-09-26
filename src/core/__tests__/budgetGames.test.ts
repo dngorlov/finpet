@@ -4,6 +4,7 @@ import {
   planAfterEvent,
   planFactDiff,
   replanPaidBy,
+  stealFromJar,
   roundsToGoal,
 } from "../budgetGames";
 
@@ -22,6 +23,12 @@ describe("budget games", () => {
     expect(replanPaidBy(before, { mandatory: 50, wants: 25, savings: 25 }, "mandatory")).toBe("wants");
     expect(replanPaidBy(before, { mandatory: 50, wants: 30, savings: 20 }, "mandatory")).toBe("savings");
     expect(replanPaidBy(before, before, "mandatory")).toBeNull();
+  });
+
+  it("lets the child pay the surprise from one jar", () => {
+    const bumped = planAfterEvent({ mandatory: 40, wants: 30, savings: 30 }, { bucket: "mandatory", delta: 10 });
+    expect(stealFromJar(bumped, "wants", 10)).toEqual({ mandatory: 50, wants: 20, savings: 30 });
+    expect(stealFromJar(bumped, "wants", 40)).toBeNull();
   });
 
   it("saves what was not spent and diffs plan against fact", () => {

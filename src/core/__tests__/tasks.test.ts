@@ -1,7 +1,11 @@
 import {
   chooseOption,
+  dealTask,
   earnedReward,
+  matchPick,
+  miniGames,
   missionPrerequisite,
+  pickBudget,
   rewardLeft,
   rewardTopUp,
   scoredUnits,
@@ -142,6 +146,7 @@ describe("mini-games inside a lesson sheet and «скоро» pins", () => {
 
   it("keeps games off the chain, opens them after the parent, and never opens a «скоро» pin", () => {
     expect(missionPrerequisite(tasks[2]!, tasks)?.id).toBe("budget_1");
+    expect(miniGames(tasks).map((t) => t.id)).toEqual(["game"]);
     expect(unlockedTasks(tasks, new Set()).map((t) => t.id)).toEqual(["budget_1"]);
     expect(unlockedTasks(tasks, new Set(["budget_1"])).map((t) => t.id)).toEqual(["budget_1", "game"]);
   });
@@ -179,6 +184,64 @@ describe("score-based reward", () => {
     expect(sortVerdict(game.nodes[1]!.items![0]!, 0)).toBe("good");
     expect(sortVerdict(game.nodes[1]!.items![1]!, 0)).toBe("bad");
     expect(earnedReward(game, ["good", "bad"])).toBe(5);
+  });
+
+  it("matches tapped cards to an answer and reads the wallet as the budget", () => {
+    const options = [
+      { label: "Обед и шампунь", picks: ["Обед", "Шампунь"], next: "g3", verdict: "good" as const, explanation: "ok" },
+      { label: "Только мячик", picks: ["Мячик"], next: "retry", verdict: "bad" as const, explanation: "no" },
+      { label: "Другой набор", fallback: true, next: "retry", verdict: "bad" as const, explanation: "else" },
+    ];
+    expect(matchPick(options, ["Шампунь", "Обед"])).toBe(0);
+    expect(matchPick(options, ["Мячик"])).toBe(1);
+    expect(matchPick(options, ["Обед"])).toBe(2);
+    expect(pickBudget([{ label: "Обед", value: "10", pick: true }, { label: "Есть", value: "20", tone: "good" }])).toBe(20);
+  });
+
+  it("deals a short chain from the pool so the next visit can be a different set of rounds", () => {
+    const game = fixture({
+      id: "sale",
+      topic: "payments",
+      parent: "shop",
+      reward: 10,
+      deal: 2,
+      nodes: [
+        { id: "g0", kind: "card", text: "Начни", next: "q1", button: "Начать" },
+        ...["q1", "q2", "q3", "q4"].map((id, index, ids) => ({
+          id,
+          text: id,
+          options: [
+            {
+              label: "Купить",
+              next: ids[index + 1] ?? "fin",
+              verdict: "good" as const,
+              explanation: "да",
+              kept: 10,
+            },
+            { label: "Пройти мимо", next: "retry", verdict: "bad" as const, explanation: "нет" },
+          ],
+        })),
+        { id: "fin", kind: "card" as const, text: "Конец", next: "exit", button: "Продолжить" },
+      ],
+    });
+
+    const dealt = dealTask(game, [2, 0]);
+
+    expect(dealt.nodes.map((node) => node.id)).toEqual(["g0", "q3", "q1", "fin"]);
+    expect(dealt.nodes[0]?.next).toBe("q3");
+    expect(dealt.nodes[1]?.options?.[0]?.next).toBe("q1");
+    expect(dealt.nodes[1]?.options?.[1]?.next).toBe("retry");
+    expect(dealt.nodes[1]?.options?.[0]?.kept).toBe(10);
+    expect(dealt.nodes[2]?.options?.[0]?.next).toBe("fin");
+    expect(scoredUnits(game)).toBe(4);
+    expect(scoredUnits(dealt)).toBe(2);
+    expect(earnedReward(dealt, ["good", "good"])).toBe(10);
+    expect(dealTask(game, [1, 3]).nodes.map((node) => node.id)).toEqual(["g0", "q2", "q4", "fin"]);
+  });
+
+  it("leaves a lesson without a deal untouched", () => {
+    const lesson = fixture({ id: "lesson", topic: "budget" });
+    expect(dealTask(lesson)).toBe(lesson);
   });
 
   it("pays only the improvement over the best run and reports what is left", () => {

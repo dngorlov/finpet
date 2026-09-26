@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { planMandatoryFloor, validatePlan, type PlanBuckets } from "../../core/economy";
@@ -6,7 +6,7 @@ import { META_KEYS } from "../../data/metaKeys";
 import type { DayState } from "../../data/repositories/gameRepository";
 import { AmountStepper } from "../components/AmountStepper";
 import { CoinText } from "../components/CoinText";
-import { CHART_COLORS, DonutChart } from "../components/DonutChart";
+import { CHART_COLORS } from "../components/DonutChart";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -16,9 +16,9 @@ import { usePlayChrome } from "../navigation/playChrome";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { moneyStrings } from "../stringsMoney";
-import { colors, radius, spacing, type } from "../theme";
-import { bucketSpendOnDay, itemLookup, percents } from "./journalStats";
-import { Amount, HeroCard, Legend, MoneyCard, moneyColors, ProgressBar, type LegendRow } from "./moneyParts";
+import { colors, spacing, type } from "../theme";
+import { bucketSpendOnDay, itemLookup } from "./journalStats";
+import { Amount, MoneyCard, moneyColors, ProgressBar } from "./moneyParts";
 import { daysToGoalAt, incomeToday, todayBills, wantsThatFit } from "./planDraft";
 
 const EMPTY: PlanBuckets = { mandatory: 0, optional: 0, savings: 0 };
@@ -112,15 +112,13 @@ export default function PlanScreen() {
 
   const shown = confirmed ? day.plan.buckets : buckets;
   const free = Math.max(0, day.available - shown.mandatory - shown.optional - shown.savings);
-  const sliceValues = [shown.mandatory, shown.savings, shown.optional, free];
-  const shares = percents(sliceValues);
-  const legend: LegendRow[] = [
-    { id: "mandatory", label: strings.bucketMandatory, color: CHART_COLORS.mandatory, amount: shown.mandatory, percent: shares[0] },
-    { id: "savings", label: strings.bucketSavings, color: CHART_COLORS.savings, amount: shown.savings, percent: shares[1] },
-    { id: "optional", label: strings.bucketOptional, color: CHART_COLORS.optional, amount: shown.optional, percent: shares[2] },
-    { id: "free", label: moneyStrings.planFree, color: moneyColors.free, amount: free, percent: shares[3] },
+  const slices = [
+    { id: "mandatory", label: strings.bucketMandatory, color: CHART_COLORS.mandatory, amount: shown.mandatory },
+    { id: "savings", label: strings.bucketSavings, color: CHART_COLORS.savings, amount: shown.savings },
+    { id: "optional", label: strings.bucketOptional, color: CHART_COLORS.optional, amount: shown.optional },
+    { id: "free", label: moneyStrings.planFree, color: moneyColors.free, amount: free },
   ];
-  const chartParts = legend.filter((row) => row.amount > 0);
+  const chartParts = slices.filter((row) => row.amount > 0);
 
   return (
     <Screen
@@ -136,101 +134,110 @@ export default function PlanScreen() {
       }
     >
       <ScreenTitle style={styles.title}>{strings.navPlan}</ScreenTitle>
-      <HeroCard caption={moneyStrings.planCaption} value={day.available} label={strings.planAvailable(day.available)}>
-        {confirmed || income <= 0 ? null : <Text style={styles.heroLine}>{strings.planIncomeToday(income)}</Text>}
-      </HeroCard>
-      {confirmed ? null : <CoinText text={strings.planPromise} style={styles.note} />}
-      <MoneyCard>
-        <Text style={styles.section}>{moneyStrings.planSplit}</Text>
-        <View style={styles.split}>
-          <DonutChart
-            size={132}
-            thickness={24}
-            slices={legend.map((row) => ({ id: row.id, label: row.label, value: row.amount, color: row.color }))}
-            centerValue={day.available}
-            centerCaption={moneyStrings.planChartCenter}
-            accessibilityLabel={moneyStrings.planChartA11y(chartParts)}
-          />
+      <View style={styles.availableRow}>
+        <Text style={styles.availableCaption}>{moneyStrings.planCaption}</Text>
+        <View accessible aria-label={strings.planAvailable(day.available)}>
+          <Amount value={day.available} size={16} />
         </View>
-        <Legend rows={legend} />
+      </View>
+      {confirmed || income <= 0 ? null : <Text style={styles.income}>{strings.planIncomeToday(income)}</Text>}
+      {confirmed ? null : <CoinText text={strings.planPromise} style={styles.note} />}
+      <MoneyCard tight>
+        <Text style={styles.section}>{confirmed ? moneyStrings.planSplit : moneyStrings.planHow}</Text>
+        <SplitBar
+          slices={slices.map((row) => ({ id: row.id, value: row.amount, color: row.color }))}
+          label={moneyStrings.planChartA11y(chartParts)}
+        />
+        {confirmed ? null : (
+          <CoinText
+            coin
+            text={strings.planRemainder(check.remainder)}
+            style={[styles.remainder, check.remainder < 0 ? styles.remainderOver : null]}
+          />
+        )}
+        {confirmed || check.ok ? null : <CoinText text={strings.planOverBudget} style={styles.body} />}
+        {confirmed ? (
+          <>
+            <BucketActual
+              label={strings.bucketMandatory}
+              color={CHART_COLORS.mandatory}
+              plan={day.plan.buckets.mandatory}
+              actual={day.actual.mandatory}
+              yesterday={yesterday?.mandatory}
+            />
+            <BucketActual
+              divided
+              label={strings.bucketSavings}
+              color={CHART_COLORS.savings}
+              plan={day.plan.buckets.savings}
+              actual={day.actual.savings}
+              yesterday={yesterday?.savings}
+            />
+            <BucketActual
+              divided
+              label={strings.bucketOptional}
+              color={CHART_COLORS.optional}
+              plan={day.plan.buckets.optional}
+              actual={day.actual.optional}
+              yesterday={yesterday?.optional}
+            />
+          </>
+        ) : (
+          <>
+            {/* Order = order of decisions: Счета → себе на Цель → желаемое на остаток. */}
+            <DraftBucket
+              label={strings.bucketMandatory}
+              pictogram={strings.navPlanPictogram}
+              color={CHART_COLORS.mandatory}
+              value={buckets.mandatory}
+              min={floor}
+              max={day.available}
+              yesterday={yesterday?.mandatory}
+              extra={floor > 0 ? strings.planBillsFloor(floor) : undefined}
+              details={
+                bills.parts.length === 0 ? null : (
+                  <View style={styles.bills}>
+                    <CoinText text={strings.planBillsTitle} style={styles.billTitle} />
+                    {bills.note ? <CoinText text={bills.note} style={styles.small} /> : null}
+                    <CoinText coin text={strings.planBillsLine(bills.parts, bills.total)} style={styles.small} />
+                    {billsShort > 0 ? <CoinText text={strings.planBillsShort(billsShort)} style={styles.small} /> : null}
+                  </View>
+                )
+              }
+              onChange={(mandatory) => persist({ ...buckets, mandatory: Math.max(floor, mandatory) })}
+            />
+            <DraftBucket
+              divided
+              label={strings.bucketSavings}
+              pictogram={strings.navSavingsPictogram}
+              color={CHART_COLORS.savings}
+              value={buckets.savings}
+              max={day.available}
+              yesterday={yesterday?.savings}
+              extra={strings.planSavingsExtra}
+              hint={
+                goal
+                  ? goalDays == null
+                    ? strings.planGoalNoSavings(goal.name)
+                    : strings.planGoalForecast(goal.name, goalDays)
+                  : undefined
+              }
+              onChange={(savings) => persist({ ...buckets, savings })}
+            />
+            <DraftBucket
+              divided
+              label={strings.bucketOptional}
+              pictogram={strings.navShopPictogram}
+              color={CHART_COLORS.optional}
+              value={buckets.optional}
+              max={day.available}
+              yesterday={yesterday?.optional}
+              hint={strings.planWantsHint(wantsThatFit(content.catalog, buckets.optional))}
+              onChange={(optional) => persist({ ...buckets, optional })}
+            />
+          </>
+        )}
       </MoneyCard>
-      {confirmed || bills.parts.length === 0 ? null : (
-        <Card>
-          <CoinText text={strings.planBillsTitle} style={styles.section} />
-          {bills.note ? <CoinText text={bills.note} style={styles.body} /> : null}
-          <CoinText coin text={strings.planBillsLine(bills.parts, bills.total)} style={styles.body} />
-          {billsShort > 0 ? <CoinText text={strings.planBillsShort(billsShort)} style={styles.body} /> : null}
-        </Card>
-      )}
-      {confirmed ? (
-        <>
-          <BucketActual
-            label={strings.bucketMandatory}
-            color={CHART_COLORS.mandatory}
-            plan={day.plan.buckets.mandatory}
-            actual={day.actual.mandatory}
-            yesterday={yesterday?.mandatory}
-          />
-          <BucketActual
-            label={strings.bucketSavings}
-            color={CHART_COLORS.savings}
-            plan={day.plan.buckets.savings}
-            actual={day.actual.savings}
-            yesterday={yesterday?.savings}
-          />
-          <BucketActual
-            label={strings.bucketOptional}
-            color={CHART_COLORS.optional}
-            plan={day.plan.buckets.optional}
-            actual={day.actual.optional}
-            yesterday={yesterday?.optional}
-          />
-        </>
-      ) : (
-        <>
-          {/* Order = order of decisions: Счета → себе на Цель → желаемое на остаток. */}
-          <DraftBucket
-            label={strings.bucketMandatory}
-            pictogram={strings.navPlanPictogram}
-            color={CHART_COLORS.mandatory}
-            value={buckets.mandatory}
-            min={floor}
-            max={day.available}
-            yesterday={yesterday?.mandatory}
-            extra={floor > 0 ? strings.planBillsFloor(floor) : undefined}
-            onChange={(mandatory) => persist({ ...buckets, mandatory: Math.max(floor, mandatory) })}
-          />
-          <DraftBucket
-            label={strings.bucketSavings}
-            pictogram={strings.navSavingsPictogram}
-            color={CHART_COLORS.savings}
-            value={buckets.savings}
-            max={day.available}
-            yesterday={yesterday?.savings}
-            extra={strings.planSavingsExtra}
-            hint={
-              goal
-                ? goalDays == null
-                  ? strings.planGoalNoSavings(goal.name)
-                  : strings.planGoalForecast(goal.name, goalDays)
-                : undefined
-            }
-            onChange={(savings) => persist({ ...buckets, savings })}
-          />
-          <DraftBucket
-            label={strings.bucketOptional}
-            pictogram={strings.navShopPictogram}
-            color={CHART_COLORS.optional}
-            value={buckets.optional}
-            max={day.available}
-            yesterday={yesterday?.optional}
-            hint={strings.planWantsHint(wantsThatFit(content.catalog, buckets.optional))}
-            onChange={(optional) => persist({ ...buckets, optional })}
-          />
-        </>
-      )}
-      {confirmed ? null : <CoinText coin text={strings.planRemainder(check.remainder)} style={styles.remainder} />}
-      {confirmed || check.ok ? null : <CoinText text={strings.planOverBudget} style={styles.body} />}
       {askingConfirm ? (
         <Card>
           <CoinText text={strings.confirmPlanTitle} style={styles.section} />
@@ -252,10 +259,29 @@ function Yesterday({ today, yesterday }: { today: number; yesterday?: number }) 
   if (yesterday == null) return null;
   return (
     <View style={styles.yesterday}>
-      <View style={styles.yesterdayChip}>
-        <Text style={styles.yesterdayText}>{moneyStrings.planYesterday(yesterday)}</Text>
-      </View>
+      <Text style={styles.yesterdayText}>{moneyStrings.planYesterday(yesterday)}</Text>
       <Text style={styles.compare}>{compareLine(today, yesterday)}</Text>
+    </View>
+  );
+}
+
+/** One pile: colored shares, and the unfilled track is «Свободно». */
+function SplitBar({
+  slices,
+  label,
+}: {
+  slices: readonly { id: string; value: number; color: string }[];
+  label: string;
+}) {
+  return (
+    <View accessible role="img" aria-label={label} style={styles.bar}>
+      {slices.map((slice) =>
+        slice.value <= 0 ? null : slice.id === "free" ? (
+          <View key={slice.id} style={{ flex: slice.value }} />
+        ) : (
+          <View key={slice.id} style={[styles.barSeg, { flex: slice.value, backgroundColor: slice.color }]} />
+        ),
+      )}
     </View>
   );
 }
@@ -278,7 +304,9 @@ function DraftBucket({
   yesterday,
   extra,
   hint,
+  details,
   min,
+  divided,
   onChange,
 }: {
   label: string;
@@ -289,21 +317,27 @@ function DraftBucket({
   yesterday?: number;
   extra?: string;
   hint?: string;
+  details?: ReactNode;
   min?: number;
+  divided?: boolean;
   onChange: (next: number) => void;
 }) {
   return (
-    <View style={[styles.bucket, { borderLeftColor: color }]}>
+    <View style={[styles.bucket, { borderLeftColor: color }, divided ? styles.divided : null]}>
       <AmountStepper
         label={label}
         pictogram={pictogram}
         value={value}
         min={min}
         max={max}
+        dense
         showTrack
+        trackColor={color}
+        amountLabel={moneyStrings.legendRow(label, value)}
         onChange={onChange}
       />
       <Yesterday today={value} yesterday={yesterday} />
+      {details}
       {extra ? <CoinText coin={/\d/.test(extra)} text={extra} style={styles.small} /> : null}
       {hint ? <CoinText text={hint} style={styles.small} /> : null}
     </View>
@@ -316,15 +350,17 @@ function BucketActual({
   plan,
   actual,
   yesterday,
+  divided,
 }: {
   label: string;
   color: string;
   plan: number;
   actual: number;
   yesterday?: number;
+  divided?: boolean;
 }) {
   return (
-    <View style={[styles.bucket, { borderLeftColor: color }]}>
+    <View style={[styles.bucket, { borderLeftColor: color }, divided ? styles.divided : null]}>
       <View style={styles.bucketTop}>
         <BucketHeader label={label} color={color} />
         <Amount value={actual} size={14} />
@@ -355,30 +391,60 @@ const styles = StyleSheet.create({
     color: colors.subtle,
     fontSize: type.body,
   },
+  availableRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.s,
+    justifyContent: "space-between",
+  },
+  availableCaption: {
+    color: colors.text,
+    flexShrink: 1,
+    fontSize: type.body,
+    fontWeight: "700",
+  },
+  income: {
+    color: moneyColors.plus,
+    fontSize: type.body,
+    fontWeight: "700",
+  },
   small: {
     color: colors.subtle,
     fontSize: type.body,
+    lineHeight: 20,
   },
   remainder: {
     color: colors.text,
     fontSize: type.body,
     fontWeight: "700",
   },
-  heroLine: {
-    color: moneyColors.heroSubtle,
-    fontSize: type.body,
-    fontWeight: "700",
+  remainderOver: {
+    color: moneyColors.minus,
   },
-  split: {
-    alignItems: "center",
-    paddingVertical: spacing.s,
+  bar: {
+    backgroundColor: colors.track,
+    borderRadius: 8,
+    flexDirection: "row",
+    height: 16,
+    overflow: "hidden",
+  },
+  barSeg: {
+    height: 16,
+  },
+  bills: {
+    gap: 0,
+  },
+  billTitle: {
+    color: colors.subtle,
+    fontSize: type.body,
   },
   bucket: {
-    backgroundColor: colors.card,
-    borderLeftWidth: 6,
-    borderRadius: radius.card,
-    gap: spacing.s,
-    padding: spacing.m,
+    gap: 4,
+    paddingVertical: 4,
+  },
+  divided: {
+    borderTopColor: colors.track,
+    borderTopWidth: 1,
   },
   bucketTop: {
     alignItems: "center",
@@ -406,20 +472,13 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.s,
   },
-  yesterdayChip: {
-    backgroundColor: colors.track,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
   yesterdayText: {
-    color: colors.text,
+    color: colors.subtle,
     fontSize: type.body,
-    fontWeight: "700",
   },
   compare: {
     color: colors.subtle,
     flexShrink: 1,
-    fontSize: 14,
+    fontSize: type.body,
   },
 });
