@@ -18,12 +18,10 @@ import { colors, font, minTarget, radius, spacing, type } from "../theme";
 const tint = {
   mandatoryTile: colors.highlight,
   optionalTile: "#E9F0C4",
-  mandatoryTag: colors.badgeFill,
-  optionalTag: "#D9E59A",
-  dueTag: "#FFDAD4",
   goalTag: "#FFE08A",
   neutralTag: colors.track,
-  loss: "#FFDAD4",
+  /** Calm sand, not alarm red: a skipped bill is a choice with a cost, not a failure (Т/З 8.1, 8.4). */
+  loss: "#F3E3CF",
   gain: "#EEF3D2",
 } as const;
 
@@ -115,16 +113,15 @@ function Tag({ label, fill, icon }: { label: string; fill: string; icon?: PixelI
   );
 }
 
-/** Category plus state tags: Счёт на сегодня, Цель, Куплено, Один раз, Отложено. */
+/**
+ * State tags: Цель, Куплено, Один раз, Отложено. No category or «Счёт на
+ * сегодня» (Дима, 2026-09-26): the tab already says the category, and the
+ * «если отложить: …» line already marks today's Счёт.
+ */
 export function ItemTags({ item, flags }: { item: CatalogItemContent; flags: RowFlags }) {
-  const mandatory = item.kind === "mandatory";
+  if (!flags.goal && !flags.bought && !item.once && !flags.postponed) return null;
   return (
     <View style={styles.tags}>
-      <Tag
-        label={mandatory ? shopStrings.tagMandatory : shopStrings.tagOptional}
-        fill={mandatory ? tint.mandatoryTag : tint.optionalTag}
-      />
-      {flags.due && !flags.bought ? <Tag label={shopStrings.tagDueToday} fill={tint.dueTag} icon="clipboard" /> : null}
       {flags.goal ? <Tag label={strings.shopGoalChip} fill={tint.goalTag} icon="star" /> : null}
       {flags.bought ? <Tag label={strings.shopBought} fill={tint.gain} icon="check" /> : null}
       {item.once ? <Tag label={strings.shopOnceChip} fill={tint.neutralTag} /> : null}
@@ -166,7 +163,7 @@ export function ItemEffects({
           accessible={announce}
           accessibilityLabel={announce ? skip.spoken : undefined}
         >
-          <PixelSprite name={meterSprite(skip.meter)} size={16} />
+          <PixelSprite name={skip.meter === "mood" ? "mood-down" : meterSprite(skip.meter)} size={16} />
           <Text style={styles.effectText}>{shopStrings.effectSkip(skip.delta, meterWordLower(skip.meter))}</Text>
         </View>
       ) : null}
@@ -357,7 +354,8 @@ const styles = StyleSheet.create({
   },
   tag: {
     alignItems: "center",
-    borderRadius: 8,
+    borderRadius: 10,
+    minHeight: 24,
     flexDirection: "row",
     gap: 4,
     paddingHorizontal: spacing.s,
@@ -375,16 +373,22 @@ const styles = StyleSheet.create({
   },
   effect: {
     alignItems: "center",
-    borderRadius: 8,
+    borderRadius: 10,
     flexDirection: "row",
     gap: 6,
-    paddingHorizontal: spacing.s,
+    maxWidth: "100%",
+    minHeight: 28,
+    paddingHorizontal: 10,
     paddingVertical: 4,
   },
   effectText: {
     color: colors.text,
+    flexShrink: 1,
     fontSize: 14,
     fontWeight: "600",
+    includeFontPadding: false,
+    lineHeight: 18,
+    textAlignVertical: "center",
   },
   rowButton: {
     alignItems: "center",

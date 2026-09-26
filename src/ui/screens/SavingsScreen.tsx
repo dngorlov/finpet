@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { CatalogItemContent, GoalContent } from "../../data/content";
@@ -89,9 +89,11 @@ export default function SavingsScreen() {
     }, [load]),
   );
 
-  useEffect(() => {
+  const [seenFocus, setSeenFocus] = useState<typeof focus>(null);
+  if (focus !== seenFocus) {
+    setSeenFocus(focus);
     if (focus?.kind === "goal") setPickerOpen(true);
-  }, [focus]);
+  }
 
   if (!savings) {
     return (
@@ -280,7 +282,6 @@ export default function SavingsScreen() {
   const ops = savingsOps(journal, lookup).slice(0, RECENT_OPS);
   const stats = savingsStats(journal);
   const goalCost = savings.activeGoal?.cost ?? 0;
-  const goalPercent = goalCost > 0 ? Math.min(100, Math.floor((accumulated / goalCost) * 100)) : 0;
   const home = phase.name === "home";
   const itemName = (id: string | null) => content.goals.find((entry) => entry.id === id)?.name ?? id ?? "";
 
@@ -312,7 +313,7 @@ export default function SavingsScreen() {
                 <Amount value={goalCost} size={16} color={moneyColors.heroText} />
               </View>
             </View>
-            <View accessible aria-label={moneyStrings.savingsGoalProgress(accumulated, goalCost, goalPercent)}>
+            <View accessible aria-label={moneyStrings.savingsGoalProgress(accumulated, goalCost)}>
               <ProgressBar value={accumulated} max={goalCost} on="hero" />
             </View>
             <View style={styles.heroRow}>

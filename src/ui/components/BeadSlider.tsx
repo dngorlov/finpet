@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useLatest } from "./useLatest";
 import {
   PanResponder,
   Pressable,
@@ -61,10 +62,8 @@ export function BeadSlider<K extends string>({
   const [dragX, setDragX] = useState(0);
   const trackPageXRef = useRef(0);
   const trackRef = useRef<View>(null);
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
-  const keysRef = useRef(keys);
-  keysRef.current = keys;
+  const onChangeRef = useLatest(onChange);
+  const keysRef = useLatest(keys);
   const dragXRef = useRef(0);
 
   const centers = useMemo(
@@ -98,7 +97,7 @@ export function BeadSlider<K extends string>({
         onChangeRef.current(key);
       }
     },
-    [centers],
+    [centers, keysRef, onChangeRef],
   );
 
   const applyPageX = useCallback(
@@ -116,6 +115,8 @@ export function BeadSlider<K extends string>({
     setDragging(false);
   }, [emitNearest]);
 
+  // PanResponder handlers read refs only when a gesture fires, never during render.
+  /* eslint-disable react-hooks/refs */
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -139,6 +140,7 @@ export function BeadSlider<K extends string>({
       }),
     [applyPageX, finishDrag],
   );
+  /* eslint-enable react-hooks/refs */
 
   const onTrackLayout = (event: LayoutChangeEvent) => {
     setTrackWidth(event.nativeEvent.layout.width);

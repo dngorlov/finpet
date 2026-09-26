@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -85,9 +85,11 @@ export default function TaskListScreen() {
     }, [content.tasks, game, meta]),
   );
 
-  useEffect(() => {
+  const [seenFocus, setSeenFocus] = useState<typeof focus>(null);
+  if (focus !== seenFocus) {
+    setSeenFocus(focus);
     if (focus?.kind === "lesson") setSelectedId(focus.taskId);
-  }, [focus]);
+  }
 
   const byKey = new Map(progress.map((row) => [row.taskKey, row]));
   const completed = completedTaskIds(progress);

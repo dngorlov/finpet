@@ -1,16 +1,13 @@
 /** Магазин copy added with the shop-row redesign. Older shop strings stay in strings.ts. */
 export const shopStrings = {
-  tagMandatory: "Обязательное",
-  tagOptional: "Желаемое",
-  tagDueToday: "Счёт на сегодня",
   tagPostponed: "Отложено",
 
   careWord: "сытость",
   moodWord: "настроение",
   /** «+10 сытость» */
   effectGain: (delta: number, meter: string) => `+${delta} ${meter}`,
-  /** «не купишь: −15 сытость» */
-  effectSkip: (delta: number, meter: string) => `не купишь: −${delta} ${meter}`,
+  /** «если отложить: сытость −15» */
+  effectSkip: (delta: number, meter: string) => `если отложить: ${meter} −${delta}`,
 
   buy: "Купить",
   postpone: "Отложить",

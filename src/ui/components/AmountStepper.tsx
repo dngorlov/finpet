@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useLatest } from "./useLatest";
 import {
   PanResponder,
   Pressable,
@@ -42,16 +43,11 @@ export function AmountStepper({
   const fillWidth =
     `${Math.max(0, Math.min(100, trackOn && max > 0 ? (value / max) * 100 : 0))}%` as const;
 
-  const valueRef = useRef(value);
-  valueRef.current = value;
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
-  const maxRef = useRef(max);
-  maxRef.current = max;
-  const minRef = useRef(min);
-  minRef.current = min;
-  const disabledRef = useRef(disabled);
-  disabledRef.current = disabled;
+  const valueRef = useLatest(value);
+  const onChangeRef = useLatest(onChange);
+  const maxRef = useLatest(max);
+  const minRef = useLatest(min);
+  const disabledRef = useLatest(disabled);
 
   const repeatingRef = useRef(false);
   const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -81,7 +77,7 @@ export function AmountStepper({
     }
     onChangeRef.current(next);
     return true;
-  }, []);
+  }, [disabledRef, maxRef, minRef, onChangeRef, valueRef]);
 
   const startHold = useCallback(
     (delta: number) => {
@@ -124,8 +120,10 @@ export function AmountStepper({
     const x = Math.max(0, Math.min(width, pageX - trackPageXRef.current));
     const raw = cap === 0 ? 0 : Math.round((x / width) * cap);
     onChangeRef.current(Math.max(minRef.current, raw));
-  }, []);
+  }, [disabledRef, maxRef, minRef, onChangeRef]);
 
+  // PanResponder handlers read refs only when a gesture fires, never during render.
+  /* eslint-disable react-hooks/refs */
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -143,8 +141,9 @@ export function AmountStepper({
           setFromPageX(event.nativeEvent.pageX);
         },
       }),
-    [setFromPageX],
+    [disabledRef, setFromPageX],
   );
+  /* eslint-enable react-hooks/refs */
 
   const onTrackLayout = (event: LayoutChangeEvent) => {
     trackWidthRef.current = event.nativeEvent.layout.width;
