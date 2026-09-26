@@ -1,8 +1,5 @@
 /** Магазин copy added with the shop-row redesign. Older shop strings stay in strings.ts. */
 export const shopStrings = {
-  tagMandatory: "Обязательное",
-  tagOptional: "Желаемое",
-  tagDueToday: "Счёт на сегодня",
   tagPostponed: "Отложено",
 
   careWord: "сытость",
