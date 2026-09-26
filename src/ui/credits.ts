@@ -54,6 +54,24 @@ export const RUNTIME_LIBRARIES: readonly LibraryCredit[] = [
     version: "0.4.1",
     license: "MIT (шрифт — OFL-1.1)",
   },
+  {
+    pkg: "@expo-google-fonts/nunito",
+    name: "@expo-google-fonts/nunito",
+    version: "0.4.2",
+    license: "MIT (шрифт — OFL-1.1)",
+  },
+  {
+    pkg: "@expo-google-fonts/unbounded",
+    name: "@expo-google-fonts/unbounded",
+    version: "0.4.1",
+    license: "MIT (шрифт — OFL-1.1)",
+  },
+  {
+    pkg: "@expo-google-fonts/cormorant-garamond",
+    name: "@expo-google-fonts/cormorant-garamond",
+    version: "0.4.1",
+    license: "MIT (шрифт — OFL-1.1)",
+  },
 ];
 
 /** Build and test tooling (devDependencies, plus ESLint which package.json keeps in dependencies). */
@@ -107,6 +125,18 @@ export const FONTS: readonly Credit[] = [
   {
     what: "Press Start 2P",
     source: "CodeMan38, SIL Open Font License 1.1 (через Google Fonts)",
+  },
+  {
+    what: "Nunito",
+    source: "The Nunito Project Authors, SIL Open Font License 1.1 (через Google Fonts)",
+  },
+  {
+    what: "Unbounded",
+    source: "The Unbounded Project Authors, SIL Open Font License 1.1 (через Google Fonts)",
+  },
+  {
+    what: "Cormorant Garamond",
+    source: "Cormorant Project Authors, SIL Open Font License 1.1 (через Google Fonts)",
   },
 ];
 

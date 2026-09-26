@@ -56,9 +56,12 @@ export const radius = {
 /** Minimum touch target (UX constraints). */
 export const minTarget = 48;
 
-/** Press Start 2P, loaded in FinPetApp. Sharp at multiples of 8. */
+/** Loaded in FinPetApp. Pixel stays the app face; the other three belong to the Этап card. */
 export const font = {
   pixel: "PressStart2P_400Regular",
+  novice: "Nunito_800ExtraBold",
+  pro: "Unbounded_700Bold",
+  millionaire: "CormorantGaramond_600SemiBold",
 } as const;
 
 /** Titles that stay the phone font. Press Start 2P is too wide for this line. */

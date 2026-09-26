@@ -1,4 +1,7 @@
+import { CormorantGaramond_600SemiBold } from "@expo-google-fonts/cormorant-garamond";
+import { Nunito_800ExtraBold } from "@expo-google-fonts/nunito";
 import { PressStart2P_400Regular, useFonts } from "@expo-google-fonts/press-start-2p";
+import { Unbounded_700Bold } from "@expo-google-fonts/unbounded";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
@@ -17,7 +20,12 @@ const INITIAL_METRICS = {
 
 export function FinPetApp({ ports }: { ports: SessionPorts }) {
   const [navigationRef] = useState(() => createNavigationContainerRef<RootStackParamList>());
-  useFonts({ PressStart2P_400Regular });
+  useFonts({
+    PressStart2P_400Regular,
+    Nunito_800ExtraBold,
+    Unbounded_700Bold,
+    CormorantGaramond_600SemiBold,
+  });
 
   return (
     <SafeAreaProvider initialMetrics={INITIAL_METRICS}>

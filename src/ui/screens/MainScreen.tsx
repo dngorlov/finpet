@@ -8,6 +8,7 @@ import type { DayState, ProfileView, SavingsView } from "../../data/repositories
 import { PixelSprite } from "../components/PixelSprite";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { Screen } from "../components/Screen";
+import { StageCard } from "../components/StageCard";
 import { StatusStrip } from "../components/StatusStrip";
 import type { MoneySection } from "../navigation/playChrome";
 import { usePlayChrome } from "../navigation/playChrome";
@@ -53,6 +54,7 @@ export default function MainScreen({ navigation }: Props) {
   const { tab, setTab, money, setMoney, revision } = usePlayChrome();
   const [hub, setHub] = useState<HubModel | null>(null);
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
+  const [cardOpen, setCardOpen] = useState(false);
 
   const loadHub = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
@@ -113,6 +115,10 @@ export default function MainScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (cardOpen) {
+          setCardOpen(false);
+          return true;
+        }
         if (tab === "home") {
           BackHandler.exitApp();
           return true;
@@ -121,7 +127,13 @@ export default function MainScreen({ navigation }: Props) {
         return true;
       });
       return () => subscription.remove();
-    }, [setTab, tab]),
+    }, [cardOpen, setTab, tab]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => setCardOpen(false);
+    }, []),
   );
 
   useEffect(() => {
@@ -156,46 +168,60 @@ export default function MainScreen({ navigation }: Props) {
 
   return (
     <View style={styles.shell}>
-      <StatusStrip />
-      <View style={styles.bodySlot}>
-        {tab === "home" ? (
-          <HomeScene
-            pet={{
-              species: hub.profile.species,
-              color: hub.profile.color,
-              accessory: hub.profile.accessory,
-              petName: hub.profile.petName,
-              care: hub.profile.care,
-              mood: hub.profile.mood,
-            }}
-            day={hub.day.n}
-            waiting={waiting}
-            allowanceCredited={hub.allowanceCredited}
-            goalName={hub.goalName}
-            accumulated={hub.accumulated}
-            cost={hub.cost}
-            onShop={() => navigation.navigate("Shop")}
-            onResults={() => navigation.navigate("Results")}
-          />
-        ) : null}
-        {tab === "map" ? <TaskListScreen /> : null}
-        {tab === "money" ? (
-          <View style={styles.money}>
-            <View style={styles.menu} role="tablist" aria-label={moneyStrings.sections}>
-              <PillRow grow options={options} value={current.id} onChange={setMoney} />
-            </View>
-            <View style={styles.bodySlot}>
-              {money === "savings" ? <SavingsScreen /> : null}
-              {money === "plan" ? <PlanScreen /> : null}
-              {money === "journal" ? (
-                <Screen>
-                  <JournalPanel />
-                </Screen>
-              ) : null}
-              {money === "bank" ? <BankScreen /> : null}
-            </View>
+      <View style={styles.aboveTabs}>
+        <View
+          accessibilityElementsHidden={cardOpen}
+          importantForAccessibility={cardOpen ? "no-hide-descendants" : "auto"}
+          style={styles.aboveTabs}
+        >
+          <StatusStrip />
+          <View style={styles.bodySlot}>
+            {tab === "home" ? (
+              <HomeScene
+                pet={{
+                  species: hub.profile.species,
+                  color: hub.profile.color,
+                  accessory: hub.profile.accessory,
+                  petName: hub.profile.petName,
+                  care: hub.profile.care,
+                  mood: hub.profile.mood,
+                }}
+                day={hub.day.n}
+                waiting={waiting}
+                allowanceCredited={hub.allowanceCredited}
+                goalName={hub.goalName}
+                accumulated={hub.accumulated}
+                cost={hub.cost}
+                onShop={() => navigation.navigate("Shop")}
+                onResults={() => navigation.navigate("Results")}
+              />
+            ) : null}
+            {tab === "map" ? <TaskListScreen /> : null}
+            {tab === "money" ? (
+              <View style={styles.money}>
+                <View style={styles.menu} role="tablist" aria-label={moneyStrings.sections}>
+                  <PillRow grow options={options} value={current.id} onChange={setMoney} />
+                </View>
+                <View style={styles.bodySlot}>
+                  {money === "savings" ? <SavingsScreen /> : null}
+                  {money === "plan" ? <PlanScreen /> : null}
+                  {money === "journal" ? (
+                    <Screen>
+                      <JournalPanel />
+                    </Screen>
+                  ) : null}
+                  {money === "bank" ? <BankScreen /> : null}
+                </View>
+              </View>
+            ) : null}
           </View>
-        ) : null}
+        </View>
+        <StageCard
+          stage={hub.profile.stage}
+          open={cardOpen}
+          onOpen={() => setCardOpen(true)}
+          onClose={() => setCardOpen(false)}
+        />
       </View>
       <View style={styles.tabTray}>
         <View style={styles.tabs}>
@@ -214,7 +240,10 @@ export default function MainScreen({ navigation }: Props) {
                 role="button"
                 aria-label={label}
                 aria-selected={selected}
-                onPress={() => setTab(id)}
+                onPress={() => {
+                  setCardOpen(false);
+                  setTab(id);
+                }}
                 style={styles.tab}
               >
                 {({ pressed }) => (
@@ -249,6 +278,10 @@ const styles = StyleSheet.create({
   shell: {
     backgroundColor: colors.background,
     flex: 1,
+  },
+  aboveTabs: {
+    flex: 1,
+    overflow: "hidden",
   },
   bodySlot: {
     flex: 1,
