@@ -4,4 +4,6 @@ export const META_KEYS = {
   onboardingDone: "onboardingDone",
   childProfileId: "childProfileId",
   demoProfileId: "demoProfileId",
+  /** Device-wide громкость, 0–100. Missing means the default in `readSoundVolume`. */
+  soundVolume: "soundVolume",
 } as const;

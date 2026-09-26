@@ -87,7 +87,7 @@ These were decided in the planning interview; do not re-derive them. If a number
 
 ### 2.6 Stretch tier (build only after M6; never blocks the mandatory scope)
 
-In build order: (1) animation/sound polish + mute toggle · (2) Родительский бонус (+5/+10/+20 once per day with optional reason, logged as a transaction) · (3) «неожиданные расходы» medical event · (4) tablet/landscape · (5) **Помощник** — kid-visible LLM chat button on the main screen: feature-flagged off by default, optional (never required), topic-restricted RU system prompt, no personal data in requests, no links in output, API key via local `.env` (never committed), explicit no-connection message. (See CONTEXT.md «Помощник».)
+In build order: (1) animation polish — sound effects for a right answer, a wrong answer, and the end of a Задание, plus a volume slider on Настройки, are in · (2) Родительский бонус (+5/+10/+20 once per day with optional reason, logged as a transaction) · (3) «неожиданные расходы» medical event · (4) tablet/landscape · (5) **Помощник** — kid-visible LLM chat button on the main screen: feature-flagged off by default, optional (never required), topic-restricted RU system prompt, no personal data in requests, no links in output, API key via local `.env` (never committed), explicit no-connection message. (See CONTEXT.md «Помощник».)
 
 ## 3. Architecture
 

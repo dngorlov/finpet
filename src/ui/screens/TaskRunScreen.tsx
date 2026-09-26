@@ -28,6 +28,8 @@ import type { RootStackParamList } from "../navigation/types";
 import { PetView } from "../pet/PetView";
 import type { PetPose } from "../pet/keys";
 import { useSession } from "../session/SessionProvider";
+import { cueForVerdict } from "../sound/cues";
+import { playStoredCue } from "../sound/playCue";
 import { strings } from "../strings";
 import { colors, radius, spacing, type } from "../theme";
 import { AllocateBoard, ReplanBoard } from "../games/BudgetBoard";
@@ -174,6 +176,7 @@ export default function TaskRunScreen({ navigation, route }: Props) {
       setSpent((current) => ({ ...current, [spend.bucket]: (current[spend.bucket] ?? 0) + spend.amount }));
     }
     setResult(step);
+    void playStoredCue(cueForVerdict(step.verdict), meta);
     const coins = coinDelta(step.effects);
     if (coins > 0 && step.next !== "exit") {
       setSceneFeedback({
@@ -295,7 +298,10 @@ export default function TaskRunScreen({ navigation, route }: Props) {
           bins={node.bins ?? []}
           items={node.items ?? []}
           withPet={withPet}
-          onAnswer={(index, verdict) => remember(`${node.id}#${index}`, verdict)}
+          onAnswer={(index, verdict) => {
+            remember(`${node.id}#${index}`, verdict);
+            void playStoredCue(cueForVerdict(verdict), meta);
+          }}
           onDone={goNext}
           onPose={setPose}
         />

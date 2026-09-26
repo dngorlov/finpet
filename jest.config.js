@@ -7,6 +7,7 @@ module.exports = {
         "node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|expo-.*|@expo/.*|@react-navigation/.*|drizzle-orm|react-native-svg|@expo-google-fonts)/.*)",
       ],
       testPathIgnorePatterns: ["/node_modules/", "\\.node\\.test\\.(ts|tsx)$"],
+      setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
     },
     {
       displayName: "data",

@@ -3,6 +3,7 @@
  * src/core stays pure domain logic — no React/Expo, no ui/data imports
  * (ROADMAP §3; spec .scratch/m0-scaffold).
  */
+const globals = require("globals");
 const expoFlat = require("eslint-config-expo/flat");
 
 const CORE_BANNED_PACKAGES = [
@@ -19,6 +20,12 @@ const CORE_BANNED_PACKAGES = [
 module.exports = [
   {
     ignores: ["node_modules/", "android/", "ios/", "assets/", "scripts/"],
+  },
+  {
+    files: ["jest.setup.js"],
+    languageOptions: {
+      globals: globals.jest,
+    },
   },
   ...expoFlat,
   {

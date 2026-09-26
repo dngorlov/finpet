@@ -29,6 +29,7 @@ export const RUNTIME_LIBRARIES: readonly LibraryCredit[] = [
   { pkg: "expo-build-properties", name: "Expo Build Properties", version: "57.0.21", license: "MIT" },
   { pkg: "expo-constants", name: "Expo Constants", version: "57.0.19", license: "MIT" },
   { pkg: "expo-font", name: "Expo Font", version: "57.0.4", license: "MIT" },
+  { pkg: "expo-audio", name: "Expo Audio", version: "57.0.5", license: "MIT" },
   { pkg: "expo-sqlite", name: "Expo SQLite", version: "57.0.3", license: "MIT" },
   { pkg: "expo-status-bar", name: "Expo Status Bar", version: "57.0.1", license: "MIT" },
   { pkg: "@react-navigation/native", name: "React Navigation", version: "7.4.1", license: "MIT" },
@@ -158,6 +159,10 @@ export const REFERENCES: readonly Credit[] = [
   { what: "Duolingo", source: "стиль интерфейса" },
   { what: "«Говорящий Том»", source: "главный экран" },
   { what: "Material Design 3", source: "палитра" },
+  {
+    what: "Звуки верного ответа, ошибки и конца задания",
+    source: "оригинальный синтез, команда hsespbteam (scripts/generate-sfx.mjs)",
+  },
 ];
 
 export const EDUCATIONAL_CONTENT: readonly Credit[] = [

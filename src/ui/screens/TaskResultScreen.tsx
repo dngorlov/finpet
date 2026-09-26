@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BackHandler, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -12,6 +12,7 @@ import { usePlayChrome } from "../navigation/playChrome";
 import type { RootStackParamList } from "../navigation/types";
 import { rewardLeft, scoredUnits } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
+import { playStoredCue } from "../sound/playCue";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { colors, spacing, type } from "../theme";
@@ -61,6 +62,13 @@ export default function TaskResultScreen({ navigation, route }: Props) {
   const balanceBefore = balanceAfter - delta;
   const moves = moveLines(task?.title ?? strings.navTasks, reward, sceneCoins);
   const openedTool = dayEnded && profile && !profile.isDemo ? openedToolForTask(taskId) : null;
+
+  const playedComplete = useRef(false);
+  useEffect(() => {
+    if (playedComplete.current) return;
+    playedComplete.current = true;
+    void playStoredCue("complete", meta);
+  }, [meta]);
 
   const leave = useCallback(() => {
     if (dayEnded) {

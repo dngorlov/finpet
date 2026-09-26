@@ -42,6 +42,16 @@ export const strings = {
   backIcon: "←",
   settings: "Настройки",
   settingsIcon: "⚙",
+  soundTitle: "Звук",
+  soundHint: "Так звучат верный ответ, ошибка и конец задания.",
+  soundVolume: "Громкость",
+  soundQuieter: "Тише",
+  soundLouder: "Громче",
+  soundLevel: (n: number) => {
+    if (n <= 0) return "Выключен";
+    const word = n <= 40 ? "Тихо" : n <= 70 ? "Средне" : "Громко";
+    return `${word} ${n}%`;
+  },
   deleteProfile: "Удалить профиль",
   devSection: "Dev",
   finishDay: "Закончить день",

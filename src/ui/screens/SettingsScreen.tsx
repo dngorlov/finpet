@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { APP_BUILD, APP_VERSION } from "../appInfo";
@@ -6,6 +7,11 @@ import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
+import { VolumeControl } from "../components/VolumeControl";
+import { META_KEYS } from "../../data/metaKeys";
+import { clampVolume, readSoundVolume } from "../sound/cues";
+import { playCue } from "../sound/playCue";
+import { useSession } from "../session/SessionProvider";
 import {
   AI_MODELS,
   TEAM,
@@ -44,6 +50,7 @@ export default function SettingsScreen({ navigation }: Props) {
         <ScreenTitle style={styles.title}>{strings.appName}</ScreenTitle>
         <Text style={styles.body}>{strings.versionLine(APP_VERSION, APP_BUILD)}</Text>
       </Card>
+      <SoundSettings />
       <PrimaryButton label={strings.navAdult} onPress={() => navigation.navigate("AdultGate")} />
       <Text role="heading" style={styles.heading}>
         {homeStrings.creditsTitle}
@@ -77,6 +84,35 @@ export default function SettingsScreen({ navigation }: Props) {
         </Card>
       ))}
     </Screen>
+  );
+}
+
+function SoundSettings() {
+  const { meta } = useSession();
+  const [volume, setVolume] = useState(() => readSoundVolume(meta.get(META_KEYS.soundVolume)));
+
+  const save = (next: number) => {
+    const value = clampVolume(next);
+    setVolume(value);
+    meta.set(META_KEYS.soundVolume, String(value));
+    return value;
+  };
+
+  return (
+    <Card>
+      <Text role="heading" style={styles.groupTitle}>
+        {strings.soundTitle}
+      </Text>
+      <Text style={styles.body}>{strings.soundHint}</Text>
+      <VolumeControl
+        value={volume}
+        onChange={save}
+        onCommit={(next) => {
+          const value = save(next);
+          if (value > 0) void playCue("correct", value);
+        }}
+      />
+    </Card>
   );
 }
 
