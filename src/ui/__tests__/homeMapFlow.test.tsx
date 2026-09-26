@@ -65,7 +65,7 @@ describe("Карта заданий compact panel", () => {
     }
   });
 
-  it("opens Словарик from the floating button, shows a word in a drawer, and styles Уроки as cards", async () => {
+  it("opens Словарик from the floating button, shows a word in a drawer, and reads one урок at a time", async () => {
     const ports = createFakePorts();
     seedReturningChild(ports);
     const { user } = await renderApp(ports);
@@ -83,7 +83,18 @@ describe("Карта заданий compact panel", () => {
 
     await user.press(screen.getByRole("button", { name: "Уроки" }));
     expect(screen.getByRole("button", { name: "Уроки" })).toBeSelected();
-    expect(screen.getAllByText("Что такое бюджет?").length).toBeGreaterThan(0);
+    for (const title of ["Что такое бюджет?", "Планирование бюджета", "Что такое сбережения"]) {
+      expect(screen.getByRole("button", { name: title })).toBeOnTheScreen();
+    }
+    expect(screen.queryByRole("button", { name: "Меняем план" })).not.toBeOnTheScreen();
+    expect(screen.queryByLabelText(/Бюджет — это план твоих денег/)).not.toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Что такое бюджет?" }));
+    expect(screen.getByLabelText(/Бюджет — это план твоих денег/)).toBeOnTheScreen();
+    expect(screen.getByLabelText(/Пух получает монеты/)).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Понятно" }));
+    expect(screen.queryByLabelText(/Бюджет — это план твоих денег/)).not.toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Планирование бюджета" })).toBeOnTheScreen();
   });
 });
 

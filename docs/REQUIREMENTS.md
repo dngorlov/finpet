@@ -76,7 +76,7 @@
 ## 11. History & Learning Progress
 - Visible: completed tasks, progress toward current goal, results of the last game period
 - Short help section explaining key terms
-- **Resolved:** no Прогресс screen (ADR-0004). Итоги on Дом is the reopenable record (last closed day + overall counts). Журнал is a Деньги section. Словарик on Карта has «Слова» (the 11 terms) and «Уроки» (unscored cards of open уроки). Key terms: Баланс, Копилка, Цель, Пособие, План, Обязательные расходы, Желаемые расходы, Сытость, Настроение, Этап, Игровой день — one-to-one with `CONTEXT.md`, kid-worded definitions. (ROADMAP §2.5, §4.2; ADR-0004)
+- **Resolved:** no Прогресс screen (ADR-0004). Итоги on Дом is the reopenable record (last closed day + overall counts). Журнал is a Деньги section. Словарик on Карта has «Слова» (the 11 terms) and «Уроки» (a compact list of open уроки; tapping one opens its unscored cards). Key terms: Баланс, Копилка, Цель, Пособие, План, Обязательные расходы, Желаемые расходы, Сытость, Настроение, Этап, Игровой день — one-to-one with `CONTEXT.md`, kid-worded definitions. (ROADMAP §2.5, §4.2; ADR-0004)
 
 ## 12. Adult Section
 - Entry barrier: simple adult gate (doc's examples: hold a button, solve an arithmetic problem)

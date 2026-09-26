@@ -14,6 +14,7 @@ export const homeStrings = {
   mapMore: "Подробнее",
   mapMoreA11y: (title: string) => `Подробнее: ${title}`,
   handbookWordsHint: "Нажми на слово",
+  handbookLessonsHint: "Нажми на урок",
   handbookEmptyLessons: "Уроки появятся, когда откроешь их на карте.",
   creditsTitle: "Об авторах и источниках",
   creditsLibraries: "Библиотеки",

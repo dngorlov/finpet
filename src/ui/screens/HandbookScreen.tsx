@@ -16,7 +16,7 @@ import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { homeStrings } from "../stringsHome";
 import { completedTaskIds, type TaskTopic } from "../tasks/model";
-import { colors, minTarget, radius, spacing, type } from "../theme";
+import { colors, minTarget, spacing, type } from "../theme";
 import { TOPIC_TINT } from "../topicStyle";
 
 type Tab = "words" | "lessons";
@@ -43,11 +43,12 @@ function lessonCards(task: TaskContent) {
   return task.nodes.filter((node) => node.kind === "card");
 }
 
-/** Словарик: «Слова» are the kid terms as tiles, «Уроки» are the unscored cards of open уроки. */
+/** Словарик: «Слова» are the kid terms as tiles, «Уроки» are a compact list of open уроки. */
 export default function HandbookScreen() {
   const { game, meta, content } = useSession();
   const [tab, setTab] = useState<Tab>("words");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [openLessonId, setOpenLessonId] = useState<string | null>(null);
   const [petName, setPetName] = useState("");
   const [lessons, setLessons] = useState<TaskContent[]>([]);
 
@@ -70,6 +71,13 @@ export default function HandbookScreen() {
   );
 
   const openTerm = content.terms.find((term) => term.id === openId) ?? null;
+  const openLesson = lessons.find((task) => task.id === openLessonId) ?? null;
+
+  function selectTab(next: Tab) {
+    setTab(next);
+    setOpenId(null);
+    setOpenLessonId(null);
+  }
 
   return (
     <Screen header={<StatusStrip />}>
@@ -84,7 +92,7 @@ export default function HandbookScreen() {
               role="button"
               aria-label={item.label}
               aria-selected={selected}
-              onPress={() => setTab(item.id)}
+              onPress={() => selectTab(item.id)}
               style={[styles.segment, selected ? styles.segmentOn : null]}
             >
               <View style={[styles.segmentFace, selected ? styles.segmentFaceOn : null]}>
@@ -121,28 +129,26 @@ export default function HandbookScreen() {
       ) : lessons.length === 0 ? (
         <Text style={styles.hint}>{homeStrings.handbookEmptyLessons}</Text>
       ) : (
-        lessons.map((task) => (
-          <View key={task.id} style={styles.lesson}>
-            <View style={[styles.lessonHead, { backgroundColor: TOPIC_TINT[task.topic] }]}>
-              <View style={styles.lessonIcon}>
-                <Pictogram glyph={TOPIC_ICON[task.topic]} size={24} />
-              </View>
-              <View style={styles.lessonTitle}>
-                <CoinText text={task.title} style={styles.section} />
-              </View>
-            </View>
-            <View style={styles.lessonBody}>
-              {lessonCards(task).map((card) => (
-                <View key={card.id} style={styles.lessonCard}>
-                  {card.title ? (
-                    <CoinText text={withPet(card.title, petName)} style={styles.cardTitle} />
-                  ) : null}
-                  <CoinText text={withPet(card.text, petName)} style={styles.body} />
+        <>
+          <Text style={styles.hint}>{homeStrings.handbookLessonsHint}</Text>
+          <View style={styles.lessonList}>
+            {lessons.map((task) => (
+              <Pressable
+                key={task.id}
+                role="button"
+                aria-label={task.title}
+                onPress={() => setOpenLessonId(task.id)}
+                style={({ pressed }) => [styles.lessonRow, pressed ? styles.lessonRowPressed : null]}
+              >
+                <View style={[styles.lessonMark, { backgroundColor: TOPIC_TINT[task.topic] }]}>
+                  <Pictogram glyph={TOPIC_ICON[task.topic]} size={18} />
                 </View>
-              ))}
-            </View>
+                <Text style={styles.lessonRowLabel}>{task.title}</Text>
+                <PixelIcon name="arrow-right" size={16} color={colors.subtle} />
+              </Pressable>
+            ))}
           </View>
-        ))
+        </>
       )}
       <BottomSheet
         visible={openTerm !== null}
@@ -153,6 +159,25 @@ export default function HandbookScreen() {
           <>
             <Text style={styles.sheetTerm}>{openTerm.term}</Text>
             <CoinText text={openTerm.definition} style={styles.sheetDefinition} />
+          </>
+        ) : null}
+      </BottomSheet>
+      <BottomSheet
+        visible={openLesson !== null}
+        onClose={() => setOpenLessonId(null)}
+        footer={<PrimaryButton label={strings.gotIt} onPress={() => setOpenLessonId(null)} />}
+      >
+        {openLesson ? (
+          <>
+            <Text style={styles.sheetTerm}>{openLesson.title}</Text>
+            {lessonCards(openLesson).map((card) => (
+              <View key={card.id} style={styles.lessonCard}>
+                {card.title ? (
+                  <CoinText text={withPet(card.title, petName)} style={styles.cardTitle} />
+                ) : null}
+                <CoinText text={withPet(card.text, petName)} style={styles.body} />
+              </View>
+            ))}
           </>
         ) : null}
       </BottomSheet>
@@ -231,43 +256,40 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     textAlign: "center",
   },
-  lesson: {
-    backgroundColor: colors.card,
-    borderRadius: radius.card,
-    overflow: "hidden",
+  lessonList: {
+    gap: spacing.s,
   },
-  lessonHead: {
+  lessonRow: {
     alignItems: "center",
+    backgroundColor: colors.card,
+    borderRadius: 14,
     flexDirection: "row",
     gap: spacing.s,
-    padding: spacing.m,
+    minHeight: minTarget,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
   },
-  lessonIcon: {
+  lessonRowPressed: {
+    opacity: 0.7,
+  },
+  lessonMark: {
     alignItems: "center",
-    backgroundColor: colors.card,
-    borderRadius: 10,
-    height: 40,
+    borderRadius: 8,
+    height: 32,
     justifyContent: "center",
-    width: 40,
+    width: 32,
   },
-  lessonTitle: {
+  lessonRowLabel: {
+    color: colors.text,
     flex: 1,
-    minWidth: 0,
-  },
-  lessonBody: {
-    gap: spacing.m,
-    padding: spacing.m,
+    fontSize: type.body,
+    fontWeight: "700",
   },
   lessonCard: {
     borderLeftColor: colors.track,
     borderLeftWidth: 4,
     gap: 4,
     paddingLeft: spacing.s + 4,
-  },
-  section: {
-    color: colors.text,
-    fontSize: type.section,
-    fontWeight: "700",
   },
   cardTitle: {
     color: colors.text,
