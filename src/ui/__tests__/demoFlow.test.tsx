@@ -104,10 +104,10 @@ describe("Демо-режим panel", () => {
       await openTab(user, "Дом");
 
       await openMoney(user, "Журнал");
-      expect(screen.getByText("Стартовый бюджет +100")).toBeOnTheScreen();
-      expect(screen.getByText("Пособие +20")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Стартовый бюджет +100")).toBeOnTheScreen();
+      expect(screen.getByLabelText("Пособие +20")).toBeOnTheScreen();
       expect(screen.getByText("День 1")).toBeOnTheScreen();
-      expect(screen.queryByText("Покупка: Обед -12")).not.toBeOnTheScreen();
+      expect(screen.queryByLabelText("Покупка: Обед -12")).not.toBeOnTheScreen();
       expect(screen.queryByText("День 2")).not.toBeOnTheScreen();
       await openTab(user, "Дом");
 

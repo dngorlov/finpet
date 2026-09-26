@@ -20,7 +20,6 @@ describe("Банк", () => {
     ports.game.claimTaskReward(profileId, day.dayId, "savings_where", 15);
     const { user } = await renderApp(ports);
     await user.press(screen.getByRole("button", { name: "Деньги" }));
-    await user.press(screen.getByRole("button", { name: "Раздел денег" }));
     expect(screen.getByRole("button", { name: "Банк" })).toBeOnTheScreen();
   });
 
@@ -29,7 +28,6 @@ describe("Банк", () => {
     seedReturningChild(ports);
     const { user } = await renderApp(ports);
     await user.press(screen.getByRole("button", { name: "Деньги" }));
-    await user.press(screen.getByRole("button", { name: "Раздел денег" }));
     expect(screen.queryByRole("button", { name: "Банк" })).not.toBeOnTheScreen();
   });
 

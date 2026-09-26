@@ -5,7 +5,6 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BANK, ECONOMY, FEATURES } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
-import { Pictogram } from "../components/Pictogram";
 import { PixelSprite } from "../components/PixelSprite";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { Screen } from "../components/Screen";
@@ -16,9 +15,11 @@ import type { RootStackParamList } from "../navigation/types";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { completedTaskIds } from "../tasks/model";
+import { moneyStrings } from "../stringsMoney";
 import { colors, minTarget, spacing, type } from "../theme";
 import BankScreen from "./BankScreen";
 import { HomeScene } from "./HomeScene";
+import { PillRow } from "./moneyParts";
 import { JournalPanel } from "./progressPanels";
 import PlanScreen from "./PlanScreen";
 import SavingsScreen from "./SavingsScreen";
@@ -52,7 +53,6 @@ export default function MainScreen({ navigation }: Props) {
   const { tab, setTab, money, setMoney, revision } = usePlayChrome();
   const [hub, setHub] = useState<HubModel | null>(null);
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const loadHub = useCallback(() => {
     const profileId = meta.get(META_KEYS.activeProfileId);
@@ -117,7 +117,6 @@ export default function MainScreen({ navigation }: Props) {
           BackHandler.exitApp();
           return true;
         }
-        setMenuOpen(false);
         setTab("home");
         return true;
       });
@@ -182,53 +181,8 @@ export default function MainScreen({ navigation }: Props) {
         {tab === "map" ? <TaskListScreen /> : null}
         {tab === "money" ? (
           <View style={styles.money}>
-            <View style={styles.menu}>
-              <Pressable
-                role="button"
-                aria-label={strings.moneyMenu}
-                aria-expanded={menuOpen}
-                onPress={() => setMenuOpen((open) => !open)}
-                style={styles.menuTrigger}
-              >
-                <Text style={styles.menuValue}>{current.label}</Text>
-                <Text
-                  aria-hidden
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
-                  style={styles.menuChevron}
-                >
-                  {menuOpen ? strings.moneyChevronOpen : strings.moneyChevronClosed}
-                </Text>
-              </Pressable>
-              {menuOpen ? (
-                <View style={styles.menuList}>
-                  {options.map((option, index) => {
-                    const selected = option.id === money;
-                    return (
-                      <Pressable
-                        key={option.id}
-                        role="button"
-                        aria-label={option.label}
-                        aria-selected={selected}
-                        onPress={() => {
-                          setMoney(option.id);
-                          setMenuOpen(false);
-                        }}
-                        style={[
-                          styles.menuRow,
-                          index === options.length - 1 ? styles.menuRowLast : null,
-                          selected ? styles.menuRowOn : null,
-                        ]}
-                      >
-                        <Text style={styles.menuValue}>{option.label}</Text>
-                        {selected ? (
-                          <Pictogram glyph={strings.selectedCheck} color={colors.accentText} />
-                        ) : null}
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ) : null}
+            <View style={styles.menu} role="tablist" aria-label={moneyStrings.sections}>
+              <PillRow grow options={options} value={current.id} onChange={setMoney} />
             </View>
             <View style={styles.bodySlot}>
               {money === "savings" ? <SavingsScreen /> : null}
@@ -260,10 +214,7 @@ export default function MainScreen({ navigation }: Props) {
                 role="button"
                 aria-label={label}
                 aria-selected={selected}
-                onPress={() => {
-                  if (id !== "money") setMenuOpen(false);
-                  setTab(id);
-                }}
+                onPress={() => setTab(id)}
                 style={styles.tab}
               >
                 {({ pressed }) => (
@@ -310,51 +261,8 @@ const styles = StyleSheet.create({
     fontSize: type.body,
   },
   menu: {
-    gap: spacing.s,
-    paddingHorizontal: spacing.l,
+    paddingHorizontal: spacing.m,
     paddingTop: spacing.s,
-  },
-  menuTrigger: {
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderColor: colors.disabledFace,
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    minHeight: minTarget,
-    paddingHorizontal: spacing.m,
-  },
-  menuValue: {
-    color: colors.text,
-    fontSize: type.body,
-    fontWeight: "700",
-  },
-  menuChevron: {
-    color: colors.subtle,
-    fontSize: type.body,
-  },
-  menuList: {
-    backgroundColor: colors.card,
-    borderColor: colors.disabledFace,
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  menuRow: {
-    alignItems: "center",
-    borderBottomColor: colors.track,
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    minHeight: minTarget,
-    paddingHorizontal: spacing.m,
-  },
-  menuRowLast: {
-    borderBottomWidth: 0,
-  },
-  menuRowOn: {
-    backgroundColor: colors.highlight,
   },
   tabTray: {
     backgroundColor: colors.raisedEdge,

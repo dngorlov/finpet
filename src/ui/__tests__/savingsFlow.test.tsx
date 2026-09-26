@@ -16,7 +16,7 @@ describe("Копилка", () => {
     const { user } = await renderApp(ports);
 
     await openMoney(user, "Копилка");
-    expect(screen.getByText("В копилке 0")).toBeOnTheScreen();
+    expect(screen.getByLabelText("В копилке 0")).toBeOnTheScreen();
     expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
     expect(screen.getByLabelText("90 монет")).toBeOnTheScreen();
     expect(screen.getByText(stringsDash())).toBeOnTheScreen();
@@ -31,7 +31,7 @@ describe("Копилка", () => {
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     expect(screen.queryByText(stringsDash())).not.toBeOnTheScreen();
     expect(screen.getByText(/примерно 89/)).toBeOnTheScreen();
-    expect(screen.getByText("В копилке 1")).toBeOnTheScreen();
+    expect(screen.getByLabelText("В копилке 1")).toBeOnTheScreen();
     expect(screen.getByLabelText("Баланс 119")).toBeOnTheScreen();
 
     await openTab(user, "Дом");
@@ -58,7 +58,7 @@ describe("Копилка", () => {
     expect(screen.getByText("Баланс +1")).toBeOnTheScreen();
     expect(screen.getByText("Копилка -1")).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Понятно" }));
-    expect(screen.getByText("В копилке 14")).toBeOnTheScreen();
+    expect(screen.getByLabelText("В копилке 14")).toBeOnTheScreen();
   });
 
   it("celebrates funding without mood and lets Купить из копилки or Позже", async () => {
@@ -84,7 +84,7 @@ describe("Копилка", () => {
     }
     expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
     expect(screen.getByText("осталось 0")).toBeOnTheScreen();
-    expect(screen.getByText("В копилке 90")).toBeOnTheScreen();
+    expect(screen.getByLabelText("В копилке 90")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Купить из копилки" })).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Купить из копилки" }));
@@ -95,7 +95,7 @@ describe("Копилка", () => {
     await user.press(screen.getByRole("button", { name: "Понятно" }));
 
     expect(screen.getByRole("button", { name: "Выбрать новую цель" })).toBeOnTheScreen();
-    expect(screen.getByText("В копилке 0")).toBeOnTheScreen();
+    expect(screen.getByLabelText("В копилке 0")).toBeOnTheScreen();
     expect(ports.game.boughtAsActiveGoalCount(profileId)).toBe(1);
     await user.press(screen.getByRole("button", { name: "Выбрать новую цель" }));
     expect(screen.getByRole("button", { name: "Самокат" })).toBeOnTheScreen();

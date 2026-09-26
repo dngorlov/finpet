@@ -33,13 +33,12 @@ export async function openTab(user: ReturnType<typeof userEvent.setup>, name: "�
   await user.press(screen.getByRole("button", { name }));
 }
 
-/** Open a Деньги section. The dropdown starts closed on Копилка. */
+/** Open a Деньги section from the pill tabs at the top (Копилка is first). */
 export async function openMoney(
   user: ReturnType<typeof userEvent.setup>,
   section: "Копилка" | "План" | "Журнал" | "Банк",
 ) {
   await openTab(user, "Деньги");
-  await user.press(screen.getByRole("button", { name: "Раздел денег" }));
   await user.press(screen.getByRole("button", { name: section }));
 }
 

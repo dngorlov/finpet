@@ -36,10 +36,10 @@ describe("Прогресс", () => {
 
     await openMoney(user, "Журнал");
     expect(screen.getByText("День 1")).toBeOnTheScreen();
-    expect(screen.getByText("Покупка: Обед -12")).toBeOnTheScreen();
-    expect(screen.getByText("Пособие +20")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Покупка: Обед -12")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Пособие +20")).toBeOnTheScreen();
     expect(screen.getByText("Старт")).toBeOnTheScreen();
-    expect(screen.getByText("Стартовый бюджет +100")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Стартовый бюджет +100")).toBeOnTheScreen();
 
     await openTab(user, "Дом");
     await user.press(screen.getByRole("button", { name: "Итоги" }));
@@ -65,8 +65,8 @@ describe("Прогресс", () => {
     await user.press(screen.getByRole("button", { name: "Следующий день" }));
     await user.press(screen.getByRole("button", { name: "Понятно" }));
     await openMoney(user, "Журнал");
-    expect(screen.getByText("Задание: Что такое бюджет? +10")).toBeOnTheScreen();
-    expect(screen.getByText("Задание +8")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Задание: Что такое бюджет? +10")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Задание +8")).toBeOnTheScreen();
 
     await openTab(user, "Дом");
     await user.press(screen.getByRole("button", { name: "Итоги" }));
