@@ -5,23 +5,20 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BANK, ECONOMY, FEATURES } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
-import { Card } from "../components/Card";
-import { CoinText } from "../components/CoinText";
-import { Pictogram, PixelIcon } from "../components/Pictogram";
-import type { PixelIconName } from "../pixelIconXml";
+import { Pictogram } from "../components/Pictogram";
+import { PixelSprite } from "../components/PixelSprite";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
-import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { StatusStrip } from "../components/StatusStrip";
 import type { MoneySection } from "../navigation/playChrome";
 import { usePlayChrome } from "../navigation/playChrome";
 import type { RootStackParamList } from "../navigation/types";
-import { PetView } from "../pet/PetView";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { completedTaskIds } from "../tasks/model";
 import { colors, minTarget, spacing, type } from "../theme";
 import BankScreen from "./BankScreen";
+import { HomeScene } from "./HomeScene";
 import { JournalPanel } from "./progressPanels";
 import PlanScreen from "./PlanScreen";
 import SavingsScreen from "./SavingsScreen";
@@ -42,8 +39,6 @@ type HubModel = {
   planOpen: boolean;
   bankOpen: boolean;
 };
-
-const HUB_PET_SIZE = 200;
 
 const MONEY_OPTIONS: { id: MoneySection; label: string }[] = [
   { id: "savings", label: strings.navSavings },
@@ -165,40 +160,24 @@ export default function MainScreen({ navigation }: Props) {
       <StatusStrip />
       <View style={styles.bodySlot}>
         {tab === "home" ? (
-          <Screen>
-            <View style={styles.pet}>
-              <PetView
-                species={hub.profile.species}
-                color={hub.profile.color}
-                accessory={hub.profile.accessory}
-                petName={hub.profile.petName}
-                care={hub.profile.care}
-                mood={hub.profile.mood}
-                size={HUB_PET_SIZE}
-              />
-            </View>
-            <Text style={styles.body}>{strings.journalDay(hub.day.n)}</Text>
-            {waiting ? <Text style={styles.body}>{strings.waitingBanner}</Text> : null}
-            {hub.allowanceCredited ? <CoinText text={strings.allowanceRibbon} style={styles.body} /> : null}
-            <Card>
-              {hub.goalName ? (
-                <>
-                  <CoinText text={hub.goalName} style={styles.cardTitle} />
-                  <CoinText coin text={strings.goalRatio(hub.accumulated, hub.cost)} style={styles.body} />
-                  <CoinText coin text={strings.goalRemaining(hub.remaining)} style={styles.body} />
-                </>
-              ) : (
-                <CoinText text={strings.goalEmptyPrompt} style={styles.cardTitle} />
-              )}
-            </Card>
-            <PrimaryButton label={strings.tabResults} onPress={() => navigation.navigate("Results")} />
-            <PrimaryButton
-              label={strings.navShop}
-              disabled={waiting}
-              accessibilityHint={waiting ? strings.waitingEconomyHint : undefined}
-              onPress={() => navigation.navigate("Shop")}
-            />
-          </Screen>
+          <HomeScene
+            pet={{
+              species: hub.profile.species,
+              color: hub.profile.color,
+              accessory: hub.profile.accessory,
+              petName: hub.profile.petName,
+              care: hub.profile.care,
+              mood: hub.profile.mood,
+            }}
+            day={hub.day.n}
+            waiting={waiting}
+            allowanceCredited={hub.allowanceCredited}
+            goalName={hub.goalName}
+            accumulated={hub.accumulated}
+            cost={hub.cost}
+            onShop={() => navigation.navigate("Shop")}
+            onResults={() => navigation.navigate("Results")}
+          />
         ) : null}
         {tab === "map" ? <TaskListScreen /> : null}
         {tab === "money" ? (
@@ -270,7 +249,7 @@ export default function MainScreen({ navigation }: Props) {
             [
               ["home", strings.tabHome, "home"],
               ["map", strings.tabMap, "map"],
-              ["money", strings.tabMoney, "coins"],
+              ["money", strings.tabMoney, "coin"],
             ] as const
           ).map(([id, label, icon]) => {
             const selected = tab === id;
@@ -297,7 +276,9 @@ export default function MainScreen({ navigation }: Props) {
                       ]}
                     >
                       <View style={[styles.tokenFace, selected ? styles.tokenFaceOn : null]}>
-                        <PixelIcon name={icon as PixelIconName} color={ink} />
+                        <View style={selected ? null : styles.spriteIdle}>
+                          <PixelSprite name={icon} size={28} />
+                        </View>
                       </View>
                     </View>
                     <Text style={[styles.tabLabel, selected ? styles.tabLabelOn : null, { color: ink }]}>{label}</Text>
@@ -324,17 +305,9 @@ const styles = StyleSheet.create({
   money: {
     flex: 1,
   },
-  pet: {
-    alignItems: "center",
-  },
   body: {
     color: colors.text,
     fontSize: type.body,
-  },
-  cardTitle: {
-    color: colors.text,
-    fontSize: type.section,
-    fontWeight: "700",
   },
   menu: {
     gap: spacing.s,
@@ -422,6 +395,9 @@ const styles = StyleSheet.create({
   },
   tokenFaceOn: {
     backgroundColor: colors.raisedFace,
+  },
+  spriteIdle: {
+    opacity: 0.6,
   },
   tabLabel: {
     fontSize: type.body,

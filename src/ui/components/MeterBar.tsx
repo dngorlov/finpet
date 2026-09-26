@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { strings } from "../strings";
 import { Pictogram } from "./Pictogram";
+import { PixelSprite, type SpriteName } from "./PixelSprite";
 import { colors, radius, spacing, type } from "../theme";
 
 export function MeterBar({
@@ -8,18 +9,22 @@ export function MeterBar({
   label,
   value,
   compact,
+  sprite,
 }: {
   icon: string;
+  /** Andrei's pixel sprite shown instead of the emoji glyph. */
+  sprite?: SpriteName;
   label: string;
   value: number;
   compact?: boolean;
 }) {
   const width = `${Math.max(0, Math.min(100, value))}%` as const;
   const name = strings.meterLine(label, value);
+  const mark = sprite ? <PixelSprite name={sprite} size={24} /> : <Pictogram glyph={icon} />;
   if (compact) {
     return (
       <View accessible aria-label={name} style={styles.compact}>
-        <Pictogram glyph={icon} />
+        {mark}
         <View style={styles.compactTrack} accessibilityElementsHidden>
           <View style={[styles.compactFill, { width }]} />
         </View>
@@ -29,7 +34,7 @@ export function MeterBar({
   return (
     <View style={styles.wrap}>
       <View style={styles.line}>
-        <Pictogram glyph={icon} />
+        {mark}
         <Text style={styles.label}>{name}</Text>
       </View>
       <View style={styles.track} accessibilityElementsHidden>
