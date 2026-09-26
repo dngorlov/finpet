@@ -17,11 +17,14 @@ describe("Копилка", () => {
 
     await openMoney(user, "Копилка");
     expect(screen.getByLabelText("В копилке 0")).toBeOnTheScreen();
-    expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
+    expect(screen.getAllByText("Скейтборд")).toHaveLength(2);
     expect(screen.getByLabelText("90 монет")).toBeOnTheScreen();
     expect(screen.getByText(stringsDash())).toBeOnTheScreen();
 
     await user.press(screen.getByRole("button", { name: "Положить" }));
+    expect(screen.getByRole("button", { name: "Закрыть окно" })).toHaveStyle({
+      backgroundColor: "rgba(34, 26, 18, 0.45)",
+    });
     await user.press(screen.getByRole("button", { name: "Сумма, больше" }));
     await user.press(screen.getByRole("button", { name: "Положить" }));
 
@@ -32,11 +35,11 @@ describe("Копилка", () => {
     expect(screen.queryByText(stringsDash())).not.toBeOnTheScreen();
     expect(screen.getByText(/примерно 89/)).toBeOnTheScreen();
     expect(screen.getByLabelText("В копилке 1")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Баланс 119")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 99")).toBeOnTheScreen();
 
     await openTab(user, "Дом");
-    expect(screen.getByText("1 / 90")).toBeOnTheScreen();
-    expect(screen.getByLabelText("Баланс 119")).toBeOnTheScreen();
+    expect(screen.getAllByText("1 / 90")).toHaveLength(2);
+    expect(screen.getByLabelText("Баланс 99")).toBeOnTheScreen();
     expect(screen.queryByLabelText("Баланс 1")).not.toBeOnTheScreen();
   });
 
@@ -49,6 +52,9 @@ describe("Копилка", () => {
 
     await openMoney(user, "Копилка");
     await user.press(screen.getByRole("button", { name: "Забрать" }));
+    expect(screen.getByRole("button", { name: "Закрыть окно" })).toHaveStyle({
+      backgroundColor: "rgba(34, 26, 18, 0.45)",
+    });
     await user.press(screen.getByRole("button", { name: "Сумма, больше" }));
     await user.press(screen.getByRole("button", { name: "Забрать" }));
     expect(screen.getByText(/В копилке станет 14/)).toBeOnTheScreen();
@@ -82,7 +88,7 @@ describe("Копилка", () => {
     while (screen.queryAllByRole("button", { name: "Позже" }).length > 0) {
       await user.press(screen.getAllByRole("button", { name: "Позже" })[0]!);
     }
-    expect(screen.getByText("Скейтборд")).toBeOnTheScreen();
+    expect(screen.getAllByText("Скейтборд")).toHaveLength(2);
     expect(screen.getByText("осталось 0")).toBeOnTheScreen();
     expect(screen.getByLabelText("В копилке 90")).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Купить из копилки" })).toBeOnTheScreen();
@@ -100,7 +106,7 @@ describe("Копилка", () => {
     await user.press(screen.getByRole("button", { name: "Выбрать новую цель" }));
     expect(screen.getByRole("button", { name: "Самокат" })).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Самокат" }));
-    expect(screen.getByText("Самокат")).toBeOnTheScreen();
+    expect(screen.getAllByText("Самокат")).toHaveLength(2);
     expect(screen.getByLabelText("160 монет")).toBeOnTheScreen();
   });
 });

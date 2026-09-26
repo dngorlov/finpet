@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useCallback, useState, type ReactNode } from "react";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { CatalogItemContent, GoalContent } from "../../data/content";
 import { applyGoalProgress, estimateDaysToGoal } from "../../core/savings";
@@ -19,7 +19,7 @@ import { usePlayChrome } from "../navigation/playChrome";
 import { useSession } from "../session/SessionProvider";
 import { strings } from "../strings";
 import { moneyStrings } from "../stringsMoney";
-import { colors, spacing, type } from "../theme";
+import { colors, radius, spacing, type } from "../theme";
 import { meterDeltaMap } from "../../core/economy";
 import { itemLookup, savingsOps, savingsStats } from "./journalStats";
 import {
@@ -46,6 +46,27 @@ type Phase =
   | { name: "withdraw"; amount: number }
   | { name: "withdrawPreview"; amount: number; potAfter: number; days: number | null }
   | { name: "celebration" };
+
+/** Centered dialog over a dimmed Копилка. The dimmed area and «Закрыть» both dismiss it. */
+function AmountDialog({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  return (
+    <Modal animationType="fade" transparent visible onRequestClose={onClose}>
+      <View style={styles.modalRoot}>
+        <Pressable
+          role="button"
+          aria-label={strings.sheetClose}
+          onPress={onClose}
+          style={styles.scrim}
+        />
+        <View pointerEvents="box-none" style={styles.dialogWrap}>
+          <View onStartShouldSetResponder={() => true} style={styles.dialog}>
+            {children}
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
 function engineItem(item: Pick<CatalogItemContent, "id" | "kind" | "price" | "effect" | "also" | "once"> & { stage?: GoalContent["stage"] }) {
   return {
@@ -205,49 +226,10 @@ export default function SavingsScreen() {
     setPickerOpen(true);
   };
 
-  const dropGoal = () => {
-    const profileId = meta.get(META_KEYS.activeProfileId);
-    if (!profileId) return;
-    game.clearActiveGoal(profileId);
-    load();
-    setPickerOpen(false);
-    setOfferPickGoal(false);
-  };
+  const closeTransfer = () => setPhase({ name: "home" });
 
   const footer = (() => {
     if (feedback) return null;
-    if (phase.name === "deposit") {
-      return (
-        <>
-          <TextButton label={strings.close} onPress={() => setPhase({ name: "home" })} />
-          <PrimaryButton
-            label={strings.savingsDeposit}
-            disabled={phase.amount <= 0}
-            onPress={() => putIn(phase.amount)}
-          />
-        </>
-      );
-    }
-    if (phase.name === "withdraw") {
-      return (
-        <>
-          <TextButton label={strings.close} onPress={() => setPhase({ name: "home" })} />
-          <PrimaryButton
-            label={strings.savingsWithdraw}
-            disabled={phase.amount <= 0}
-            onPress={() => previewWithdraw(phase.amount)}
-          />
-        </>
-      );
-    }
-    if (phase.name === "withdrawPreview") {
-      return (
-        <>
-          <TextButton label={strings.close} onPress={() => setPhase({ name: "home" })} />
-          <PrimaryButton label={strings.savingsConfirmWithdraw(phase.amount)} onPress={() => takeOut(phase.amount)} />
-        </>
-      );
-    }
     if (phase.name === "celebration") {
       return (
         <>
@@ -282,92 +264,150 @@ export default function SavingsScreen() {
   const ops = savingsOps(journal, lookup).slice(0, RECENT_OPS);
   const stats = savingsStats(journal);
   const goalCost = savings.activeGoal?.cost ?? 0;
-  const home = phase.name === "home";
+  const showHome = phase.name !== "celebration";
+  const transferOpen =
+    phase.name === "deposit" || phase.name === "withdraw" || phase.name === "withdrawPreview";
   const itemName = (id: string | null) => content.goals.find((entry) => entry.id === id)?.name ?? id ?? "";
 
   return (
     <Screen footer={footer}>
-      <ScreenTitle style={styles.title}>{strings.navSavings}</ScreenTitle>
-      {savingsLeftover != null && home ? (
-        <CoinText
-          coin
-          label={strings.planLeftoverA11y(strings.bucketSavings, savingsLeftover)}
-          text={
-            savingsLeftover >= 0
-              ? strings.planLeftover(savingsLeftover)
-              : strings.planOvershoot(Math.abs(savingsLeftover))
-          }
-          style={styles.body}
-        />
-      ) : null}
-      <HeroCard caption={moneyStrings.savingsCaption} value={savings.pot} label={strings.savingsPot(savings.pot)}>
-        <View style={styles.heroDivider} />
-        {savings.activeGoal && activeName ? (
-          <>
-            <View style={styles.heroRow}>
-              <View style={styles.heroGoal}>
-                <Text style={styles.heroSmall}>{moneyStrings.savingsGoalCaption}</Text>
-                <Text style={styles.heroGoalName}>{activeName}</Text>
+      <View
+        accessibilityElementsHidden={transferOpen}
+        importantForAccessibility={transferOpen ? "no-hide-descendants" : "auto"}
+        style={styles.home}
+      >
+        <ScreenTitle style={styles.title}>{strings.navSavings}</ScreenTitle>
+        {savingsLeftover != null && showHome ? (
+          <CoinText
+            coin
+            label={strings.planLeftoverA11y(strings.bucketSavings, savingsLeftover)}
+            text={
+              savingsLeftover >= 0
+                ? strings.planLeftover(savingsLeftover)
+                : strings.planOvershoot(Math.abs(savingsLeftover))
+            }
+            style={styles.body}
+          />
+        ) : null}
+        <HeroCard caption={moneyStrings.savingsCaption} value={savings.pot} label={strings.savingsPot(savings.pot)}>
+          <View style={styles.heroDivider} />
+          {savings.activeGoal && activeName ? (
+            <>
+              <View style={styles.heroRow}>
+                <View style={styles.heroGoal}>
+                  <Text style={styles.heroSmall}>{moneyStrings.savingsGoalCaption}</Text>
+                  <Text style={styles.heroGoalName}>{activeName}</Text>
+                </View>
+                <View accessible aria-label={strings.shopPrice(goalCost)}>
+                  <Amount value={goalCost} size={16} color={moneyColors.heroText} />
+                </View>
               </View>
-              <View accessible aria-label={strings.shopPrice(goalCost)}>
-                <Amount value={goalCost} size={16} color={moneyColors.heroText} />
+              <View accessible aria-label={moneyStrings.savingsGoalProgress(accumulated, goalCost)}>
+                <ProgressBar value={accumulated} max={goalCost} on="hero" />
               </View>
-            </View>
-            <View accessible aria-label={moneyStrings.savingsGoalProgress(accumulated, goalCost)}>
-              <ProgressBar value={accumulated} max={goalCost} on="hero" />
-            </View>
-            <View style={styles.heroRow}>
-              <Text style={styles.heroValue}>{strings.goalRatio(accumulated, goalCost)}</Text>
-              <Text style={styles.heroValue}>{strings.savingsRemaining(savings.activeGoal.remaining)}</Text>
-            </View>
-            <View style={styles.heroRow}>
-              <Text style={styles.heroSmall}>{moneyStrings.savingsForecast}</Text>
-              <Text style={styles.heroValue}>
-                {savings.estimateDays == null
-                  ? strings.savingsEstimateNone
-                  : strings.savingsEstimate(savings.estimateDays)}
-              </Text>
-            </View>
-          </>
-        ) : (
+              <View style={styles.heroRow}>
+                <Text style={styles.heroValue}>{strings.goalRatio(accumulated, goalCost)}</Text>
+                <Text style={styles.heroValue}>{strings.savingsRemaining(savings.activeGoal.remaining)}</Text>
+              </View>
+              <View style={styles.heroRow}>
+                <Text style={styles.heroSmall}>{moneyStrings.savingsForecast}</Text>
+                <Text style={styles.heroValue}>
+                  {savings.estimateDays == null
+                    ? strings.savingsEstimateNone
+                    : strings.savingsEstimate(savings.estimateDays)}
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.heroSmall}>{moneyStrings.savingsNoGoal}</Text>
+              <Text style={styles.heroGoalName}>{strings.savingsPickGoal}</Text>
+            </>
+          )}
+        </HeroCard>
+        {showHome && !offerPickGoal ? (
+          <ActionRow>
+            <RoundAction
+              label={strings.savingsDeposit}
+              icon="arrow-down"
+              disabled={balance <= 0}
+              onPress={() => setPhase({ name: "deposit", amount: 0 })}
+            />
+            <RoundAction
+              label={strings.savingsWithdraw}
+              icon="arrow-up"
+              disabled={savings.pot <= 0}
+              onPress={() => setPhase({ name: "withdraw", amount: 0 })}
+            />
+            <RoundAction
+              label={moneyStrings.actionGoal}
+              icon="target"
+              highlighted={focus?.kind === "goal"}
+              onPress={openPicker}
+            />
+          </ActionRow>
+        ) : null}
+        {phase.name === "celebration" ? (
+          <Card>
+            <GlyphLabel glyph={strings.savingsConfetti} label={strings.savingsAchieved} labelStyle={styles.section} />
+          </Card>
+        ) : null}
+        {showHome ? (
           <>
-            <Text style={styles.heroSmall}>{moneyStrings.savingsNoGoal}</Text>
-            <Text style={styles.heroGoalName}>{strings.savingsPickGoal}</Text>
+            <TileRow>
+              <StatTile
+                label={moneyStrings.statTotal}
+                value={stats.total}
+                spoken={moneyStrings.statA11y(moneyStrings.statTotal, stats.total)}
+              />
+              <StatTile
+                label={moneyStrings.statCount}
+                value={stats.count}
+                coin={false}
+                spoken={moneyStrings.statCountA11y(stats.count)}
+              />
+              <StatTile
+                label={moneyStrings.statAverage}
+                value={stats.average}
+                spoken={moneyStrings.statA11y(moneyStrings.statAverage, stats.average)}
+              />
+            </TileRow>
+            <SectionTitle>{moneyStrings.savingsHistory}</SectionTitle>
+            <MoneyCard tight>
+              {ops.length === 0 ? <Text style={styles.empty}>{moneyStrings.savingsHistoryEmpty}</Text> : null}
+              {ops.map((op, index) => {
+                const title =
+                  op.kind === "in"
+                    ? moneyStrings.opIn
+                    : op.kind === "out"
+                      ? moneyStrings.opOut
+                      : moneyStrings.opGoal(itemName(op.itemId));
+                const day = moneyStrings.day(op.dayN);
+                return (
+                  <OpRow
+                    key={op.id}
+                    icon={op.kind === "in" ? "arrow-down" : op.kind === "out" ? "arrow-up" : "star"}
+                    tint={op.kind === "in" ? moneyColors.plus : op.kind === "out" ? colors.raisedEdge : moneyColors.goal}
+                    title={title}
+                    subtitle={day}
+                    amount={op.amount}
+                    label={moneyStrings.opRowA11y(title, day, op.amount)}
+                    last={index === ops.length - 1}
+                  />
+                );
+              })}
+            </MoneyCard>
           </>
-        )}
-      </HeroCard>
-      {home && !offerPickGoal ? (
-        <ActionRow>
-          <RoundAction
-            label={strings.savingsDeposit}
-            icon="arrow-down"
-            disabled={balance <= 0}
-            onPress={() => setPhase({ name: "deposit", amount: 0 })}
-          />
-          <RoundAction
-            label={strings.savingsWithdraw}
-            icon="arrow-up"
-            disabled={savings.pot <= 0}
-            onPress={() => setPhase({ name: "withdraw", amount: 0 })}
-          />
-          <RoundAction
-            label={moneyStrings.actionGoal}
-            icon="target"
-            highlighted={focus?.kind === "goal"}
-            onPress={openPicker}
-          />
-        </ActionRow>
-      ) : null}
-      {home && !offerPickGoal && savings.activeGoal ? (
-        <TextButton label={strings.savingsDropGoal} onPress={dropGoal} />
-      ) : null}
+        ) : null}
+      </View>
       {phase.name === "deposit" ? (
-        <Card>
+        <AmountDialog onClose={closeTransfer}>
           <AmountStepper
             label={strings.savingsDepositAmount}
             pictogram={strings.navSavingsPictogram}
             value={phase.amount}
             max={balance}
+            showTrack
             onChange={(amount) => setPhase({ name: "deposit", amount })}
           />
           <CoinText coin text={strings.savingsConfirmDeposit(phase.amount)} style={styles.body} />
@@ -377,21 +417,34 @@ export default function SavingsScreen() {
               {leftoverAfterDeposit < 0 ? <CoinText text={strings.planOverWarn} style={styles.body} /> : null}
             </>
           ) : null}
-        </Card>
+          <TextButton label={strings.close} onPress={closeTransfer} />
+          <PrimaryButton
+            label={strings.savingsDeposit}
+            disabled={phase.amount <= 0}
+            onPress={() => putIn(phase.amount)}
+          />
+        </AmountDialog>
       ) : null}
       {phase.name === "withdraw" ? (
-        <Card>
+        <AmountDialog onClose={closeTransfer}>
           <AmountStepper
             label={strings.savingsDepositAmount}
             pictogram={strings.navSavingsPictogram}
             value={phase.amount}
             max={savings.pot}
+            showTrack
             onChange={(amount) => setPhase({ name: "withdraw", amount })}
           />
-        </Card>
+          <TextButton label={strings.close} onPress={closeTransfer} />
+          <PrimaryButton
+            label={strings.savingsWithdraw}
+            disabled={phase.amount <= 0}
+            onPress={() => previewWithdraw(phase.amount)}
+          />
+        </AmountDialog>
       ) : null}
       {phase.name === "withdrawPreview" ? (
-        <Card>
+        <AmountDialog onClose={closeTransfer}>
           <CoinText coin text={strings.savingsConfirmWithdraw(phase.amount)} style={styles.section} />
           <CoinText
             coin
@@ -402,59 +455,9 @@ export default function SavingsScreen() {
             }
             style={styles.body}
           />
-        </Card>
-      ) : null}
-      {phase.name === "celebration" ? (
-        <Card>
-          <GlyphLabel glyph={strings.savingsConfetti} label={strings.savingsAchieved} labelStyle={styles.section} />
-        </Card>
-      ) : null}
-      {home ? (
-        <>
-          <TileRow>
-            <StatTile
-              label={moneyStrings.statTotal}
-              value={stats.total}
-              spoken={moneyStrings.statA11y(moneyStrings.statTotal, stats.total)}
-            />
-            <StatTile
-              label={moneyStrings.statCount}
-              value={stats.count}
-              coin={false}
-              spoken={moneyStrings.statCountA11y(stats.count)}
-            />
-            <StatTile
-              label={moneyStrings.statAverage}
-              value={stats.average}
-              spoken={moneyStrings.statA11y(moneyStrings.statAverage, stats.average)}
-            />
-          </TileRow>
-          <SectionTitle>{moneyStrings.savingsHistory}</SectionTitle>
-          <MoneyCard tight>
-            {ops.length === 0 ? <Text style={styles.empty}>{moneyStrings.savingsHistoryEmpty}</Text> : null}
-            {ops.map((op, index) => {
-              const title =
-                op.kind === "in"
-                  ? moneyStrings.opIn
-                  : op.kind === "out"
-                    ? moneyStrings.opOut
-                    : moneyStrings.opGoal(itemName(op.itemId));
-              const day = moneyStrings.day(op.dayN);
-              return (
-                <OpRow
-                  key={op.id}
-                  icon={op.kind === "in" ? "arrow-down" : op.kind === "out" ? "arrow-up" : "star"}
-                  tint={op.kind === "in" ? moneyColors.plus : op.kind === "out" ? colors.raisedEdge : moneyColors.goal}
-                  title={title}
-                  subtitle={day}
-                  amount={op.amount}
-                  label={moneyStrings.opRowA11y(title, day, op.amount)}
-                  last={index === ops.length - 1}
-                />
-              );
-            })}
-          </MoneyCard>
-        </>
+          <TextButton label={strings.close} onPress={closeTransfer} />
+          <PrimaryButton label={strings.savingsConfirmWithdraw(phase.amount)} onPress={() => takeOut(phase.amount)} />
+        </AmountDialog>
       ) : null}
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}
       <GoalPicker
@@ -470,6 +473,31 @@ export default function SavingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  home: {
+    flexGrow: 1,
+    gap: spacing.m,
+  },
+  modalRoot: {
+    flex: 1,
+  },
+  scrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(34, 26, 18, 0.45)",
+  },
+  dialogWrap: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    padding: spacing.l,
+  },
+  dialog: {
+    backgroundColor: colors.card,
+    borderRadius: radius.card,
+    gap: spacing.s,
+    maxWidth: 360,
+    padding: spacing.l,
+    width: "100%",
+  },
   title: {
     color: colors.text,
     fontSize: type.title,
