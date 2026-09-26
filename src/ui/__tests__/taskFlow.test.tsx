@@ -79,6 +79,7 @@ describe("Карта заданий", () => {
     });
 
     const { user } = await renderApp(ports);
+    expect(screen.getByLabelText("День 1 → День 2")).toBeOnTheScreen();
     expect(screen.getByText("Сытость -15: пропущен обед")).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "Магазин" })).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Следующий день" }));
@@ -116,6 +117,7 @@ describe("Карта заданий", () => {
       await user.press(screen.getByRole("button", { name: "Понятно" }));
       await user.press(screen.getByRole("button", { name: "Итоги дня" }));
 
+      expect(screen.getByLabelText("День 1 → День 2")).toBeOnTheScreen();
       expect(screen.getByText("Сытость -15: пропущен обед")).toBeOnTheScreen();
       await user.press(screen.getByRole("button", { name: "Следующий день" }));
       expect(screen.getByText("День 2")).toBeOnTheScreen();

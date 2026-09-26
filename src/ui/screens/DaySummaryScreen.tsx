@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { BackHandler, StyleSheet, Text } from "react-native";
+import { BackHandler, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
@@ -8,6 +8,7 @@ import { BackButton } from "../components/BackButton";
 import { CoinText } from "../components/CoinText";
 import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
+import { PixelIcon } from "../components/Pictogram";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
 import { StatusStrip } from "../components/StatusStrip";
@@ -16,7 +17,7 @@ import { PetView } from "../pet/PetView";
 import { usePlayChrome } from "../navigation/playChrome";
 import { useSession } from "../session/SessionProvider";
 import { dayCloseLines, strings } from "../strings";
-import { colors, spacing, type } from "../theme";
+import { colors, font, spacing, type } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DaySummary">;
 
@@ -64,6 +65,15 @@ export default function DaySummaryScreen({ navigation }: Props) {
     <Screen header={<StatusStrip />} footer={<PrimaryButton label={strings.nextDay} onPress={beginNextDay} />}>
       <BackButton onPress={beginNextDay} />
       <ScreenTitle style={styles.title}>{strings.daySummaryTitle}</ScreenTitle>
+      <View accessible role="text" aria-label={strings.dayAdvance(summary.n, summary.n + 1)} style={styles.advance}>
+        <View aria-hidden style={[styles.dayPill, styles.dayDone]}>
+          <Text style={[styles.dayLabel, styles.dayDoneLabel]}>{strings.journalDay(summary.n)}</Text>
+        </View>
+        <PixelIcon name="arrow-right" color={colors.accentText} />
+        <View aria-hidden style={[styles.dayPill, styles.dayNext]}>
+          <Text style={[styles.dayLabel, styles.dayNextLabel]}>{strings.journalDay(summary.n + 1)}</Text>
+        </View>
+      </View>
       <PetView
         species={profile.species}
         color={profile.color}
@@ -99,6 +109,38 @@ const styles = StyleSheet.create({
     fontSize: type.title,
     fontWeight: "700",
   },
+  advance: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.s,
+    justifyContent: "center",
+  },
+  dayPill: {
+    borderRadius: 12,
+    justifyContent: "center",
+    minHeight: 44,
+    paddingHorizontal: spacing.m,
+  },
+  dayDone: {
+    backgroundColor: colors.track,
+  },
+  dayNext: {
+    backgroundColor: colors.raisedEdge,
+  },
+  dayLabel: {
+    fontFamily: font.pixel,
+    fontSize: 16,
+    fontWeight: "400",
+    includeFontPadding: false,
+    lineHeight: 24,
+  },
+  dayDoneLabel: {
+    color: colors.subtle,
+  },
+  dayNextLabel: {
+    color: colors.card,
+  },
   section: {
     color: colors.text,
     fontSize: type.section,
@@ -107,10 +149,5 @@ const styles = StyleSheet.create({
   body: {
     color: colors.text,
     fontSize: type.body,
-  },
-  row: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.s,
   },
 });

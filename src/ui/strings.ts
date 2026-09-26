@@ -48,6 +48,7 @@ export const strings = {
   planReady: "План готов",
   finishDayNeedPlan: "Сначала составь план дня",
   daySummaryTitle: "Итоги дня",
+  dayAdvance: (from: number, to: number) => `День ${from} → День ${to}`,
   waitTomorrow: "Ждём завтра!",
   nextDay: "Следующий день",
   waitingBanner: "Новый день откроется завтра",
