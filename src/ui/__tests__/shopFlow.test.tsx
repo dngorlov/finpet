@@ -35,21 +35,24 @@ describe("Магазин", () => {
     expect(
       screen.getByRole("button", { name: "Школьные принадлежности. 10 монет. Настроение +5" }),
     ).toBeOnTheScreen();
-    expect(screen.getAllByText("−15", { includeHiddenElements: true })).toHaveLength(2);
+    expect(screen.getAllByText(/не купишь: −15/, { includeHiddenElements: true })).toHaveLength(2);
+    expect(screen.getByText("не купишь: −15 сытость", { includeHiddenElements: true })).toBeOnTheScreen();
+    expect(screen.getAllByText("Счёт на сегодня", { includeHiddenElements: true })).toHaveLength(2);
     expect(screen.getByText("🍱", { includeHiddenElements: true })).toBeOnTheScreen();
     expect(screen.queryByText("Счёт")).not.toBeOnTheScreen();
     expect(screen.queryByText("монет")).not.toBeOnTheScreen();
     expect(screen.queryByText("Обязательные")).not.toBeOnTheScreen();
     expect(screen.queryByText(/после покупки/)).not.toBeOnTheScreen();
     expect(screen.getByText("12")).toHaveStyle({ fontFamily: "PressStart2P_400Regular" });
+    expect(screen.getByRole("button", { name: "Отложить Обед" })).toBeOnTheScreen();
 
-    await user.press(screen.getByRole("button", { name: /^Обед/ }));
+    await user.press(screen.getByRole("button", { name: "Купить Обед" }));
     expect(screen.getByText(lunch.description)).toBeOnTheScreen();
     expect(screen.getByLabelText("Сытость +10")).toBeOnTheScreen();
     expect(screen.getByLabelText("Если не купить Обед, Сытость −15")).toBeOnTheScreen();
     expect(screen.getByLabelText("после покупки: 108 монет")).toBeOnTheScreen();
-    await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText("Купить Обед за 12?")).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Купить Обед" })).not.toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Купить" }));
 
     expect(screen.getByText("Баланс -12")).toBeOnTheScreen();
@@ -73,7 +76,7 @@ describe("Магазин", () => {
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
     await user.press(screen.getByRole("button", { name: new RegExp(`^${candy.name}`) }));
-    await user.press(screen.getByRole("button", { name: "Купить" }));
+    expect(screen.getByText(candy.description)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Купить" }));
     expect(screen.getByText("Баланс -5")).toBeOnTheScreen();
     expect(screen.getByText("Настроение +5")).toBeOnTheScreen();
@@ -108,12 +111,97 @@ describe("Магазин", () => {
 
     await user.press(screen.getByRole("button", { name: "Магазин" }));
     await user.press(screen.getByRole("button", { name: "Желаемое" }));
-    await user.press(screen.getByRole("button", { name: /^Мороженое/ }));
+    await user.press(screen.getByRole("button", { name: "Купить Мороженое" }));
     expect(screen.queryByRole("button", { name: "Купить" })).not.toBeOnTheScreen();
     expect(screen.getByText(/Не хватает/)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Дождаться пособия" }));
     expect(screen.getByText(/Пособие придёт/)).toBeOnTheScreen();
     await user.press(screen.getByRole("button", { name: "Выполнить задание" }));
     expect(screen.getByText("Карта заданий")).toBeOnTheScreen();
+  });
+  it("opens the Купить drawer from the row and closes it with Назад", async () => {
+    const ports = createFakePorts();
+    seedReturningChild(ports);
+    const { user } = await renderApp(ports);
+
+    await user.press(screen.getByRole("button", { name: "Магазин" }));
+    await user.press(screen.getByRole("button", { name: /^Обед/ }));
+    expect(screen.getByText(lunch.description)).toBeOnTheScreen();
+    expect(screen.getByText("Купить Обед за 12?")).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: /^Проезд/ })).not.toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Назад" }));
+    expect(screen.queryByText(lunch.description)).not.toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: /^Проезд/ })).toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
+  });
+
+  it("postpones a due Счёт after showing the penalty, then brings it back", async () => {
+    const ports = createFakePorts();
+    seedReturningChild(ports);
+    const { user } = await renderApp(ports);
+
+    await user.press(screen.getByRole("button", { name: "Магазин" }));
+    await user.press(screen.getByRole("button", { name: "Отложить Обед" }));
+    expect(screen.getByText("Отложить Обед?")).toBeOnTheScreen();
+    expect(screen.getByText("Если не купить Обед до конца дня, Сытость −15.")).toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Отложить" }));
+    expect(screen.queryByText("Отложить Обед?")).not.toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: /^Обед.*Отложено$/ })).toBeOnTheScreen();
+    expect(screen.getByText("Отложено", { includeHiddenElements: true })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Отложить Обед" })).not.toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 120")).toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Вернуть Обед" }));
+    expect(screen.getByRole("button", { name: "Отложить Обед" })).toBeOnTheScreen();
+    expect(screen.queryByText("Отложено", { includeHiddenElements: true })).not.toBeOnTheScreen();
+  });
+
+  it("explains that postponing a Желаемое keeps the money, and Назад keeps the row as it was", async () => {
+    const ports = createFakePorts();
+    seedReturningChild(ports);
+    const { user } = await renderApp(ports);
+
+    await user.press(screen.getByRole("button", { name: "Магазин" }));
+    await user.press(screen.getByRole("button", { name: "Желаемое" }));
+    expect(screen.getByRole("button", { name: "Желаемое" })).toBeSelected();
+    await user.press(screen.getByRole("button", { name: "Отложить Конфета" }));
+    expect(screen.getByLabelText("Деньги останутся у тебя.")).toBeOnTheScreen();
+    expect(screen.getByText("Питомец ничего не потеряет.")).toBeOnTheScreen();
+
+    await user.press(screen.getByRole("button", { name: "Назад" }));
+    expect(screen.getByRole("button", { name: "Отложить Конфета" })).toBeOnTheScreen();
+    expect(screen.queryByText("Отложено", { includeHiddenElements: true })).not.toBeOnTheScreen();
+  });
+
+  it("buys a postponed item, which clears Отложено and shows Куплено", async () => {
+    const ports = createFakePorts();
+    seedReturningChild(ports);
+    const { user } = await renderApp(ports);
+
+    await user.press(screen.getByRole("button", { name: "Магазин" }));
+    await user.press(screen.getByRole("button", { name: "Отложить Проезд" }));
+    expect(screen.getByText("Если не купить Проезд до конца дня, Настроение −15 один раз.")).toBeOnTheScreen();
+    await user.press(screen.getByRole("button", { name: "Отложить" }));
+    await user.press(screen.getByRole("button", { name: "Купить Проезд" }));
+    await user.press(screen.getByRole("button", { name: "Купить" }));
+    await user.press(screen.getByRole("button", { name: "Понятно" }));
+
+    expect(screen.getByRole("button", { name: /^Проезд.*Куплено$/ })).toBeOnTheScreen();
+    expect(screen.queryByText("Отложено", { includeHiddenElements: true })).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Отложить Проезд" })).not.toBeOnTheScreen();
+    expect(screen.getByLabelText("Баланс 112")).toBeOnTheScreen();
+  });
+  it("marks today's unpaid Счета when opened from Текущая задача", async () => {
+    const ports = createFakePorts();
+    seedReturningChild(ports);
+    const { user } = await renderApp(ports);
+
+    await user.press(screen.getByRole("button", { name: "Текущая задача: купить нужное в Магазине" }));
+    expect(screen.getByRole("button", { name: "Обязательное" })).toBeSelected();
+    expect(screen.getByRole("button", { name: /^Обед/ })).toBeSelected();
+    expect(screen.getByRole("button", { name: /^Проезд/ })).toBeSelected();
+    expect(screen.getByRole("button", { name: /^Школьные принадлежности/ })).not.toBeSelected();
   });
 });
