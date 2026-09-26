@@ -1,3 +1,4 @@
+import type { ClaimDailyRewardResult, DailyRewardView } from "../../core/dailyReward";
 import type { CatalogItem, DayBills, PlanBuckets } from "../../core/economy";
 import type { Stage } from "../../core/stages";
 import type { AnswerTally, TaskStepResult } from "../../core/tasks";
@@ -12,6 +13,7 @@ import type {
   DaySummaryView,
   PinnedLessonClaim,
   GoalOption,
+  EarnedAchievement,
   JournalEntry,
   OpenDayResult,
   ProfileView,
@@ -23,12 +25,14 @@ import type {
 } from "../../data/repositories/gameRepository";
 
 export type { CollectDepositsResult, DepositView, OpenDepositResult };
-export type { DayState, DaySummaryView, GoalOption, JournalEntry, ProfileView, SavingsView, TaskProgressView };
+export type { DayState, DaySummaryView, EarnedAchievement, GoalOption, JournalEntry, ProfileView, SavingsView, TaskProgressView };
 
 /** UI-facing slice of the game repository — the persistence seam tests fake. */
 export type SessionGame = {
   createProfile(input: CreateProfileInput): string;
   getProfile(profileId: string): ProfileView;
+  dailyRewardState(profileId: string): DailyRewardView;
+  claimDailyReward(profileId: string): ClaimDailyRewardResult;
   deleteProfile(profileId: string): void;
   openDay(profileId: string): OpenDayResult;
   savingsState(profileId: string): SavingsView;
@@ -54,6 +58,9 @@ export type SessionGame = {
   clearActiveGoal(profileId: string): void;
   listGoals(profileId: string): GoalOption[];
   listJournal(profileId: string): JournalEntry[];
+  listAchievements(profileId: string): EarnedAchievement[];
+  celebrateAchievement(profileId: string, id: string): void;
+  subscribe(listener: () => void): () => void;
   purchasedItemIds(profileId: string, dayId: string): string[];
   boughtAsActiveGoalCount(profileId: string): number;
   applyTaskStep(profileId: string, dayId: string, result: TaskStepResult): void;

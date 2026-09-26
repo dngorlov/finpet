@@ -22,7 +22,7 @@ export function todayBills(
   return { parts, total: billsTotal(bills, catalog), note: bills.note };
 }
 
-const INCOME_KINDS = new Set(["starting_grant", "task_reward", "task_scene"]);
+const INCOME_KINDS = new Set(["starting_grant", "task_reward", "task_scene", "daily_reward"]);
 
 /**
  * Coins that came in on Игровой день `n` — the «Сегодня пришло» line.

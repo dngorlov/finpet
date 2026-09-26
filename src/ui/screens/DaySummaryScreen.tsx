@@ -3,6 +3,7 @@ import { BackHandler, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { META_KEYS } from "../../data/metaKeys";
+import { EarnedAchievements } from "../components/AchievementBoard";
 import { BackButton } from "../components/BackButton";
 import { CHART_COLORS } from "../components/DonutChart";
 import { ScreenTitle } from "../components/ScreenTitle";
@@ -102,6 +103,7 @@ export default function DaySummaryScreen({ navigation, route }: Props) {
       {summary.facts.mandatoryCovered ? null : (
         <FactNote color={CHART_COLORS.mandatory} icon="clipboard" text={strings.nextDayPlanNeeds} />
       )}
+      <EarnedAchievements dayN={summary.n} />
     </Screen>
   );
 }

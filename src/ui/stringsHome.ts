@@ -28,4 +28,13 @@ export const homeStrings = {
   creditsReferences: "Референсы",
   creditsContent: "Образовательный контент",
   creditsLibraryLine: (version: string, license: string) => `${version} · ${license}`,
+  giftButton: "Подарок",
+  giftTitle: "Подарки",
+  giftHint: "Один подарок в день. Пропущенный день не сбрасывает.",
+  giftTake: "Забрать",
+  giftClaim: (coins: number) => `Забрать подарок, ${coins} монет`,
+  giftClaimed: (day: number) => `День ${day}, уже получен`,
+  giftLocked: (day: number) => `День ${day}, закрыт`,
+  giftGotTitle: "Вот твой подарок",
+  giftGot: (coins: number) => `Тебе ${coins} монет`,
 } as const;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  AccessibilityInfo,
   Animated,
   Dimensions,
   Pressable,
@@ -10,9 +11,16 @@ import {
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { STAGE_CODES, STAGE_NAMES, type Stage } from "../../core/stages";
+import { PixelIcon } from "./Pictogram";
 import { homeStrings } from "../stringsHome";
 import { strings } from "../strings";
 import { font, minTarget, spacing } from "../theme";
+
+/** Lip under the tucked card, same press language as a raised button. */
+const PEEK_EDGE = 4;
+
+/** Height of the tucked card, including the lip. Дом uses this to clear the overlay. */
+export const STAGE_PEEK_HEIGHT = minTarget + PEEK_EDGE;
 
 /** Width / height. A little shorter than ISO/IEC 7810 ID-1 (85.6 / 53.98). */
 const CARD_RATIO = 1.8;
@@ -88,6 +96,7 @@ export function StageCard({
   onClose,
   canPickGoal,
   onPickGoal,
+  overlay = false,
 }: {
   stage: Stage;
   petName: string;
@@ -102,6 +111,8 @@ export function StageCard({
   /** Копилка is open, so an empty card can offer «Выбери цель». */
   canPickGoal: boolean;
   onPickGoal: () => void;
+  /** Sit on top of the screen behind, instead of taking a row of its own. */
+  overlay?: boolean;
 }) {
   const { width } = useWindowDimensions();
   const face = FACES[stage];
@@ -139,21 +150,27 @@ export function StageCard({
 
   return (
     <>
-      <View
+      <Pressable
         accessibilityElementsHidden={open}
         importantForAccessibility={open ? "no-hide-descendants" : "auto"}
-        style={[styles.peekClip, { borderRadius: face.radius }]}
+        role="button"
+        aria-label={label}
+        onPress={onOpen}
+        style={({ pressed }) => [
+          styles.peekShell,
+          overlay ? styles.peekOverlay : null,
+          { backgroundColor: face.accent, borderRadius: face.radius },
+          pressed ? styles.peekPressed : null,
+        ]}
       >
-        <Pressable
-          role="button"
-          aria-label={label}
-          onPress={onOpen}
-          style={[styles.face, faceShell(face), { height: cardHeight }]}
-        >
-          {/* The tucked face only peeks the title. «Выбери цель» is a control on the open card. */}
-          <CardFace {...faceProps} onPickGoal={undefined} />
-        </Pressable>
-      </View>
+        <View style={[styles.peekClip, { borderRadius: face.radius }]}>
+          <View style={[styles.face, faceShell(face), { height: cardHeight }]}>
+            {/* The tucked face only peeks the title. «Выбери цель» is a control on the open card. */}
+            <CardFace {...faceProps} onPickGoal={undefined} />
+          </View>
+          <PeekCue color={face.ink} />
+        </View>
+      </Pressable>
       {open ? (
         <Pressable
           role="button"
@@ -182,6 +199,57 @@ export function StageCard({
         </Animated.View>
       ) : null}
     </>
+  );
+}
+
+/** Up arrow in the slot Закрыть uses once the card is open. It bobs so the strip reads as a pull. */
+function PeekCue({ color }: { color: string }) {
+  const [nudge] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    let stopped = false;
+    let loop: Animated.CompositeAnimation | null = null;
+    const play = () => {
+      loop?.stop();
+      loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(nudge, { toValue: -5, duration: 650, useNativeDriver: true }),
+          Animated.timing(nudge, { toValue: 0, duration: 650, useNativeDriver: true }),
+        ]),
+      );
+      loop.start();
+    };
+    const stop = () => {
+      loop?.stop();
+      loop = null;
+      nudge.setValue(0);
+    };
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((reduce) => {
+        if (!stopped && !reduce) play();
+      })
+      .catch(() => undefined);
+    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", (reduce) => {
+      if (reduce) stop();
+      else play();
+    });
+    return () => {
+      stopped = true;
+      stop();
+      subscription.remove();
+    };
+  }, [nudge]);
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      aria-hidden
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={[styles.peekCue, { transform: [{ translateY: nudge }] }]}
+    >
+      <PixelIcon name="arrow-up" size={22} color={color} />
+    </Animated.View>
   );
 }
 
@@ -414,10 +482,32 @@ function Cross({ color }: { color: string }) {
 }
 
 const styles = StyleSheet.create({
+  peekShell: {
+    marginHorizontal: spacing.m,
+    paddingBottom: PEEK_EDGE,
+  },
+  peekOverlay: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+  },
+  peekPressed: {
+    paddingBottom: 0,
+    paddingTop: PEEK_EDGE,
+  },
   peekClip: {
     height: minTarget,
-    marginHorizontal: spacing.m,
     overflow: "hidden",
+  },
+  peekCue: {
+    alignItems: "center",
+    height: minTarget,
+    justifyContent: "center",
+    position: "absolute",
+    right: 0,
+    top: 0,
+    width: minTarget,
   },
   face: {
     flex: 1,

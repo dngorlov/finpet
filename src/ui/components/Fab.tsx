@@ -7,7 +7,7 @@ const EDGE = 5;
 
 /**
  * Round raised game button with a short caption under it (Главная: Магазин,
- * Итоги; Карта: Словарик). Place several inside <FabStack>.
+ * Итоги, Подарок; Карта: Словарик). Place several inside <FabStack>.
  */
 export function Fab({
   label,
@@ -60,10 +60,21 @@ export function Fab({
   );
 }
 
-/** Bottom-right column of FABs floating over the screen. */
-export function FabStack({ children, bottom = spacing.m }: { children: ReactNode; bottom?: number }) {
+/** Column of FABs floating over a screen corner. Дом keeps Магазин and Итоги on the right. */
+export function FabStack({
+  children,
+  bottom = spacing.m,
+  side = "right",
+}: {
+  children: ReactNode;
+  bottom?: number;
+  side?: "left" | "right";
+}) {
   return (
-    <View pointerEvents="box-none" style={[styles.stack, { bottom }]}>
+    <View
+      pointerEvents="box-none"
+      style={[styles.stack, side === "left" ? styles.stackLeft : styles.stackRight, { bottom }]}
+    >
       {children}
     </View>
   );
@@ -74,6 +85,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.m,
     position: "absolute",
+  },
+  stackLeft: {
+    left: spacing.m,
+  },
+  stackRight: {
     right: spacing.m,
   },
   hit: {

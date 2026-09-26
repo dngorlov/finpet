@@ -75,12 +75,12 @@ describe("runMigrations", () => {
     expect(driver.statements).toHaveLength(0);
   });
 
-  it("applies meta then the settled game schema and ends at version 7", () => {
+  it("applies meta then the settled game schema and ends at version 9", () => {
     const driver = new FakeSqlite(0);
 
     runMigrations(driver, MIGRATIONS);
 
-    expect(driver.userVersion).toBe(7);
+    expect(driver.userVersion).toBe(9);
     expect(driver.createTableStatements()[0]).toContain("CREATE TABLE IF NOT EXISTS meta");
     const ddl = driver.statements.join("\n");
     for (const table of [
@@ -96,6 +96,7 @@ describe("runMigrations", () => {
       "dayScores",
       "taskProgress",
       "deposits",
+      "achievements",
     ]) {
       expect(ddl).toContain(`CREATE TABLE IF NOT EXISTS ${table}`);
     }
@@ -106,14 +107,15 @@ describe("runMigrations", () => {
     expect(ddl).toContain("ALTER TABLE taskProgress ADD COLUMN firstCompletedAt");
     expect(ddl).toContain("ALTER TABLE goals ADD COLUMN custom");
     expect(ddl).toContain("ALTER TABLE petState ADD COLUMN stageCredit");
+    expect(ddl).toContain("ALTER TABLE profiles ADD COLUMN dailyRewardClaimed");
   });
 
   it("real migration set is a no-op on an already migrated database", () => {
-    const driver = new FakeSqlite(7);
+    const driver = new FakeSqlite(9);
 
     runMigrations(driver, MIGRATIONS);
 
-    expect(driver.userVersion).toBe(7);
+    expect(driver.userVersion).toBe(9);
     expect(driver.statements).toHaveLength(0);
   });
 

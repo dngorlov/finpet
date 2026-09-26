@@ -169,4 +169,25 @@ ALTER TABLE taskProgress ADD COLUMN firstCompletedAt INTEGER;
 UPDATE taskProgress SET firstCompletedAt = completedAt WHERE status = 'completed' AND completedAt IS NOT NULL;
 `,
   },
+  {
+    version: 8,
+    up: `
+CREATE TABLE IF NOT EXISTS achievements (
+  id TEXT PRIMARY KEY NOT NULL,
+  profileId TEXT NOT NULL REFERENCES profiles(id),
+  key TEXT NOT NULL,
+  dayN INTEGER NOT NULL,
+  earnedAt INTEGER NOT NULL,
+  celebrated INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(profileId, key)
+);
+`,
+  },
+  {
+    version: 9,
+    up: `
+ALTER TABLE profiles ADD COLUMN dailyRewardClaimed INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE profiles ADD COLUMN dailyRewardClaimedOn TEXT;
+`,
+  },
 ];

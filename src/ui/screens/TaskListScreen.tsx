@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -28,6 +28,14 @@ import { homeStrings } from "../stringsHome";
 import { colors, minTarget, radius, spacing, type } from "../theme";
 import { TOPIC_TINT } from "../topicStyle";
 import {
+  containedMapSize,
+  dockCap,
+  dockOverflows,
+  naturalDockHeight,
+  PANEL_BORDER,
+  PANEL_PAD,
+} from "./mapLayout";
+import {
   completedTaskIds,
   correctionTasks,
   preferredHubTask,
@@ -36,8 +44,6 @@ import {
 
 /** Background art: Andrei's Moscow map drops in here (same file name, any size, 3:4). */
 const MAP_IMAGE = require("../../../assets/map/moscow.png");
-const MAP_ASPECT = 3 / 4;
-const MIN_MAP_HEIGHT = 200;
 const PIN = 44;
 const DOTS = 5;
 
@@ -56,8 +62,9 @@ const TOPIC_COPY: Record<TaskTopic, { title: string; icon: string }> = {
 type PinState = "locked" | "open" | "done" | "soon";
 
 /**
- * Карта заданий: pins by district, unlock chain, reward left. The map shrinks
- * so the selected mission's «Начать» stays above the tab bar without scrolling.
+ * Карта заданий: pins by district, unlock chain, reward left. The map keeps
+ * the space above the lesson dock. A long description scrolls inside the dock,
+ * and «Начать» stays pinned at the bottom of the card.
  */
 export default function TaskListScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -68,9 +75,8 @@ export default function TaskListScreen() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [gamesOpen, setGamesOpen] = useState(false);
   const [outer, setOuter] = useState({ width: 0, height: 0 });
-  const [headerHeight, setHeaderHeight] = useState(0);
-  const [panelHeight, setPanelHeight] = useState(0);
-  const [fallbackWidth, setFallbackWidth] = useState(0);
+  const [slot, setSlot] = useState({ width: 0, height: 0 });
+  const [dockHeight, setDockHeight] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -119,20 +125,14 @@ export default function TaskListScreen() {
     `${Math.round(fraction * 1000) / 10}%`;
 
   const pad = spacing.m;
-  const measured = outer.width > 0 && outer.height > 0 && panelHeight > 0;
-  // Map height = min(full width at 3:4, what is left once the title and the
-  // mission panel fit). Width follows from the art's aspect.
-  const mapHeight = measured
-    ? Math.max(
-        MIN_MAP_HEIGHT,
-        Math.min(
-          (outer.width - pad * 2) / MAP_ASPECT,
-          outer.height - pad * 2 - headerHeight - panelHeight - spacing.s * 2,
-        ),
-      )
-    : 0;
-  const mapWidth = measured ? mapHeight * MAP_ASPECT : fallbackWidth;
-  const mapBox = measured ? { height: mapHeight, width: mapWidth } : styles.mapFull;
+  const cap = dockCap(outer.height, pad);
+  const map = containedMapSize(slot.width, slot.height);
+  const mapReady = map.width > 0 && map.height > 0;
+  const selectedState = selected ? stateOf(selected) : null;
+  const showAction = selected != null && selectedState !== "soon";
+  const games = selected ? childGames(selected, content.tasks) : [];
+  const showExtras = games.length > 0 || corrections.length > 0;
+  if (!selected && corrections.length === 0 && dockHeight !== 0) setDockHeight(0);
 
   return (
     <View
@@ -144,25 +144,44 @@ export default function TaskListScreen() {
         );
       }}
     >
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: pad }]}>
-        <View onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
-          <ScreenTitle style={styles.title}>{strings.mapTitle}</ScreenTitle>
-        </View>
+      <View style={[styles.column, { padding: pad }]}>
+        <ScreenTitle style={styles.title}>{strings.mapTitle}</ScreenTitle>
         <View
-          style={[styles.map, mapBox]}
-          onLayout={(event) => setFallbackWidth(event.nativeEvent.layout.width)}
+          collapsable={false}
+          style={styles.mapSlot}
+          onLayout={(event) => {
+            const { width, height } = event.nativeEvent.layout;
+            setSlot((current) =>
+              Math.abs(current.width - width) < 0.5 && Math.abs(current.height - height) < 0.5
+                ? current
+                : { width, height },
+            );
+          }}
+        >
+        <View
+          style={[
+            styles.map,
+            mapReady
+              ? {
+                  height: map.height,
+                  left: (slot.width - map.width) / 2,
+                  position: "absolute",
+                  top: 0,
+                  width: map.width,
+                }
+              : styles.mapPending,
+          ]}
         >
           {/* Explicit width/height: on iOS an absolute-fill Image kept its
               828×1104 intrinsic size and spilled far past the box. */}
-          <Image
-            source={MAP_IMAGE}
-            style={[
-              styles.mapImage,
-              mapWidth > 0 ? { width: mapWidth, height: mapWidth / MAP_ASPECT } : null,
-            ]}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
-          />
+          {mapReady ? (
+            <Image
+              source={MAP_IMAGE}
+              style={{ width: map.width, height: map.height }}
+              resizeMode="contain"
+              accessibilityIgnoresInvertColors
+            />
+          ) : null}
           {missions.map((task) => {
             const before = missionPrerequisite(task, content.tasks);
             if (!before) return null;
@@ -224,53 +243,70 @@ export default function TaskListScreen() {
             );
           })}
         </View>
-        {selected ? (
-          <>
-            <View onLayout={(event) => setPanelHeight(event.nativeEvent.layout.height)}>
-              <MissionPanel
+        </View>
+        {selected && selectedState ? (
+          <LessonDock
+            cap={cap}
+            onHeight={setDockHeight}
+            copy={
+              <MissionCopy
                 task={selected}
-                state={stateOf(selected)}
+                state={selectedState}
                 best={byKey.get(selected.id)?.bestReward ?? 0}
-                blocker={missionPrerequisite(selected, content.tasks)}
-                onPlay={(taskId) => navigation.navigate("TaskRun", { taskId })}
                 onMore={() => setDetailsOpen(true)}
-                highlighted={
-                  focus?.kind === "lesson" &&
-                  focus.taskId === selected.id &&
-                  stateOf(selected) === "open"
-                }
               />
-            </View>
-            <GameRow
-              parent={selected}
-              games={childGames(selected, content.tasks).map((child) => ({
-                task: child,
-                state: stateOf(child),
-              }))}
-              onPlay={(taskId) => navigation.navigate("TaskRun", { taskId })}
-            />
-          </>
-        ) : null}
-        {corrections.length > 0 ? (
-          <Text style={styles.section}>{strings.missionCorrections}</Text>
-        ) : null}
-        {corrections.map((task) => (
-          <Pressable
-            key={task.id}
-            role="button"
-            aria-label={task.title}
-            onPress={() => navigation.navigate("TaskRun", { taskId: task.id })}
-            style={styles.hit}
+            }
+            action={
+              showAction ? (
+                <MissionAction
+                  task={selected}
+                  state={selectedState}
+                  blocker={missionPrerequisite(selected, content.tasks)}
+                  onPlay={(taskId) => navigation.navigate("TaskRun", { taskId })}
+                  highlighted={
+                    focus?.kind === "lesson" &&
+                    focus.taskId === selected.id &&
+                    selectedState === "open"
+                  }
+                />
+              ) : null
+            }
+            extras={
+              showExtras ? (
+                <>
+                  {games.length > 0 ? (
+                    <GameRow
+                      parent={selected}
+                      games={games.map((child) => ({ task: child, state: stateOf(child) }))}
+                      onPlay={(taskId) => navigation.navigate("TaskRun", { taskId })}
+                    />
+                  ) : null}
+                  <Corrections
+                    tasks={corrections}
+                    onPlay={(taskId) => navigation.navigate("TaskRun", { taskId })}
+                  />
+                </>
+              ) : null
+            }
+          />
+        ) : corrections.length > 0 ? (
+          <View
+            style={[styles.dock, cap > 0 ? { maxHeight: cap } : null]}
+            onLayout={(event) => {
+              const next = Math.round(event.nativeEvent.layout.height);
+              setDockHeight((current) => (current === next ? current : next));
+            }}
           >
-            <Card>
-              <CoinText text={task.title} style={styles.cardTitle} />
-              <CoinText text={task.intro} style={styles.body} />
-              <CoinText text={strings.playTask} style={styles.body} />
-            </Card>
-          </Pressable>
-        ))}
-      </ScrollView>
-      <FabStack bottom={measured ? pad + panelHeight + spacing.s : spacing.m}>
+            <ScrollView style={[styles.panelScrollFit, cap > 0 ? { maxHeight: cap } : null]} contentContainerStyle={styles.extras}>
+              <Corrections
+                tasks={corrections}
+                onPlay={(taskId) => navigation.navigate("TaskRun", { taskId })}
+              />
+            </ScrollView>
+          </View>
+        ) : null}
+      </View>
+      <FabStack bottom={dockHeight > 0 ? pad + dockHeight + spacing.s : spacing.m}>
         <Fab
           label={strings.missionGames}
           icon={<PixelIcon name="play" size={32} color={colors.onRaised} />}
@@ -330,27 +366,106 @@ function DifficultyMarks({ level }: { level: number }) {
   );
 }
 
-/** Compact bottom panel: topic + title + stars, the reward, and the one big button. */
-function MissionPanel({
+function rememberHeight(current: number, next: number): number {
+  const rounded = Math.round(next);
+  return current === rounded ? current : rounded;
+}
+
+/**
+ * Lesson card under the map. Copy and games scroll once they pass `cap`;
+ * «Начать» stays pinned so a long description cannot shrink the map.
+ */
+function LessonDock({
+  cap,
+  copy,
+  action,
+  extras,
+  onHeight,
+}: {
+  cap: number;
+  copy: ReactNode;
+  action: ReactNode | null;
+  extras: ReactNode | null;
+  onHeight: (height: number) => void;
+}) {
+  const [copyHeight, setCopyHeight] = useState(0);
+  const [actionHeight, setActionHeight] = useState(0);
+  const [extrasHeight, setExtrasHeight] = useState(0);
+  const ready =
+    copyHeight > 0 && (action == null || actionHeight > 0) && (extras == null || extrasHeight > 0);
+  const natural = naturalDockHeight({
+    copyHeight,
+    actionHeight: action ? actionHeight : 0,
+    extrasHeight: extras ? extrasHeight : 0,
+  });
+  const overflows = ready && dockOverflows(natural, cap);
+  const report = (height: number) => onHeight(Math.round(height));
+
+  const copyBlock = (
+    <View
+      collapsable={false}
+      style={styles.copy}
+      onLayout={(event) => setCopyHeight((current) => rememberHeight(current, event.nativeEvent.layout.height))}
+    >
+      {copy}
+    </View>
+  );
+  const actionBlock = action ? (
+    <View
+      collapsable={false}
+      style={styles.dockAction}
+      onLayout={(event) => setActionHeight((current) => rememberHeight(current, event.nativeEvent.layout.height))}
+    >
+      {action}
+    </View>
+  ) : null;
+  const extrasBlock = extras ? (
+    <View
+      collapsable={false}
+      style={styles.extras}
+      onLayout={(event) => setExtrasHeight((current) => rememberHeight(current, event.nativeEvent.layout.height))}
+    >
+      {extras}
+    </View>
+  ) : null;
+
+  return (
+    <View
+      style={[styles.dock, cap > 0 ? { maxHeight: cap } : null, overflows ? { height: cap } : null]}
+      onLayout={(event) => report(event.nativeEvent.layout.height)}
+    >
+      <View style={[styles.panel, overflows ? styles.panelFlex : null]}>
+        {/* Scroll content keeps its full height, so a long intro is measured
+            even when the dock itself is capped. */}
+        <ScrollView
+          scrollEnabled={overflows}
+          style={overflows ? styles.panelScroll : styles.panelScrollFit}
+          contentContainerStyle={extras ? styles.copy : undefined}
+        >
+          {copyBlock}
+          {extrasBlock}
+        </ScrollView>
+        {actionBlock}
+      </View>
+    </View>
+  );
+}
+
+/** Topic, title, intro, and the reward line. The action sits under this. */
+function MissionCopy({
   task,
   state,
   best,
-  blocker,
-  onPlay,
   onMore,
-  highlighted,
 }: {
   task: TaskContent;
   state: PinState;
   best: number;
-  blocker: TaskContent | null;
-  onPlay: (taskId: string) => void;
   onMore: () => void;
-  highlighted?: boolean;
 }) {
   const topic = TOPIC_COPY[task.topic];
   return (
-    <View style={styles.panel}>
+    <>
       <View style={styles.panelRow}>
         <View style={[styles.topicBadge, { backgroundColor: TOPIC_TINT[task.topic] }]}>
           <Pictogram glyph={topic.icon} size={24} />
@@ -382,21 +497,63 @@ function MissionPanel({
           </Pressable>
         )}
       </View>
-      {state === "soon" ? null : state === "locked" && blocker ? (
-        <View style={styles.lockedLine}>
-          <PixelIcon name="lock" size={20} color={colors.subtle} />
-          <Text style={[styles.body, styles.lockedText]}>
-            {strings.missionLockedAfter(blocker.title)}
-          </Text>
-        </View>
-      ) : (
-        <PrimaryButton
-          highlighted={highlighted}
-          label={state === "done" ? strings.missionReplay : strings.missionStart}
+    </>
+  );
+}
+
+/** «Начать», a replay, or the lock line. Pinned under the scrolling copy. */
+function MissionAction({
+  task,
+  state,
+  blocker,
+  onPlay,
+  highlighted,
+}: {
+  task: TaskContent;
+  state: PinState;
+  blocker: TaskContent | null;
+  onPlay: (taskId: string) => void;
+  highlighted?: boolean;
+}) {
+  if (state === "soon") return null;
+  if (state === "locked" && blocker) {
+    return (
+      <View style={styles.lockedLine}>
+        <PixelIcon name="lock" size={20} color={colors.subtle} />
+        <Text style={[styles.body, styles.lockedText]}>{strings.missionLockedAfter(blocker.title)}</Text>
+      </View>
+    );
+  }
+  return (
+    <PrimaryButton
+      highlighted={highlighted}
+      label={state === "done" ? strings.missionReplay : strings.missionStart}
+      onPress={() => onPlay(task.id)}
+    />
+  );
+}
+
+function Corrections({ tasks, onPlay }: { tasks: TaskContent[]; onPlay: (taskId: string) => void }) {
+  if (tasks.length === 0) return null;
+  return (
+    <>
+      <Text style={styles.section}>{strings.missionCorrections}</Text>
+      {tasks.map((task) => (
+        <Pressable
+          key={task.id}
+          role="button"
+          aria-label={task.title}
           onPress={() => onPlay(task.id)}
-        />
-      )}
-    </View>
+          style={styles.hit}
+        >
+          <Card>
+            <CoinText text={task.title} style={styles.cardTitle} />
+            <CoinText text={task.intro} style={styles.body} />
+            <CoinText text={strings.playTask} style={styles.body} />
+          </Card>
+        </Pressable>
+      ))}
+    </>
   );
 }
 
@@ -417,6 +574,7 @@ function GameRow({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        nestedScrollEnabled
         contentContainerStyle={styles.gameList}
       >
         {games.map((child) => {
@@ -563,11 +721,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     flex: 1,
   },
-  scroll: {
+  column: {
     flex: 1,
-  },
-  content: {
-    flexGrow: 1,
     gap: spacing.s,
   },
   title: {
@@ -590,21 +745,21 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: type.body,
   },
+  mapSlot: {
+    flex: 1,
+    minHeight: 0,
+    width: "100%",
+  },
   map: {
-    alignSelf: "center",
     borderRadius: 12,
     overflow: "hidden",
   },
-  mapFull: {
-    aspectRatio: MAP_ASPECT,
-    width: "100%",
-  },
-  mapImage: {
-    height: "100%",
+  mapPending: {
+    bottom: 0,
     left: 0,
     position: "absolute",
+    right: 0,
     top: 0,
-    width: "100%",
   },
   dot: {
     backgroundColor: colors.disabledFace,
@@ -643,13 +798,39 @@ const styles = StyleSheet.create({
     borderColor: colors.raisedEdge,
     transform: [{ scale: 1.15 }],
   },
+  dock: {
+    flexShrink: 1,
+    gap: spacing.s,
+    width: "100%",
+  },
   panel: {
     backgroundColor: colors.card,
     borderColor: colors.track,
     borderRadius: radius.card,
-    borderWidth: 2,
+    borderWidth: PANEL_BORDER,
     gap: spacing.s,
-    padding: spacing.s + 4,
+    padding: PANEL_PAD,
+  },
+  panelFlex: {
+    flex: 1,
+    minHeight: 0,
+  },
+  panelScroll: {
+    flex: 1,
+    minHeight: 0,
+  },
+  panelScrollFit: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  copy: {
+    gap: spacing.s,
+  },
+  dockAction: {
+    flexShrink: 0,
+  },
+  extras: {
+    gap: spacing.s,
   },
   panelRow: {
     alignItems: "center",
@@ -720,7 +901,6 @@ const styles = StyleSheet.create({
   },
   gameList: {
     gap: spacing.s,
-    paddingRight: 88,
   },
   gameChip: {
     backgroundColor: colors.raisedFace,

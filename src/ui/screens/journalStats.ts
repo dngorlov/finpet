@@ -55,6 +55,7 @@ export function classify(entry: JournalEntry, lookup: ItemLookup): Classified | 
   }
   if (entry.kind === "task_reward" || entry.kind === "task_scene") return { flow: "income", category: "tasks", amount };
   if (entry.kind === "starting_grant") return { flow: "income", category: "start", amount };
+  if (entry.kind === "daily_reward") return { flow: "income", category: "other", amount };
   if (entry.kind === "bank_out") return { flow: "income", category: "bank", amount };
   if (entry.kind === "savings_out") return { flow: "income", category: "fromSavings", amount };
   return { flow: "income", category: "other", amount };

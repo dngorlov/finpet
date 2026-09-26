@@ -1,6 +1,13 @@
 import { and, desc, eq, isNotNull, isNull, like } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
-import type { Clock } from "../../core/clock";
+import { localDate, type Clock } from "../../core/clock";
+import {
+  dailyRewardCalendar,
+  dailyRewardReady,
+  nextDailyRewardCoins,
+  type ClaimDailyRewardResult,
+  type DailyRewardView,
+} from "../../core/dailyReward";
 import { ECONOMY, FEATURES, METERS } from "../../core/config";
 import { dayId as makeDayId } from "../../core/days";
 import {
@@ -30,6 +37,7 @@ import {
   type Stage,
 } from "../../core/stages";
 import { checkedTally, endsGameDay, rewardTopUp, type AnswerTally, type TaskContent, type TaskStepResult } from "../../core/tasks";
+import { earnedAchievementIds, LUNCH_ITEM_ID, orderEarned, type AchievementFacts } from "../../core/achievements";
 import { createLocalId } from "../localId";
 import { META_KEYS } from "../metaKeys";
 import * as tables from "../schema";
@@ -179,6 +187,13 @@ export interface JournalEntry {
   goalId: string | null;
 }
 
+/** A Достижение this profile has earned. `id` is the catalog key. */
+export interface EarnedAchievement {
+  id: string;
+  dayN: number;
+  celebrated: boolean;
+}
+
 export interface GoalOption {
   key: string;
   cost: number;
@@ -197,6 +212,10 @@ export type TransferResult =
 export function createGameRepository(db: GameDb, clock: Clock) {
   const nowMs = () => clock.now().getTime();
   const newId = (prefix: string) => createLocalId(prefix);
+  const listeners = new Set<() => void>();
+  const publish = () => {
+    for (const listener of listeners) listener();
+  };
 
   function profile(conn: GameDb, profileId: string) {
     const row = conn.select().from(tables.profiles).where(eq(tables.profiles.id, profileId)).get();
@@ -341,6 +360,70 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       .orderBy(desc(tables.days.n))
       .get();
     return last?.n ?? 0;
+  }
+
+  function achievementFacts(conn: GameDb, profileId: string): AchievementFacts {
+    const purchases = conn.select().from(tables.purchases).where(eq(tables.purchases.profileId, profileId)).all();
+    const transfers = conn
+      .select()
+      .from(tables.savingsTransfers)
+      .where(eq(tables.savingsTransfers.profileId, profileId))
+      .all();
+    const plans = conn.select().from(tables.plans).where(eq(tables.plans.profileId, profileId)).all();
+    const closedDays = conn
+      .select()
+      .from(tables.days)
+      .where(and(eq(tables.days.profileId, profileId), isNotNull(tables.days.closedAt)))
+      .all();
+    const scores = conn.select().from(tables.dayScores).where(eq(tables.dayScores.profileId, profileId)).all();
+    const tasks = conn.select().from(tables.taskProgress).where(eq(tables.taskProgress.profileId, profileId)).all();
+    const deposits = conn.select().from(tables.deposits).where(eq(tables.deposits.profileId, profileId)).all();
+    const savedIn = transfers.filter((row) => row.kind === "in");
+    const shelf = purchases.filter((row) => row.boughtAsActiveGoal !== 1);
+    return {
+      shopBuys: purchases.length,
+      lunchBuys: purchases.filter((row) => row.itemId === LUNCH_ITEM_ID).length,
+      optionalBuys: shelf.filter((row) => row.kind === "optional").length,
+      savingsIns: savedIn.length,
+      savedTotal: savedIn.reduce((sum, row) => sum + row.amount, 0),
+      goalsBought: purchases.filter((row) => row.boughtAsActiveGoal === 1).length,
+      customGoalsBought: purchases.filter((row) => row.boughtAsActiveGoal === 1 && row.itemId.startsWith("custom:")).length,
+      plansConfirmed: plans.filter((row) => row.status === "confirmed").length,
+      daysClosed: closedDays.length,
+      lessonsCompleted: tasks.filter((row) => row.status === "completed").length,
+      bankOpens: deposits.length,
+      stage: stageFromCode(pet(conn, profileId).stage),
+      daysWithinPlan: scores.filter((row) => row.withinPlan === 1).length,
+      daysBillsPaid: scores.filter((row) => row.mandatoryCovered === 1).length,
+    };
+  }
+
+  /** Inserts any Достижения the facts now meet. Already stored ones stay. */
+  function recordAchievements(conn: GameDb, profileId: string): void {
+    const have = new Set(
+      conn
+        .select()
+        .from(tables.achievements)
+        .where(eq(tables.achievements.profileId, profileId))
+        .all()
+        .map((row) => row.key),
+    );
+    const dayN = latestDayN(conn, profileId);
+    const earnedAt = nowMs();
+    for (const key of earnedAchievementIds(achievementFacts(conn, profileId))) {
+      if (have.has(key)) continue;
+      conn
+        .insert(tables.achievements)
+        .values({
+          id: newId("ach"),
+          profileId,
+          key,
+          dayN,
+          earnedAt,
+          celebrated: 0,
+        })
+        .run();
+    }
   }
 
   function requireOpenDay(conn: GameDb, profileId: string, dayId: string) {
@@ -611,6 +694,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     tx.update(tables.days).set({ closedAt: nowMs() }).where(eq(tables.days.id, day.id)).run();
     const summary = readDaySummary(tx, profileId, day.id);
     if (!summary) throw new Error("Нет итогов закрытого дня");
+    recordAchievements(tx, profileId);
     return summary;
   }
 
@@ -666,6 +750,34 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       };
     },
 
+    dailyRewardState(profileId: string): DailyRewardView {
+      const row = profile(db, profileId);
+      const record = { claimed: row.dailyRewardClaimed, claimedOn: row.dailyRewardClaimedOn };
+      const today = localDate(clock.now());
+      return { ready: dailyRewardReady(record, today), cells: dailyRewardCalendar(record, today) };
+    },
+
+    claimDailyReward(profileId: string): ClaimDailyRewardResult {
+      const result = db.transaction((tx) => {
+        const row = profile(tx, profileId);
+        const today = localDate(clock.now());
+        if (row.dailyRewardClaimedOn === today) return { status: "already" as const };
+        const coins = nextDailyRewardCoins(row.dailyRewardClaimed);
+        const open = openDayRow(tx, profileId);
+        credit(tx, profileId, open?.id ?? null, coins, "daily_reward", "daily_reward");
+        tx.update(tables.profiles)
+          .set({
+            dailyRewardClaimed: row.dailyRewardClaimed + 1,
+            dailyRewardClaimedOn: today,
+          })
+          .where(eq(tables.profiles.id, profileId))
+          .run();
+        return { status: "ok" as const, coins };
+      });
+      publish();
+      return result;
+    },
+
     deleteProfile(profileId: string): void {
       db.transaction((tx) => {
         profile(tx, profileId);
@@ -677,6 +789,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         tx.delete(tables.transactions).where(eq(tables.transactions.profileId, profileId)).run();
         tx.delete(tables.taskProgress).where(eq(tables.taskProgress.profileId, profileId)).run();
         tx.delete(tables.deposits).where(eq(tables.deposits.profileId, profileId)).run();
+        tx.delete(tables.achievements).where(eq(tables.achievements.profileId, profileId)).run();
         tx.delete(tables.goals).where(eq(tables.goals.profileId, profileId)).run();
         tx.delete(tables.petState).where(eq(tables.petState.profileId, profileId)).run();
         tx.delete(tables.days).where(eq(tables.days.profileId, profileId)).run();
@@ -750,7 +863,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
 
     /** `minMandatory` — today's Счета floor (see `planMandatoryFloor`). */
     confirmPlan(profileId: string, dayId: string, minMandatory = 0): ConfirmPlanResult {
-      return db.transaction((tx) => {
+      const result = db.transaction((tx) => {
         requireOpenDay(tx, profileId, dayId);
         const existing = planForDay(tx, dayId);
         if (!existing) throw new Error("Сначала составь план");
@@ -766,12 +879,15 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           .set({ status: "confirmed", confirmedAt: nowMs() })
           .where(eq(tables.plans.id, existing.id))
           .run();
+        recordAchievements(tx, profileId);
         return { ok: true as const };
       });
+      publish();
+      return result;
     },
 
     purchase(profileId: string, dayId: string, item: CatalogItem): PurchaseResult {
-      return db.transaction((tx) => {
+      const result = db.transaction((tx) => {
         requireOpenDay(tx, profileId, dayId);
         if (item.once && itemPurchased(tx, profileId, item.id)) {
           return { status: "blocked" as const, missing: 0 };
@@ -798,12 +914,15 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           applyMeter(tx, profileId, dayId, effect.meter, effect.delta, `purchase:${item.id}`);
         }
         if (asActive) clearGoals(tx, profileId);
+        recordAchievements(tx, profileId);
         return { status: "ok" as const };
       });
+      publish();
+      return result;
     },
 
     transferToSavings(profileId: string, dayId: string, amount: number): TransferResult {
-      return db.transaction((tx) => {
+      const result = db.transaction((tx) => {
         requireOpenDay(tx, profileId, dayId);
         if (amount <= 0) throw new Error("Сумма должна быть больше нуля");
         const active = activeGoal(tx, profileId);
@@ -838,8 +957,11 @@ export function createGameRepository(db: GameDb, clock: Clock) {
               .run();
           }
         }
+        recordAchievements(tx, profileId);
         return { status: "ok" as const, achieved };
       });
+      publish();
+      return result;
     },
 
     withdrawFromSavings(profileId: string, dayId: string, amount: number): WithdrawResult {
@@ -918,7 +1040,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
     },
 
     purchaseFromSavings(profileId: string, dayId: string, item: CatalogItem): PurchaseResult {
-      return db.transaction((tx) => {
+      const result = db.transaction((tx) => {
         requireOpenDay(tx, profileId, dayId);
         const active = activeGoal(tx, profileId);
         if (!active || active.key !== item.id) {
@@ -989,12 +1111,15 @@ export function createGameRepository(db: GameDb, clock: Clock) {
           .run();
         const stageHeld =
           showStageThreshold({ stage: current, custom, price: item.price, threshold }) && step.stage === current;
+        recordAchievements(tx, profileId);
         return {
           status: "ok" as const,
           stageExplanation: explainStageChange(current, step.stage),
           stageHeld,
         };
       });
+      publish();
+      return result;
     },
 
     dayState(profileId: string): DayState {
@@ -1036,7 +1161,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
 
     /** Moves `amount` from Баланс into a вклад; it comes back with interest on maturesDayN. */
     openDeposit(profileId: string, dayId: string, offerId: string, amount: number): OpenDepositResult {
-      return db.transaction((tx) => {
+      const result = db.transaction((tx) => {
         const day = requireOpenDay(tx, profileId, dayId);
         const offer = findOffer(offerId);
         const check = checkDeposit(profile(tx, profileId).balance, amount);
@@ -1057,8 +1182,11 @@ export function createGameRepository(db: GameDb, clock: Clock) {
             paidAt: null,
           })
           .run();
+        recordAchievements(tx, profileId);
         return { status: "ok" as const, payout: depositPayout(amount, offer.ratePercent), maturesDayN };
       });
+      publish();
+      return result;
     },
 
     /** Pays every вклад whose term ended by today's Игровой день — once, with a Журнал row. */
@@ -1123,6 +1251,38 @@ export function createGameRepository(db: GameDb, clock: Clock) {
         itemId: tx.itemId,
         goalId: tx.goalId,
       }));
+    },
+
+    listAchievements(profileId: string): EarnedAchievement[] {
+      profile(db, profileId);
+      const rows = db
+        .select()
+        .from(tables.achievements)
+        .where(eq(tables.achievements.profileId, profileId))
+        .all();
+      return orderEarned(
+        rows.map((row) => ({
+          id: row.key,
+          dayN: row.dayN,
+          celebrated: row.celebrated === 1,
+        })),
+      );
+    },
+
+    celebrateAchievement(profileId: string, id: string): void {
+      profile(db, profileId);
+      db.update(tables.achievements)
+        .set({ celebrated: 1 })
+        .where(and(eq(tables.achievements.profileId, profileId), eq(tables.achievements.key, id)))
+        .run();
+      publish();
+    },
+
+    subscribe(listener: () => void): () => void {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
 
     listGoals(profileId: string): GoalOption[] {
@@ -1196,7 +1356,9 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       catalog: readonly CatalogItem[],
       bills: readonly DayBills[] = [],
     ): CloseDayResult {
-      return db.transaction((tx) => closeOpenDay(tx, profileId, catalog, bills));
+      const result = db.transaction((tx) => closeOpenDay(tx, profileId, catalog, bills));
+      publish();
+      return result;
     },
 
     applyTaskStep(profileId: string, dayId: string, result: TaskStepResult): void {
@@ -1249,7 +1411,7 @@ export function createGameRepository(db: GameDb, clock: Clock) {
       lesson?: PinnedLessonClaim,
       answers?: AnswerTally,
     ): number {
-      return db.transaction((tx) => {
+      const paid = db.transaction((tx) => {
         requireDayForTask(tx, profileId, dayId);
         if (earned < 0) throw new Error("Награда не может быть отрицательной");
         const tally = checkedTally(answers);
@@ -1300,8 +1462,11 @@ export function createGameRepository(db: GameDb, clock: Clock) {
             planLessonEndsThisDay: taskId === FEATURES.planTaskId,
           });
         }
+        recordAchievements(tx, profileId);
         return reward;
       });
+      publish();
+      return paid;
     },
 
   };

@@ -2,13 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { BackHandler, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { DailyRewardCell } from "../../core/dailyReward";
 import { BANK, FEATURES } from "../../core/config";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DayState, ProfileView, SavingsView } from "../../data/repositories/gameRepository";
 import { PixelSprite } from "../components/PixelSprite";
 import { FeedbackCard, type FeedbackModel } from "../components/FeedbackCard";
 import { Screen } from "../components/Screen";
-import { StageCard } from "../components/StageCard";
+import { STAGE_PEEK_HEIGHT, StageCard } from "../components/StageCard";
 import { StatusStrip } from "../components/StatusStrip";
 import type { MoneySection } from "../navigation/playChrome";
 import { usePlayChrome } from "../navigation/playChrome";
@@ -21,6 +22,7 @@ import { completedTaskIds } from "../tasks/model";
 import { moneyStrings } from "../stringsMoney";
 import { colors, minTarget, spacing, type } from "../theme";
 import BankScreen from "./BankScreen";
+import { DailyRewardCalendar, DailyRewardGot } from "./DailyRewardSheet";
 import { HomeScene } from "./HomeScene";
 import { PillRow } from "./moneyParts";
 import { JournalPanel } from "./progressPanels";
@@ -43,6 +45,8 @@ type HubModel = {
   savingsOpen: boolean;
   planOpen: boolean;
   bankOpen: boolean;
+  giftReady: boolean;
+  giftCells: DailyRewardCell[];
 };
 
 const MONEY_OPTIONS: { id: MoneySection; label: string }[] = [
@@ -54,9 +58,11 @@ const MONEY_OPTIONS: { id: MoneySection; label: string }[] = [
 
 export default function MainScreen({ navigation }: Props) {
   const { game, meta, content } = useSession();
-  const { tab, setTab, money, setMoney, revision, setGoalPrompt } = usePlayChrome();
+  const { tab, setTab, money, setMoney, revision, setGoalPrompt, touchChrome } = usePlayChrome();
   const [hub, setHub] = useState<HubModel | null>(null);
   const [feedback, setFeedback] = useState<FeedbackModel | null>(null);
+  const [giftOpen, setGiftOpen] = useState(false);
+  const [giftGot, setGiftGot] = useState<number | null>(null);
   const [cardOpen, setCardOpen] = useState(false);
   const [dayTip, setDayTip] = useState(false);
   const [dropBox, setDropBox] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
@@ -73,6 +79,22 @@ export default function MainScreen({ navigation }: Props) {
     setTab("money");
     setGoalPrompt(true);
   }, [closeDayTip, setGoalPrompt, setMoney, setTab]);
+  const openGift = useCallback(() => {
+    closeDayTip();
+    setCardOpen(false);
+    setGiftOpen(true);
+  }, [closeDayTip]);
+  const claimGift = useCallback(() => {
+    const profileId = meta.get(META_KEYS.activeProfileId);
+    if (!profileId) return;
+    const result = game.claimDailyReward(profileId);
+    setGiftOpen(false);
+    if (result.status === "ok") {
+      setHub((current) => (current ? { ...current, giftReady: false } : current));
+      setGiftGot(result.coins);
+    }
+    touchChrome();
+  }, [game, meta, touchChrome]);
   const placeDropShield = useCallback(() => {
     const drop = dropRef.current;
     const shell = shellRef.current;
@@ -103,6 +125,7 @@ export default function MainScreen({ navigation }: Props) {
     const bankOpen = profile.isDemo || completed.has(BANK.unlockTaskId);
     const savings = game.savingsState(profileId);
     const day = game.dayState(profileId);
+    const gift = game.dailyRewardState(profileId);
     const activeGoal = savings.activeGoal;
     const face = goalFace(savings, profile.stage, content.goals);
     const cost = activeGoal?.cost ?? 0;
@@ -120,6 +143,8 @@ export default function MainScreen({ navigation }: Props) {
       savingsOpen,
       planOpen,
       bankOpen,
+      giftReady: gift.ready,
+      giftCells: gift.cells,
     });
     const bankPaid = bank && bank.paid > 0 ? bank : null;
     if (bankPaid) {
@@ -145,6 +170,14 @@ export default function MainScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (giftGot != null) {
+          setGiftGot(null);
+          return true;
+        }
+        if (giftOpen) {
+          setGiftOpen(false);
+          return true;
+        }
         if (dayTip) {
           closeDayTip();
           return true;
@@ -161,7 +194,7 @@ export default function MainScreen({ navigation }: Props) {
         return true;
       });
       return () => subscription.remove();
-    }, [cardOpen, closeDayTip, dayTip, setTab, tab]),
+    }, [cardOpen, closeDayTip, dayTip, giftGot, giftOpen, setTab, tab]),
   );
 
   useFocusEffect(
@@ -231,10 +264,13 @@ export default function MainScreen({ navigation }: Props) {
                 onPickGoal={openGoal}
                 onShop={() => navigation.navigate("Shop")}
                 onResults={() => navigation.navigate("Results")}
+                giftReady={hub.giftReady}
+                onGift={openGift}
                 dayTip={dayTip}
                 onDayTip={(open) => (open ? setDayTip(true) : closeDayTip())}
                 dropRef={dropRef}
                 onDropLayout={placeDropShield}
+                bottomInset={STAGE_PEEK_HEIGHT}
               />
             ) : null}
             {tab === "map" ? <TaskListScreen /> : null}
@@ -270,6 +306,7 @@ export default function MainScreen({ navigation }: Props) {
           onClose={() => setCardOpen(false)}
           canPickGoal={hub.savingsOpen}
           onPickGoal={openGoal}
+          overlay={tab === "home"}
         />
       </View>
       <View style={styles.tabTray}>
@@ -345,6 +382,10 @@ export default function MainScreen({ navigation }: Props) {
           />
         </View>
       ) : null}
+      {giftOpen && hub ? (
+        <DailyRewardCalendar cells={hub.giftCells} onClose={() => setGiftOpen(false)} onClaim={claimGift} />
+      ) : null}
+      {giftGot != null ? <DailyRewardGot coins={giftGot} onDismiss={() => setGiftGot(null)} /> : null}
       {feedback ? <FeedbackCard model={feedback} onDismiss={() => setFeedback(null)} /> : null}
     </View>
   );

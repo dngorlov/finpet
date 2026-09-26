@@ -245,6 +245,7 @@ export const strings = {
   journalStart: "Старт",
   journalDay: (n: number) => `День ${n}`,
   journalStartingGrant: "Стартовый бюджет",
+  journalDailyReward: "Ежедневный подарок",
   journalAllowance: "Пособие",
   journalPurchase: (name: string) => `Покупка: ${name}`,
   journalSavingsIn: "Перевод в копилку",

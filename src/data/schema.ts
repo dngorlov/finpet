@@ -12,6 +12,10 @@ export const profiles = sqliteTable("profiles", {
   isDemo: integer("isDemo").notNull(),
   contentVersion: integer("contentVersion").notNull(),
   createdAt: integer("createdAt").notNull(),
+  /** How many Ежедневные подарки this profile has claimed. A missed day does not change it. */
+  dailyRewardClaimed: integer("dailyRewardClaimed").notNull().default(0),
+  /** Local calendar date (YYYY-MM-DD) of the last claim. */
+  dailyRewardClaimedOn: text("dailyRewardClaimedOn"),
 });
 
 export const days = sqliteTable("days", {
@@ -176,4 +180,16 @@ export const deposits = sqliteTable("deposits", {
   status: text("status", { enum: ["open", "paid"] }).notNull(),
   openedAt: integer("openedAt").notNull(),
   paidAt: integer("paidAt"),
+});
+
+/** Достижения earned on this profile. `key` is an id from `ACHIEVEMENT_RULES`. */
+export const achievements = sqliteTable("achievements", {
+  id: text("id").primaryKey(),
+  profileId: text("profileId")
+    .notNull()
+    .references(() => profiles.id),
+  key: text("key").notNull(),
+  dayN: integer("dayN").notNull(),
+  earnedAt: integer("earnedAt").notNull(),
+  celebrated: integer("celebrated").notNull(),
 });

@@ -45,8 +45,9 @@ function speechMood(pet: HomePet) {
 
 /**
  * Главная like «Говорящий Том»: the pet stands big in a pixel room, the day and
- * the Цель float as small pills on top, Магазин and Итоги are round buttons
- * bottom-right. Nothing scrolls.
+ * the Цель float as small pills on top. Магазин and Итоги are round buttons
+ * bottom-right, and Подарок sits bottom-left while an Ежедневный подарок is
+ * waiting. Nothing scrolls.
  */
 export function HomeScene({
   pet,
@@ -61,10 +62,13 @@ export function HomeScene({
   onPickGoal,
   onShop,
   onResults,
+  giftReady = false,
+  onGift,
   dayTip,
   onDayTip,
   dropRef,
   onDropLayout,
+  bottomInset = 0,
 }: {
   pet: HomePet;
   day: number;
@@ -79,12 +83,17 @@ export function HomeScene({
   onPickGoal?: () => void;
   onShop: () => void;
   onResults: () => void;
+  /** An Ежедневный подарок can be taken today. */
+  giftReady?: boolean;
+  onGift?: () => void;
   /** «День N» explanation is open. The screen behind owns the tap-outside catcher. */
   dayTip: boolean;
   onDayTip: (open: boolean) => void;
   /** Anchor for the tap shield that keeps the explanation from closing itself. */
   dropRef?: Ref<View>;
   onDropLayout?: () => void;
+  /** Space the pet and buttons leave at the bottom for the overlaid Этап card. */
+  bottomInset?: number;
 }) {
   const [box, setBox] = useState({ width: 0, height: 0 });
   const [line, setLine] = useState<string | null>(null);
@@ -133,9 +142,12 @@ export function HomeScene({
     ? Math.max(120, Math.floor(Math.min(box.width * 0.68, box.height * 0.56) / 8) * 8)
     : FALLBACK_PET;
   const floorHeight = measured ? Math.round(box.height * FLOOR_SHARE) : 160;
-  const petBottom = Math.round(floorHeight * 0.35);
-  // Nudge left so the pet clears the round buttons on the right.
-  const petLeft = measured ? Math.max(spacing.s, Math.round((box.width - petSize) / 2 - spacing.l)) : undefined;
+  const petBottom = Math.round(floorHeight * 0.35) + bottomInset;
+  // Nudge left so the pet clears the round buttons on the right. With Подарок
+  // on the left as well, leave the pet centered between the two corners.
+  const petLeft = measured
+    ? Math.max(spacing.s, Math.round((box.width - petSize) / 2 - (giftReady ? 0 : spacing.l)))
+    : undefined;
 
   const say = () => showRef.current();
 
@@ -260,7 +272,16 @@ export function HomeScene({
         ) : null}
       </View>
 
-      <FabStack>
+      {giftReady && onGift ? (
+        <FabStack side="left" bottom={spacing.m + bottomInset}>
+          <Fab
+            label={homeStrings.giftButton}
+            icon={<PixelIcon name="gift" size={32} color={colors.onRaised} />}
+            onPress={onGift}
+          />
+        </FabStack>
+      ) : null}
+      <FabStack bottom={spacing.m + bottomInset}>
         <Fab
           label={strings.navShop}
           icon={<PixelIcon name="shopping-cart" size={32} color={waiting ? colors.subtle : colors.onRaised} />}

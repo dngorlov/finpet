@@ -36,6 +36,10 @@ _Avoid_: награда, подарок
 One numbered cycle of the game economy, starting at 1. A profile begins on day 1, already open. The first completion of a pinned Урок ends the open day and pays that урок's coins. The next day begins when the child leaves Итоги дня. The calendar does not start one.
 _Avoid_: период, уровень, сессия, календарный день
 
+**Ежедневный подарок (Daily gift)**:
+The next coin gift on a fixed track, offered once on each real calendar day. A missed day leaves the place where it is. The short name on Дом is Подарок. It is not an Игровой день.
+_Avoid_: Пособие, серия, стрик, Родительский бонус
+
 **Баланс (Balance)**:
 Coins available to spend right now.
 _Avoid_: кошелёк, счёт
@@ -98,7 +102,7 @@ _Avoid_: минимум, лимит, прогресс этапа
 ### Pet
 
 **Дом (Home)**:
-The child's home view: their Питомец, the current Игровой день number under it, their current Цель, the way into Магазин, and the way into Итоги.
+The child's home view: their Питомец, the current Игровой день number under it, their current Цель, the way into Магазин, the way into Итоги, and Подарок while an Ежедневный подарок is waiting.
 _Avoid_: главная, хаб
 
 **Питомец (Pet)**:

@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { playableTasks } from "../../core/tasks";
 import { META_KEYS } from "../../data/metaKeys";
 import type { DaySummaryView, JournalEntry, TaskProgressView } from "../../data/repositories/gameRepository";
+import { EarnedAchievements } from "../components/AchievementBoard";
 import { PixelIcon } from "../components/Pictogram";
 import type { SpriteName } from "../components/PixelSprite";
 import { StageCardPlate } from "../components/StageCard";
@@ -45,6 +46,7 @@ function journalLabel(
   taskTitle: (id: string) => string | undefined,
 ): string {
   if (entry.labelKey === "starting_grant") return strings.journalStartingGrant;
+  if (entry.labelKey === "daily_reward") return strings.journalDailyReward;
   if (entry.labelKey === "allowance") return strings.journalAllowance;
   if (entry.labelKey === "savings_in") return strings.journalSavingsIn;
   if (entry.labelKey === "savings_out") return strings.journalSavingsOut;
@@ -308,6 +310,7 @@ export function JournalPanel() {
           </View>
         );
       })}
+      <EarnedAchievements />
     </>
   );
 }
@@ -322,9 +325,12 @@ export function ResultsBody() {
 
   if (!lastClosed || !card) {
     return (
-      <MoneyCard>
-        <Text style={styles.body}>{strings.resultsEmpty}</Text>
-      </MoneyCard>
+      <>
+        <MoneyCard>
+          <Text style={styles.body}>{strings.resultsEmpty}</Text>
+        </MoneyCard>
+        <EarnedAchievements />
+      </>
     );
   }
 
@@ -376,6 +382,7 @@ export function ResultsBody() {
         />
         <CountRow icon="star" tint={moneyColors.goal} text={strings.resultsGoalsAchieved(goalCount)} last />
       </MoneyCard>
+      <EarnedAchievements />
     </>
   );
 }

@@ -7,6 +7,7 @@ import { ScreenTitle } from "../components/ScreenTitle";
 import { Card } from "../components/Card";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { Screen } from "../components/Screen";
+import { SettingsAchievements } from "../components/AchievementBoard";
 import { VolumeControl } from "../components/VolumeControl";
 import { META_KEYS } from "../../data/metaKeys";
 import { clampVolume, readSoundVolume } from "../sound/cues";
@@ -51,6 +52,7 @@ export default function SettingsScreen({ navigation }: Props) {
         <Text style={styles.body}>{strings.versionLine(APP_VERSION, APP_BUILD)}</Text>
       </Card>
       <SoundSettings />
+      <SettingsAchievements />
       <PrimaryButton label={strings.navAdult} onPress={() => navigation.navigate("AdultGate")} />
       <Text role="heading" style={styles.heading}>
         {homeStrings.creditsTitle}

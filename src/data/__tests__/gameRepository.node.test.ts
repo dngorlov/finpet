@@ -1075,3 +1075,51 @@ describe("Банк: вклад", () => {
     expect((sqlite.prepare("SELECT COUNT(*) AS n FROM deposits").get() as { n: number }).n).toBe(0);
   });
 });
+
+describe("Ежедневный подарок", () => {
+  it("pays the next step once per calendar day and does not reset or skip a miss", () => {
+    const clock = new ManualClock(new Date(2026, 8, 19, 12, 0, 0));
+    const { game, sqlite, profileId } = seed(clock);
+    game.openDay(profileId);
+
+    expect(game.dailyRewardState(profileId).ready).toBe(true);
+    expect(game.claimDailyReward(profileId)).toEqual({ status: "ok", coins: 5 });
+    expect(game.claimDailyReward(profileId)).toEqual({ status: "already" });
+    expect(game.dailyRewardState(profileId).ready).toBe(false);
+    expect(sums(sqlite, profileId)).toEqual({ balance: 105, txSum: 105, pot: 0 });
+
+    clock.advanceDay();
+    clock.advanceDay();
+    expect(game.dailyRewardState(profileId).cells.map((cell) => cell.status)).toEqual([
+      "claimed",
+      "current",
+      "locked",
+      "locked",
+      "locked",
+      "locked",
+      "locked",
+    ]);
+    expect(game.claimDailyReward(profileId)).toEqual({ status: "ok", coins: 5 });
+
+    clock.advanceDay();
+    expect(game.claimDailyReward(profileId)).toEqual({ status: "ok", coins: 10 });
+    expect(game.listJournal(profileId).filter((row) => row.labelKey === "daily_reward")).toEqual([
+      expect.objectContaining({ amount: 10, kind: "daily_reward" }),
+      expect.objectContaining({ amount: 5, kind: "daily_reward" }),
+      expect.objectContaining({ amount: 5, kind: "daily_reward" }),
+    ]);
+  });
+
+  it("starts the track again after the last step", () => {
+    const clock = new ManualClock(new Date(2026, 8, 19, 12, 0, 0));
+    const { game, profileId } = seed(clock);
+    const steps = [5, 5, 10, 10, 15, 15, 20];
+    for (let i = 0; i < steps.length; i++) {
+      if (i > 0) clock.advanceDay();
+      expect(game.claimDailyReward(profileId)).toEqual({ status: "ok", coins: steps[i] });
+    }
+    clock.advanceDay();
+    expect(game.dailyRewardState(profileId).cells[0]?.status).toBe("current");
+    expect(game.claimDailyReward(profileId)).toEqual({ status: "ok", coins: 5 });
+  });
+});
