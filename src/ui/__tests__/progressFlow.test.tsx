@@ -80,7 +80,7 @@ describe("Прогресс", () => {
     expect(screen.getByText("Сытость и настроение без изменений")).toBeOnTheScreen();
     expect(screen.getByText("Этап Новичок")).toBeOnTheScreen();
     expect(screen.getByText("Игровых дней: 1")).toBeOnTheScreen();
-    expect(screen.getByText("Задания 1/9")).toBeOnTheScreen();
+    expect(screen.getByText("Задания 1/12")).toBeOnTheScreen();
     expect(screen.getByText("Целей: 0")).toBeOnTheScreen();
   });
 });

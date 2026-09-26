@@ -125,8 +125,33 @@ const taskEffectObjectSchema = z.object({
   coins: z.number().int().optional(),
 });
 
+const bucketSchema = z.enum(["mandatory", "wants", "savings"]);
+const splitSchema = z.object({
+  mandatory: z.number().int().nonnegative(),
+  wants: z.number().int().nonnegative(),
+  savings: z.number().int().nonnegative(),
+});
+
+const sceneTileSchema = z.object({
+  icon: z.string().min(1).optional(),
+  label: z.string().min(1),
+  value: z.string().min(1).optional(),
+  was: z.string().min(1).optional(),
+  sticker: z.string().min(1).optional(),
+  tone: z.enum(["plain", "warn", "good"]).optional(),
+});
+
+const savingGoalSchema = z.object({
+  name: z.string().min(1),
+  icon: z.string().min(1),
+  price: z.number().int().positive(),
+});
+
 const taskOptionSchema = z.object({
   label: z.string().min(1),
+  icon: z.string().min(1).optional(),
+  hint: z.string().min(1).optional(),
+  spend: z.object({ bucket: bucketSchema, amount: z.number().int().nonnegative() }).optional(),
   next: z.string().min(1),
   verdict: z.enum(["good", "warn", "bad"]),
   explanation: z.string().min(1),
@@ -137,15 +162,17 @@ const taskOptionSchema = z.object({
 
 const sortItemSchema = z.object({
   label: z.string().min(1),
+  icon: z.string().min(1).optional(),
   bin: z.number().int().nonnegative(),
   explanation: z.string().min(1),
+  hint: z.string().min(1).optional(),
 });
 
 /** choice (default) asks; card teaches; sort is the «Нужно или хочется?» style mini-game. */
 const taskNodeSchema = z
   .object({
     id: z.string().min(1),
-    kind: z.enum(["choice", "card", "sort"]).optional(),
+    kind: z.enum(["choice", "card", "sort", "allocate", "compare", "replan", "steps", "dream"]).optional(),
     title: z.string().min(1).optional(),
     text: z.string().min(1),
     options: z.array(taskOptionSchema).min(1).optional(),
@@ -153,6 +180,27 @@ const taskNodeSchema = z
     button: z.string().min(1).optional(),
     bins: z.array(z.string().min(1)).min(2).optional(),
     items: z.array(sortItemSchema).min(1).optional(),
+    scene: z.array(sceneTileSchema).min(1).optional(),
+    total: z.number().int().positive().optional(),
+    plan: splitSchema.optional(),
+    event: z.object({ bucket: bucketSchema, delta: z.number().int().positive() }).optional(),
+    outcomes: z.partialRecord(bucketSchema, z.string().min(1)).optional(),
+    goal: savingGoalSchema.optional(),
+    goals: z.array(savingGoalSchema).min(2).optional(),
+    saved: z.number().int().nonnegative().optional(),
+    amounts: z.array(z.number().int().positive()).min(1).optional(),
+    income: z.number().int().positive().optional(),
+    temptations: z
+      .array(
+        z.object({
+          round: z.number().int().positive(),
+          name: z.string().min(1),
+          icon: z.string().min(1),
+          price: z.number().int().positive(),
+        }),
+      )
+      .optional(),
+    days: z.number().int().positive().optional(),
   })
   .superRefine((node, ctx) => {
     const kind = node.kind ?? "choice";
@@ -171,6 +219,19 @@ const taskNodeSchema = z
         if (item.bin >= bins) ctx.addIssue({ code: "custom", message: `Узел ${node.id}: «${item.label}» в несуществующей корзине` });
       });
     }
+    const need = (ok: boolean, what: string) => {
+      if (!ok) ctx.addIssue({ code: "custom", message: `Узел ${node.id} (${kind}): ${what}` });
+    };
+    if (kind === "allocate") need(node.total != null, "нужна сумма total");
+    if (kind === "replan") {
+      need(node.total != null && node.plan != null && node.event != null, "нужны total, plan и event");
+      if (node.total != null && node.plan) {
+        const sum = node.plan.mandatory + node.plan.wants + node.plan.savings;
+        need(sum === node.total, `план ${sum} не равен total ${node.total}`);
+      }
+    }
+    if (kind === "steps") need(node.goal != null && node.amounts != null && node.income != null, "нужны goal, amounts и income");
+    if (kind === "dream") need((node.goals?.length ?? 0) >= 2 && node.amounts != null, "нужны goals и amounts");
   });
 
 const pinSchema = z.object({

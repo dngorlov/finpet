@@ -127,25 +127,28 @@ describe("loadContent", () => {
     });
   });
 
-  it("ships nine lesson pins (three «скоро») and three mini-games inside «Покупки», every answer explained", () => {
+  it("ships Савва's nine lessons as pins and three mini-games inside «Покупки», every answer explained", () => {
     const pins = content.tasks.filter((t) => !t.correction && !t.parent);
     expect(pins.map((t) => t.id)).toEqual([
       "budget_what",
       "budget_plan",
-      "budget_3",
+      "budget_change",
       "savings_what",
+      "savings_steps",
       "savings_where",
-      "savings_3",
       "payments_pay",
       "payments_shop",
-      "payments_3",
+      "payments_later",
     ]);
     for (const task of pins) {
       expect(task.pin).toBeDefined();
       expect(task.order).toBeGreaterThan(0);
     }
-    // Три урока Саввы ещё пишутся: точка есть, пройти нельзя.
-    expect(pins.filter((t) => t.comingSoon).map((t) => t.order)).toEqual([3, 3, 3]);
+    // Все девять уроков написаны: «скоро» не осталось.
+    expect(pins.filter((t) => t.comingSoon)).toEqual([]);
+    for (const topic of ["budget", "savings", "payments"] as const) {
+      expect(pins.filter((t) => t.topic === topic).map((t) => t.order)).toEqual([1, 2, 3]);
+    }
     const playable = content.tasks.filter((t) => !t.correction && !t.comingSoon);
     expect(content.tasks.filter((t) => t.parent === "payments_shop").map((t) => t.title)).toEqual([
       "Скидка или ловушка",
@@ -177,6 +180,8 @@ describe("loadContent", () => {
         }
         // Every sort item has a right basket and at least one wrong one.
         if (node.kind === "sort") ["good", "bad"].forEach((v) => verdicts.add(v));
+        // Planning and saving games show consequences instead of right/wrong.
+        if (["allocate", "replan", "steps", "dream"].includes(node.kind ?? "")) ["good", "warn"].forEach((v) => verdicts.add(v));
       }
       if (!task.correction && !task.comingSoon) expect(verdicts.size).toBeGreaterThan(1);
     }
@@ -193,7 +198,7 @@ describe("loadContent", () => {
         if (seen.has(id)) continue;
         seen.add(id);
         const node = byId.get(id)!;
-        const targets = node.kind === "card" || node.kind === "sort" ? [node.next!] : (node.options ?? []).map((o) => o.next);
+        const targets = (node.kind ?? "choice") !== "choice" ? [node.next!] : (node.options ?? []).map((o) => o.next);
         for (const next of targets) {
           if (next === "exit") canExit = true;
           else if (next !== "retry") stack.push(next);
@@ -210,6 +215,18 @@ describe("loadContent", () => {
     const sort = content.tasks.find((t) => t.id === "budget_what")?.nodes.find((n) => n.kind === "sort");
     expect(sort?.bins).toEqual(["Нужно", "Хочется"]);
     expect(sort?.items?.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it("gives each new lesson its interactive game from the updated scenario", () => {
+    const kinds = (id: string) => content.tasks.find((t) => t.id === id)?.nodes.map((n) => n.kind ?? "choice") ?? [];
+    expect(kinds("budget_plan")).toEqual(expect.arrayContaining(["allocate", "compare"]));
+    expect(kinds("budget_change").filter((k) => k === "replan")).toHaveLength(3);
+    expect(kinds("savings_steps")).toContain("steps");
+    expect(kinds("savings_where")).toContain("dream");
+    // Every lesson opens with Савва's three cards.
+    for (const task of content.tasks.filter((t) => t.pin)) {
+      expect(task.nodes.slice(0, 3).map((n) => n.kind)).toEqual(["card", "card", "card"]);
+    }
   });
 
 });
